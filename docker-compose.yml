@@ -8,6 +8,11 @@ services:
     environment:
       - MONGO_URI=mongodb://root:12345Abcde@db:27017/promptdb?authSource=admin
       - PORT=3000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
