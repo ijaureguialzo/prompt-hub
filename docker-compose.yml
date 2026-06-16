@@ -9,7 +9,7 @@ services:
       - MONGO_URI=mongodb://root:12345Abcde@db:27017/promptdb?authSource=admin
       - PORT=3000
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));"]
       interval: 10s
       timeout: 5s
       retries: 5
