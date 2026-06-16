@@ -25,7 +25,7 @@
         <button
           @click="copyToClipboard(prompt.content)"
           class="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
-          title="Copy prompt"
+          :title="t('promptCard.copyTitle')"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -37,7 +37,7 @@
         <router-link
           :to="`/prompt/${prompt._id}`"
           class="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
-          title="Edit"
+          :title="t('promptCard.editTitle')"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -51,18 +51,21 @@
 
 <script setup>
 import { useUIStore } from '../stores/useUIStore'
+import { useI18nStore } from '../stores/useI18nStore.js'
 
 const props = defineProps({
   prompt: { type: Object, required: true },
 })
 
 const uiStore = useUIStore()
+const i18nStore = useI18nStore()
+const t = i18nStore.t
 
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
-    uiStore.setSuccess('Prompt copied to clipboard!')
+    uiStore.setSuccess(t('promptCard.copiedToast'))
   }).catch(() => {
-    uiStore.setError('Failed to copy prompt')
+    uiStore.setError(t('promptCard.failedCopyToast'))
   })
 }
 </script>

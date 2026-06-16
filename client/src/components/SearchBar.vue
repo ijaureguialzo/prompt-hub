@@ -11,13 +11,18 @@
       :value="modelValue"
       @update:value="$emit('update:modelValue', $event.target.value)"
       type="text"
-      placeholder="Search prompts by title, content, or tags..."
+      :placeholder="t('searchBar.placeholder')"
       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
     />
   </div>
 </template>
 
 <script setup>
+import { useI18nStore } from '../stores/useI18nStore.js'
+
 defineProps({ modelValue: { type: String, default: '' } })
 defineEmits(['update:modelValue'])
+
+const i18nStore = useI18nStore()
+const t = i18nStore.t
 </script>

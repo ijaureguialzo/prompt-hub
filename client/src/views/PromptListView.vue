@@ -2,19 +2,19 @@
   <div>
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Prompts</h1>
+      <h1 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ t('promptList.heading') }}</h1>
       <div class="flex space-x-3">
         <button
           @click="uiStore.setShowCreateCategoryModal(true)"
           class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium"
         >
-          New Category
+          {{ t('promptList.newCategoryBtn') }}
         </button>
         <button
           @click="uiStore.setShowCreatePromptModal(true)"
           class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
         >
-          New Prompt
+          {{ t('promptList.newPromptBtn') }}
         </button>
       </div>
     </div>
@@ -32,11 +32,11 @@
       <!-- Prompts list -->
       <div class="flex-1">
         <div v-if="promptStore.loading" class="text-center py-8">
-          <p class="text-gray-500">Loading prompts...</p>
+          <p class="text-gray-500">{{ t('promptList.loading') }}</p>
         </div>
 
         <div v-else-if="filteredPrompts.length === 0" class="text-center py-8">
-          <p class="text-gray-500">No prompts found.</p>
+          <p class="text-gray-500">{{ t('promptList.noPrompts') }}</p>
         </div>
 
         <div v-else class="space-y-4">
@@ -62,6 +62,7 @@ import { ref, computed, onMounted } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
+import { useI18nStore } from '../stores/useI18nStore.js'
 import SearchBar from '../components/SearchBar.vue'
 import CategoryList from '../components/CategoryList.vue'
 import PromptCard from '../components/PromptCard.vue'
@@ -71,6 +72,8 @@ import CreateCategoryModal from '../components/CreateCategoryModal.vue'
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
 const uiStore = useUIStore()
+const i18nStore = useI18nStore()
+const t = i18nStore.t
 
 const searchQuery = ref('')
 
