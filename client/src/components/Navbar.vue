@@ -6,18 +6,18 @@
           <router-link to="/" class="text-xl font-bold text-indigo-600 hover:text-indigo-700">
             {{ t('nav.title') }}
           </router-link>
-          <div class="hidden sm:flex space-x-4">
-            <router-link to="/" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-              {{ t('nav.promptsLink') }}
-            </router-link>
-            <router-link v-if="authStore.isAdmin" to="/admin/users"
-              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-              {{ t('nav.adminLink') }}
-            </router-link>
-            <router-link to="/settings" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-              {{ t('nav.settingsLink') }}
-            </router-link>
-          </div>
+            <div v-if="authStore.isAuthenticated" class="hidden sm:flex space-x-4">
+              <router-link to="/" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                {{ t('nav.promptsLink') }}
+              </router-link>
+              <router-link v-if="authStore.isAdmin" to="/admin/users"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                {{ t('nav.adminLink') }}
+              </router-link>
+              <router-link to="/settings" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                {{ t('nav.settingsLink') }}
+              </router-link>
+            </div>
         </div>
 
         <!-- Right side: user info + logout + language -->
