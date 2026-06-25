@@ -93,6 +93,8 @@ const tagsInput = ref('')
 const form = ref({ title: '', content: '', categoryId: '' })
 
 onMounted(() => {
+  categoryStore.fetchCategories().catch(() => {})
+
   if (props.prompt) {
     form.value = {
       title: props.prompt.title,

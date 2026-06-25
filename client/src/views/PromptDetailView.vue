@@ -60,7 +60,7 @@
       </div>
 
       <!-- Editor Modal -->
-      <PromptEditor v-if="editorOpen" :prompt="promptStore.currentPrompt" @close="editorOpen = false"
+      <CreatePromptModal v-if="editorOpen" :prompt="promptStore.currentPrompt" @close="editorOpen = false"
         @saved="() => { editorOpen = false; promptStore.fetchPrompts(); }" />
 
       <!-- Use Prompt Modal -->
@@ -85,7 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
-import PromptEditor from '../components/PromptEditor.vue'
+import CreatePromptModal from '../components/CreatePromptModal.vue'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
 import UsePromptModal from '../components/UsePromptModal.vue'
 

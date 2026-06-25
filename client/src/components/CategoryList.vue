@@ -13,7 +13,7 @@
               ? 'bg-indigo-50 text-indigo-700 font-medium'
               : 'text-gray-600 hover:bg-gray-50'
           ]">
-          {{ t('categoryList.allCategories') }}
+          {{ t('categoryList.allCategories') }} <span class="text-gray-400">({{ promptStore.prompts.length }})</span>
         </button>
       </li>
 
@@ -26,7 +26,7 @@
                 ? 'bg-indigo-50 text-indigo-700 font-medium'
                 : 'text-gray-600 hover:bg-gray-50'
             ]">
-            {{ cat.name }}
+            {{ cat.name }} <span class="text-gray-400">({{ promptCounts[cat._id] }})</span>
           </button>
           <div class="flex opacity-0 group-hover:opacity-100 transition-opacity">
             <button @click="openEditCategory(cat)" class="p-1 text-gray-400 hover:text-indigo-600" :title="t('categoryList.edit')">
@@ -62,16 +62,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useCategoryStore } from '../stores/useCategoryStore'
+import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import DeleteConfirmationModal from './DeleteConfirmationModal.vue'
 
 const categoryStore = useCategoryStore()
+const promptStore = usePromptStore()
 const uiStore = useUIStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
+
+const promptCounts = computed(() => {
+  const counts = {}
+  for (const cat of categoryStore.categories) {
+    counts[cat._id] = promptStore.prompts.filter(p => p.categoryId?._id === cat._id).length
+  }
+  return counts
+})
 
 const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)
