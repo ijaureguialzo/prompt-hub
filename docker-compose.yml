@@ -1,16 +1,41 @@
 services:
+  traefik:
+    image: traefik:${TRAEFIK_VERSION:-3}
+    ports:
+      - "80:80"
+      - "443:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard.rule=Host(`${FQDN_TRAEFIK:-traefik.prompthub.test}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard.service=api@internal"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard.tls=true"
+      - "traefik.http.middlewares.${COMPOSE_PROJECT_NAME}-dashboard-redirect.redirectregex.regex=^https?://${FQDN_TRAEFIK:-traefik.prompthub.test}/(.*)"
+      - "traefik.http.middlewares.${COMPOSE_PROJECT_NAME}-dashboard-redirect.redirectregex.replacement=https://${FQDN_TRAEFIK:-traefik.prompthub.test}/dashboard/$1"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard_redirect.rule=Host(`${FQDN_TRAEFIK:-traefik.prompthub.test}`) && !PathPrefix(`/api`) && !PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard_redirect.middlewares=${COMPOSE_PROJECT_NAME}-dashboard-redirect"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard_redirect.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-dashboard_redirect.tls=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/tls.yml:/etc/traefik/dynamic/tls.yml:ro
+      - ./traefik/certs:/certs:ro
+    depends_on:
+      - frontend
+
   api:
     build:
       context: ./server
       args:
         NODE_VERSION: ${NODE_VERSION}
-    ports:
-      - "3000:3000"
     environment:
       - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/${MONGO_DB}?authSource=admin
       - PORT=3000
     healthcheck:
-      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));"]
+      test: [ "CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,6 +43,12 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.rule=Host(`${FQDN_API:-api.prompthub.test}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.tls=true"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=3000"
 
   frontend:
     build:
@@ -25,24 +56,28 @@ services:
       args:
         NODE_VERSION: ${NODE_VERSION}
         VITE_API_URL: ${VITE_API_URL}
-    ports:
-      - "5173:5173"
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.tls=true"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-frontend.loadbalancer.server.port=5173"
 
   db:
     image: mongo:${MONGO_VERSION}
-    ports:
-      - "27017:27017"
+    expose:
+      - 27017
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
       timeout: 5s
       retries: 5

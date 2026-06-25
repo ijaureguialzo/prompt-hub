@@ -115,3 +115,5 @@ server/node_modules/
 # Build output
 dist/
 client/dist/
+
+traefik/certs/
