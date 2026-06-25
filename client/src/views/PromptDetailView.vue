@@ -24,14 +24,16 @@
               class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700">
               {{ t('promptDetail.useBtn') }}
             </button>
-            <button @click="editorOpen = true"
-              class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-              {{ t('promptDetail.editBtn') }}
-            </button>
-            <button @click="openDeleteDialog"
-              class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
-              {{ t('promptDetail.deleteBtn') }}
-            </button>
+            <template v-if="authStore.isAuthenticated && isOwnPrompt">
+              <button @click="editorOpen = true"
+                class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                {{ t('promptDetail.editBtn') }}
+              </button>
+              <button @click="openDeleteDialog"
+                class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
+                {{ t('promptDetail.deleteBtn') }}
+              </button>
+            </template>
           </div>
         </div>
 
@@ -84,6 +86,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import CreatePromptModal from '../components/CreatePromptModal.vue'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
@@ -93,11 +96,17 @@ const route = useRoute()
 const router = useRouter()
 const promptStore = usePromptStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
 const editorOpen = ref(false)
 const usePromptOpen = ref(false)
+
+function isOwnPrompt() {
+  if (!authStore.isAuthenticated || !promptStore.currentPrompt) return false
+  return authStore.isOwner(promptStore.currentPrompt.ownerId)
+}
 const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)
 

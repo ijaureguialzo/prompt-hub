@@ -9,6 +9,14 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import Navbar from './components/Navbar.vue'
 import Toast from './components/Toast.vue'
+import { useAuthStore } from './stores/useAuthStore'
+
+const authStore = useAuthStore()
+
+onMounted(() => {
+  authStore.init()
+})
 </script>

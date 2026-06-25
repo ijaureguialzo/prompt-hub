@@ -16,6 +16,11 @@ const promptSchema = new mongoose.Schema({
     ref: 'Category',
     required: true
   },
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   tags: [String],
   createdAt: {
     type: Date,

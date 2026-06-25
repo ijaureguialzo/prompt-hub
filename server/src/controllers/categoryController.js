@@ -1,7 +1,7 @@
 const Category = require('../models/Category');
 const Prompt = require('../models/Prompt');
 
-// GET /api/categories - Retrieve all categories
+// GET /api/categories - Retrieve all categories (authenticated)
 exports.getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
@@ -11,7 +11,7 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
-// GET /api/categories/:id - Retrieve a specific category
+// GET /api/categories/:id - Retrieve a specific category (authenticated)
 exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -24,7 +24,7 @@ exports.getCategoryById = async (req, res) => {
   }
 };
 
-// POST /api/categories - Create a new category
+// POST /api/categories - Create a new category (authenticated, owner is creator)
 exports.createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -40,7 +40,8 @@ exports.createCategory = async (req, res) => {
 
     const category = new Category({
       name: name.trim(),
-      description: description ? description.trim() : ''
+      description: description ? description.trim() : '',
+      ownerId: req.user._id
     });
 
     await category.save();
@@ -50,7 +51,7 @@ exports.createCategory = async (req, res) => {
   }
 };
 
-// PUT /api/categories/:id - Update a category
+// PUT /api/categories/:id - Update a category (owner or admin only)
 exports.updateCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -78,18 +79,28 @@ exports.updateCategory = async (req, res) => {
       return res.status(404).json({ message: 'Category not found' });
     }
 
+    // Ownership check (admins bypass)
+    if (req.user.role !== 'admin' && category.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You can only modify your own categories' });
+    }
+
     res.status(200).json(category);
   } catch (error) {
     res.status(500).json({ message: 'Error updating category', error: error.message });
   }
 };
 
-// DELETE /api/categories/:id - Remove a category
+// DELETE /api/categories/:id - Remove a category (owner or admin only)
 exports.deleteCategory = async (req, res) => {
   try {
     const category = await Category.findByIdAndDelete(req.params.id);
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Ownership check (admins bypass)
+    if (req.user.role !== 'admin' && category.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'You can only delete your own categories' });
     }
 
     // Cascade delete all prompts belonging to this category

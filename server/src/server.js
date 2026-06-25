@@ -5,6 +5,8 @@ const cors = require('cors');
 
 const promptRoutes = require('./routes/promptRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -16,6 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/prompts', promptRoutes);
 app.use('/api/categories', categoryRoutes);
 

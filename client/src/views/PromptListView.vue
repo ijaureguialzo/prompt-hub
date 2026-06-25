@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
       <h1 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ t('promptList.heading') }}</h1>
-      <div class="flex space-x-3">
+      <div v-if="authStore.isAuthenticated" class="flex space-x-3">
         <button
           @click="uiStore.setShowCreateCategoryModal(true)"
           class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm font-medium"
@@ -79,6 +79,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import SearchBar from '../components/SearchBar.vue'
 import CategoryList from '../components/CategoryList.vue'
@@ -89,6 +90,7 @@ import CreateCategoryModal from '../components/CreateCategoryModal.vue'
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 

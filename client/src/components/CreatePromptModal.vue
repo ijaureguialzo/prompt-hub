@@ -70,6 +70,7 @@ import { ref, computed, onMounted } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 
 const props = defineProps({
@@ -81,6 +82,7 @@ const emit = defineEmits(['close', 'saved'])
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 

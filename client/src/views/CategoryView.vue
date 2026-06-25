@@ -15,7 +15,7 @@
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <h1 class="text-2xl font-bold text-gray-900">{{ categoryStore.currentCategory.name }}</h1>
-          <div class="flex space-x-2">
+          <div v-if="authStore.isAuthenticated && isOwnCategory" class="flex space-x-2">
             <button @click="editModalOpen = true"
               class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
               {{ t('categoryView.editCategoryBtn') }}
@@ -69,6 +69,7 @@ import { useRoute } from 'vue-router'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import PromptCard from '../components/PromptCard.vue'
 import CreateCategoryModal from '../components/CreateCategoryModal.vue'
@@ -78,6 +79,7 @@ const route = useRoute()
 const categoryStore = useCategoryStore()
 const promptStore = usePromptStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
@@ -88,6 +90,11 @@ const pendingDeleteId = ref(null)
 const categoryPrompts = computed(() =>
   promptStore.prompts.filter(p => p.categoryId?._id === route.params.id)
 )
+
+function isOwnCategory() {
+  if (!authStore.isAuthenticated || !categoryStore.currentCategory) return false
+  return authStore.isOwner(categoryStore.currentCategory.ownerId)
+}
 
 onMounted(async () => {
   try {

@@ -36,7 +36,7 @@
               d="M15 11h4a2 2 0 012 2v5a2 2 0 01-2 2h-8a2 2 0 01-2-2v-5a2 2 0 012-2h1z" />
           </svg>
         </button>
-        <router-link
+        <router-link v-if="isOwnPrompt()"
           :to="`/prompt/${prompt._id}`"
           class="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
           :title="t('promptCard.editTitle')"
@@ -53,6 +53,7 @@
 
 <script setup>
 import { useUIStore } from '../stores/useUIStore'
+import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 
 const props = defineProps({
@@ -62,7 +63,13 @@ const props = defineProps({
 const emit = defineEmits(['filterByCategory', 'filterByTag'])
 
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 const i18nStore = useI18nStore()
+
+function isOwnPrompt() {
+  if (!authStore.isAuthenticated || !props.prompt.ownerId) return false
+  return authStore.isOwner(props.prompt.ownerId)
+}
 const t = i18nStore.t
 
 function copyToClipboard(text) {

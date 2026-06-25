@@ -1,9 +1,19 @@
 const API_URL = import.meta.env.VITE_API_URL || '/api'
 
-async function request(endpoint, options = {}) {
+function getToken() {
+  return localStorage.getItem('token')
+}
+
+async function apiRequest(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`
+  const token = getToken()
+  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
     ...options,
   })
 
@@ -16,18 +26,36 @@ async function request(endpoint, options = {}) {
   return data
 }
 
+export function apiRequestWithToken(endpoint, options = {}) {
+  // Same as apiRequest but explicitly includes token from localStorage
+  return apiRequest(endpoint, options)
+}
+
 export const promptsApi = {
-  getAll: () => request('/prompts'),
-  getById: (id) => request(`/prompts/${id}`),
-  create: (data) => request('/prompts', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => request(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => request(`/prompts/${id}`, { method: 'DELETE' }),
+  getAll: () => apiRequest('/prompts'),
+  getById: (id) => apiRequest(`/prompts/${id}`),
+  create: (data) => apiRequest('/prompts', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => apiRequest(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' }),
 }
 
 export const categoriesApi = {
-  getAll: () => request('/categories'),
-  getById: (id) => request(`/categories/${id}`),
-  create: (data) => request('/categories', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => request(`/categories/${id}`, { method: 'DELETE' }),
+  getAll: () => apiRequest('/categories'),
+  getById: (id) => apiRequest(`/categories/${id}`),
+  create: (data) => apiRequest('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => apiRequest(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/categories/${id}`, { method: 'DELETE' }),
+}
+
+export const authApi = {
+  register: (email, password) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  getCurrentUser: () => apiRequest('/auth/me'),
+}
+
+export const usersApi = {
+  getAll: () => apiRequest('/users'),
+  getById: (id) => apiRequest(`/users/${id}`),
+  update: (id, data) => apiRequest(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
 }
