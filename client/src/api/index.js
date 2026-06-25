@@ -4,6 +4,11 @@ function getToken() {
   return localStorage.getItem('token')
 }
 
+function clearAuth() {
+  try { localStorage.removeItem('token') } catch {}
+  try { localStorage.removeItem('user') } catch {}
+}
+
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`
   const token = getToken()
@@ -20,6 +25,15 @@ async function apiRequest(endpoint, options = {}) {
   const data = await response.json()
 
   if (!response.ok) {
+    // Clear stale token on 401 (auth error from backend)
+    if (response.status === 401) {
+      clearAuth()
+      // Redirect to login if not already there
+      const currentPath = window.location.pathname
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+      }
+    }
     throw new Error(data.message || 'Request failed')
   }
 

@@ -44,35 +44,46 @@ const router = createRouter({
   routes,
 })
 
-// Auth guard: redirect unauthenticated users to login
-router.beforeEach((to, from) => {
+function isAuthenticated() {
   const token = localStorage.getItem('token')
+  if (!token) return false
+  // A valid session requires both token and user data
+  try {
+    const user = JSON.parse(localStorage.getItem('user'))
+    return !!user && !!user.email
+  } catch {
+    return false
+  }
+}
 
+function isAdmin() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'))
+    return user?.role === 'admin'
+  } catch {
+    return false
+  }
+}
+
+// Auth guard: redirect unauthenticated users to login
+router.beforeEach((to) => {
   // Public routes (login, register) — no guard needed
   if (to.name === 'Login' || to.name === 'Register') {
     // If already logged in, redirect to home
-    if (token) {
+    if (isAuthenticated()) {
       return { name: 'PromptList' }
     }
     return
   }
 
-  // Protected routes: require authentication
-  if (!token) {
+  // Protected routes: require full authentication (token + valid user)
+  if (!isAuthenticated()) {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
   // Admin routes: require admin role
-  if (to.meta.requiresAdmin) {
-    try {
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        if (user.role !== 'admin') {
-          return { name: 'PromptList' }
-        }
-      }
-    } catch {}
+  if (to.meta.requiresAdmin && !isAdmin()) {
+    return { name: 'PromptList' }
   }
 
   return true
