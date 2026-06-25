@@ -103,7 +103,7 @@ onMounted(() => {
     }
     tagsInput.value = (props.prompt.tags || []).join(', ')
   } else {
-    form.value = { title: '', content: '', categoryId: '' }
+    form.value = { title: '', content: '', categoryId: categoryStore.selectedCategoryId || '' }
     tagsInput.value = ''
   }
 })
