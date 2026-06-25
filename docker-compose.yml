@@ -2,11 +2,14 @@ version: '3.8'
 
 services:
   api:
-    build: ./server
+    build:
+      context: ./server
+      args:
+        NODE_VERSION: ${NODE_VERSION}
     ports:
       - "3000:3000"
     environment:
-      - MONGO_URI=mongodb://root:12345Abcde@db:27017/promptdb?authSource=admin
+      - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/${MONGO_DB}?authSource=admin
       - PORT=3000
     healthcheck:
       test: ["CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));"]
@@ -22,7 +25,8 @@ services:
     build:
       context: ./client
       args:
-        VITE_API_URL: http://localhost:3000/api
+        NODE_VERSION: ${NODE_VERSION}
+        VITE_API_URL: ${VITE_API_URL}
     ports:
       - "5173:5173"
     depends_on:
@@ -31,12 +35,12 @@ services:
     restart: unless-stopped
 
   db:
-    image: mongo:7
+    image: mongo:${MONGO_VERSION}
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=12345Abcde
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
     volumes:
       - mongo_data:/data/db
     healthcheck:
