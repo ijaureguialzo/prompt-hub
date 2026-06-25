@@ -12,7 +12,7 @@
           </button>
         </div>
 
-        <!-- Prompt content (read-only) -->
+        <!-- Prompt content (editable) -->
         <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ prompt.title }}</h3>
 
         <div v-if="prompt.categoryId" class="mb-3">
@@ -21,7 +21,8 @@
           </span>
         </div>
 
-        <pre class="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-md border mb-4">{{ prompt.content }}</pre>
+        <textarea v-model="editedContent"
+          class="w-full h-48 text-sm font-mono bg-gray-50 p-4 rounded-md border resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500" />
 
         <div v-if="prompt.tags && prompt.tags.length" class="mb-4 flex flex-wrap gap-2">
           <span v-for="tag in prompt.tags" :key="tag"
@@ -43,6 +44,7 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue'
 import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 
@@ -56,8 +58,14 @@ const uiStore = useUIStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
+const editedContent = ref('')
+
+watch(() => props.prompt.content, (val) => {
+  editedContent.value = val || ''
+}, { immediate: true })
+
 function copyToClipboard() {
-  navigator.clipboard.writeText(props.prompt.content).then(() => {
+  navigator.clipboard.writeText(editedContent.value).then(() => {
     uiStore.setSuccess(t('common.successCopied'))
   }).catch(() => {
     uiStore.setError(t('common.failedCopy'))
