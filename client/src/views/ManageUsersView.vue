@@ -1,9 +1,26 @@
 <template>
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ t('admin.usersHeading') }}</h1>
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- Site registration setting -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">{{ t('admin.registrationTitle') }}</h2>
+          <p class="text-sm text-gray-500 mt-1">{{ t('admin.registrationDesc') }}</p>
+        </div>
+        <button @click="handleToggleRegistration" :disabled="configLoading"
+          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+          :class="isRegistrationEnabled() ? 'bg-indigo-600' : 'bg-gray-200'"
+          role="switch" :aria-checked="isRegistrationEnabled()">
+          <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
+            :class="isRegistrationEnabled() ? 'translate-x-6' : 'translate-x-1'" />
+        </button>
+      </div>
+    </div>
+
+    <h1 class="text-2xl font-bold text-gray-900">{{ t('admin.usersHeading') }}</h1>
 
     <!-- Loading state -->
-    <div v-if="loading" class="text-center text-gray-500 py-8">{{ t('common.loading') }}</div>
+    <div v-if="loading || configLoading" class="text-center text-gray-500 py-8">{{ t('common.loading') }}</div>
 
     <!-- Error state -->
     <div v-else-if="error" class="text-red-600 text-sm mb-4">{{ error }}</div>
@@ -52,7 +69,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import { useUIStore } from '../stores/useUIStore'
-import { usersApi } from '../api/index.js'
+import { usersApi, siteConfigApi } from '../api/index.js'
 
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
@@ -60,8 +77,25 @@ const uiStore = useUIStore()
 const t = i18nStore.t
 
 const users = ref([])
+const siteConfig = ref(null)
 const loading = ref(false)
+const configLoading = ref(false)
 const error = ref('')
+
+function isRegistrationEnabled() {
+  return siteConfig.value ? siteConfig.value.registrationEnabled : true
+}
+
+async function fetchSiteConfig() {
+  configLoading.value = true
+  try {
+    siteConfig.value = await siteConfigApi.getConfig()
+  } catch (err) {
+    // Silently fail — default to enabled
+  } finally {
+    configLoading.value = false
+  }
+}
 
 async function fetchUsers() {
   loading.value = true
@@ -73,6 +107,17 @@ async function fetchUsers() {
     error.value = err.message
   } finally {
     loading.value = false
+  }
+}
+
+async function handleToggleRegistration() {
+  if (!siteConfig.value) return
+  try {
+    const newStatus = !siteConfig.value.registrationEnabled
+    siteConfig.value = await siteConfigApi.updateConfig({ registrationEnabled: newStatus })
+    uiStore.setSuccess(newStatus ? t('admin.registrationEnabled') : t('admin.registrationDisabled'))
+  } catch (err) {
+    uiStore.setError(err.message)
   }
 }
 
@@ -97,6 +142,7 @@ async function handleToggleActive(user) {
 }
 
 onMounted(() => {
+  fetchSiteConfig()
   fetchUsers()
 })
 </script>

@@ -73,3 +73,8 @@ export const usersApi = {
   update: (id, data) => apiRequest(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
 }
+
+export const siteConfigApi = {
+  getConfig: () => apiRequest('/site-config'),
+  updateConfig: (data) => apiRequest('/site-config', { method: 'PUT', body: JSON.stringify(data) }),
+}

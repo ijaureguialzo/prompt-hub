@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const SiteConfig = require('../models/SiteConfig');
 
 function generateToken(user) {
   return jwt.sign(
@@ -16,6 +17,14 @@ exports.register = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Check if registration is enabled site-wide
+    const config = await SiteConfig.findById('site');
+    const isEnabled = config ? config.registrationEnabled : true;
+
+    if (!isEnabled) {
+      return res.status(403).json({ message: 'Registration is currently disabled by the administrator.' });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase().trim() });

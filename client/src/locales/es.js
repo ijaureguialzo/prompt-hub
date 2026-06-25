@@ -134,5 +134,9 @@ export default {
     roleUpdated: '¡Rol actualizado correctamente!',
     activated: 'Usuario activado.',
     deactivated: 'Usuario desactivado.',
+    registrationTitle: 'Registro',
+    registrationDesc: 'Permitir o impedir que nuevos usuarios creen cuentas.',
+    registrationEnabled: 'Registro activado.',
+    registrationDisabled: 'Registro desactivado.',
   },
 }

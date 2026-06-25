@@ -134,5 +134,9 @@ export default {
     roleUpdated: 'Rola arrakastaz eguneratuta!',
     activated: 'Erabiltzailea aktibatuta.',
     deactivated: 'Erabiltzailea desaktibatuta.',
+    registrationTitle: 'Erregistroa',
+    registrationDesc: 'Baimendu edo eragoz berri erabiltzaileek kontuak sortzea.',
+    registrationEnabled: 'Erregistroa aktibatuta.',
+    registrationDisabled: 'Erregistroa desaktibatuta.',
   },
 }
