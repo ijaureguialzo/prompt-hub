@@ -79,7 +79,7 @@ const loading = ref(false)
 
 onMounted(async () => {
   try {
-    const config = await siteConfigApi.getConfig()
+    const config = await siteConfigApi.getPublicConfig()
     registrationEnabled.value = config.registrationEnabled !== false // default true
   } catch {
     registrationEnabled.value = true // default to enabled on error

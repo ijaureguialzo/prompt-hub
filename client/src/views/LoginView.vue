@@ -58,7 +58,7 @@ const registrationEnabled = ref(true)
 
 onMounted(async () => {
   try {
-    const config = await siteConfigApi.getConfig()
+    const config = await siteConfigApi.getPublicConfig()
     registrationEnabled.value = config.registrationEnabled !== false
   } catch {
     registrationEnabled.value = true

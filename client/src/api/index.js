@@ -75,6 +75,7 @@ export const usersApi = {
 }
 
 export const siteConfigApi = {
+  getPublicConfig: () => apiRequest('/site-config/public'),
   getConfig: () => apiRequest('/site-config'),
   updateConfig: (data) => apiRequest('/site-config', { method: 'PUT', body: JSON.stringify(data) }),
 }
