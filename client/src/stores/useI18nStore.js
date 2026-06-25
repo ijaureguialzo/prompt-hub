@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import en from '../locales/en.js'
 import es from '../locales/es.js'
+import eu from '../locales/eu.js'
 
-const localeMap = { es: 'es', en: 'en', 'en-us': 'en', 'en-gb': 'en' }
+const localeMap = { es: 'es', eu: 'eu', en: 'en', 'en-us': 'en', 'en-gb': 'en' }
 
 function detectBrowserLanguage() {
   if (typeof navigator === 'undefined') return 'en'
   const lang = (navigator.language || navigator.languages?.[0] || 'en').toLowerCase()
-  return localeMap[lang] || (lang.startsWith('es') ? 'es' : 'en')
+  return localeMap[lang] || (lang.startsWith('eu') ? 'eu' : (lang.startsWith('es') ? 'es' : 'en'))
 }
 
 function resolve(obj, key) {
@@ -23,7 +24,7 @@ function resolve(obj, key) {
 export const useI18nStore = defineStore('i18n', {
   state: () => ({
     language: detectBrowserLanguage(),
-    locales: { en, es },
+    locales: { en, es, eu },
   }),
 
   getters: {

@@ -23,6 +23,11 @@
             es
           </button>
           <span class="text-gray-300">|</span>
+          <button @click="i18nStore.setLanguage('eu')"
+            :class="[i18nStore.language === 'eu' ? 'text-indigo-600 font-semibold' : 'text-gray-500 hover:text-gray-700']">
+            eu
+          </button>
+          <span class="text-gray-300">|</span>
           <button @click="i18nStore.setLanguage('en')"
             :class="[i18nStore.language === 'en' ? 'text-indigo-600 font-semibold' : 'text-gray-500 hover:text-gray-700']">
             en
