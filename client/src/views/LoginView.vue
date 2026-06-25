@@ -7,14 +7,14 @@
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.emailLabel') }}</label>
-          <input v-model="email" type="email" required maxlength="255" data-1p-ignore
+          <input v-model="email" type="email" required maxlength="255"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Password -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.passwordLabel') }}</label>
-          <input v-model="password" type="password" required minlength="8" data-1p-ignore
+          <input v-model="password" type="password" required minlength="8"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
