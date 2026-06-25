@@ -1,11 +1,11 @@
-ARG NODE_VERSION
+ARG NODE_VERSION=18-slim
 FROM node:${NODE_VERSION} AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 
-ARG NODE_VERSION
+ARG NODE_VERSION=18-slim
 FROM node:${NODE_VERSION}
 WORKDIR /app
 COPY --from=build /app/package*.json ./
