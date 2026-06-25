@@ -27,8 +27,8 @@
           {{ loading ? t('auth.loggingIn') : t('auth.loginBtn') }}
         </button>
 
-        <!-- Register link (only if no users exist yet, registration is allowed) -->
-        <p v-if="!error" class="text-center text-sm text-gray-600">
+        <!-- Register link (only if registration is enabled) -->
+        <p v-if="!error && registrationEnabled" class="text-center text-sm text-gray-600">
           {{ t('auth.noAccount') }}
           <router-link to="/register" class="text-indigo-600 hover:text-indigo-700">
             {{ t('auth.registerLink') }}
@@ -40,10 +40,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
+import { siteConfigApi } from '../api/index.js'
 
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
@@ -53,6 +54,16 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const registrationEnabled = ref(true)
+
+onMounted(async () => {
+  try {
+    const config = await siteConfigApi.getConfig()
+    registrationEnabled.value = config.registrationEnabled !== false
+  } catch {
+    registrationEnabled.value = true
+  }
+})
 
 async function handleLogin() {
   error.value = ''
