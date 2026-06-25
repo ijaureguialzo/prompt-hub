@@ -20,7 +20,7 @@
               class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
               {{ t('categoryView.editCategoryBtn') }}
             </button>
-            <button @click="confirmDelete"
+            <button @click="openDeleteDialog"
               class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
               {{ t('categoryView.deleteBtn') }}
             </button>
@@ -55,6 +55,11 @@
       <p class="text-gray-500">{{ t('promptDetail.notFound') }}</p>
       <router-link to="/" class="text-indigo-600 hover:underline">{{ t('categoryView.backLink') }}</router-link>
     </div>
+
+      <!-- Delete Confirmation Modal -->
+      <DeleteConfirmationModal v-if="deleteDialogOpen" entity-type="'category'" :entity-id="pendingDeleteId"
+        @close="deleteDialogOpen = false; pendingDeleteId = null"
+        @confirm="handleDeleteConfirm" />
   </div>
 </template>
 
@@ -67,6 +72,7 @@ import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import PromptCard from '../components/PromptCard.vue'
 import CreateCategoryModal from '../components/CreateCategoryModal.vue'
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
 
 const route = useRoute()
 const categoryStore = useCategoryStore()
@@ -76,6 +82,8 @@ const i18nStore = useI18nStore()
 const t = i18nStore.t
 
 const editModalOpen = ref(false)
+const deleteDialogOpen = ref(false)
+const pendingDeleteId = ref(null)
 
 const categoryPrompts = computed(() =>
   promptStore.prompts.filter(p => p.categoryId?._id === route.params.id)
@@ -92,13 +100,16 @@ onMounted(async () => {
   }
 })
 
-function confirmDelete() {
-  if (confirm(t('common.confirmDeleteCategory'))) {
-    categoryStore.deleteCategory(route.params.id).then(() => {
-      window.location.href = '/'
-    }).catch(err => {
-      uiStore.setError(err.message)
-    })
-  }
+function openDeleteDialog() {
+  pendingDeleteId.value = route.params.id
+  deleteDialogOpen.value = true
+}
+
+function handleDeleteConfirm(id) {
+  categoryStore.deleteCategory(id).then(() => {
+    window.location.href = '/'
+  }).catch(err => {
+    uiStore.setError(err.message)
+  })
 }
 </script>

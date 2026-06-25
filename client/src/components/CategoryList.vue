@@ -49,28 +49,45 @@
         {{ t('categoryList.noCategories') }}
       </li>
     </ul>
+
+    <!-- Delete Confirmation Modal -->
+    <DeleteConfirmationModal
+      v-if="deleteDialogOpen"
+      entity-type="'category'"
+      :entity-id="pendingDeleteId"
+      @close="deleteDialogOpen = false; pendingDeleteId = null"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
+import DeleteConfirmationModal from './DeleteConfirmationModal.vue'
 
 const categoryStore = useCategoryStore()
 const uiStore = useUIStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
+const deleteDialogOpen = ref(false)
+const pendingDeleteId = ref(null)
+
 function openEditCategory(category) {
   window.dispatchEvent(new CustomEvent('edit-category', { detail: category }))
 }
 
 function confirmDeleteCategory(id) {
-  if (confirm(t('common.confirmDeleteCategory'))) {
-    categoryStore.deleteCategory(id).catch(err => {
-      uiStore.setError(err.message)
-    })
-  }
+  pendingDeleteId.value = id
+  deleteDialogOpen.value = true
+}
+
+function handleDeleteConfirm(id) {
+  categoryStore.deleteCategory(id).catch(err => {
+    uiStore.setError(err.message)
+  })
 }
 </script>

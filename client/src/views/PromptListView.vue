@@ -25,6 +25,21 @@
     <!-- Search -->
     <SearchBar v-model="searchQuery" />
 
+    <!-- Tag filter bar -->
+    <div v-if="selectedTags.length > 0" class="mt-4 flex flex-wrap items-center gap-2">
+      <span class="text-sm text-gray-600 mr-1">{{ t('promptList.filteredByTags') }}:</span>
+      <button v-for="tag in selectedTags" :key="tag" @click="removeTag(tag)"
+        class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200">
+        {{ tag }}
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <button @click="clearAllTags" class="text-sm text-red-600 hover:text-red-800 font-medium">
+        {{ t('promptList.clearAllTags') }}
+      </button>
+    </div>
+
     <!-- Content -->
     <div class="mt-6 flex flex-col lg:flex-row gap-6">
       <!-- Categories sidebar -->
@@ -111,6 +126,17 @@ function onFilterByTag(tag) {
   if (idx === -1) {
     selectedTags.value.push(tag)
   } else {
+    selectedTags.value.splice(idx, 1)
+  }
+}
+
+function clearAllTags() {
+  selectedTags.value = []
+}
+
+function removeTag(tag) {
+  const idx = selectedTags.value.indexOf(tag)
+  if (idx !== -1) {
     selectedTags.value.splice(idx, 1)
   }
 }

@@ -20,11 +20,15 @@
               class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
               {{ t('promptDetail.copyBtn') }}
             </button>
+            <button @click="usePromptOpen = true"
+              class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700">
+              {{ t('promptDetail.useBtn') }}
+            </button>
             <button @click="editorOpen = true"
               class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
               {{ t('promptDetail.editBtn') }}
             </button>
-            <button @click="confirmDelete"
+            <button @click="openDeleteDialog"
               class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
               {{ t('promptDetail.deleteBtn') }}
             </button>
@@ -56,7 +60,16 @@
       </div>
 
       <!-- Editor Modal -->
-      <PromptEditor v-if="editorOpen" :prompt="promptStore.currentPrompt" @close="editorOpen = false" />
+      <PromptEditor v-if="editorOpen" :prompt="promptStore.currentPrompt" @close="editorOpen = false"
+        @saved="() => { editorOpen = false; promptStore.fetchPrompts(); }" />
+
+      <!-- Use Prompt Modal -->
+      <UsePromptModal v-if="usePromptOpen" :prompt="promptStore.currentPrompt" @close="usePromptOpen = false" />
+
+      <!-- Delete Confirmation Modal -->
+      <DeleteConfirmationModal v-if="deleteDialogOpen" entity-type="'prompt'" :entity-id="pendingDeleteId"
+        @close="deleteDialogOpen = false; pendingDeleteId = null"
+        @confirm="(id) => { promptStore.deletePrompt(id).then(() => router.push('/')).catch(err => uiStore.setError(err.message)) }" />
     </div>
 
     <div v-else class="text-center py-8">
@@ -73,6 +86,8 @@ import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import PromptEditor from '../components/PromptEditor.vue'
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
+import UsePromptModal from '../components/UsePromptModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -82,6 +97,9 @@ const i18nStore = useI18nStore()
 const t = i18nStore.t
 
 const editorOpen = ref(false)
+const usePromptOpen = ref(false)
+const deleteDialogOpen = ref(false)
+const pendingDeleteId = ref(null)
 
 onMounted(async () => {
   try {
@@ -97,13 +115,16 @@ function copyToClipboard(text) {
   })
 }
 
-function confirmDelete() {
-  if (confirm(t('common.confirmDeletePrompt'))) {
-    promptStore.deletePrompt(route.params.id).then(() => {
-      router.push('/')
-    }).catch(err => {
-      uiStore.setError(err.message)
-    })
-  }
+function openDeleteDialog() {
+  pendingDeleteId.value = route.params.id
+  deleteDialogOpen.value = true
+}
+
+function handleDeleteConfirm(id) {
+  promptStore.deletePrompt(id).then(() => {
+    router.push('/')
+  }).catch(err => {
+    uiStore.setError(err.message)
+  })
 }
 </script>
