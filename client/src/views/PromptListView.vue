@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- Toast notifications -->
-    <Toast />
-
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
       <h1 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ t('promptList.heading') }}</h1>
@@ -88,7 +85,6 @@ import CategoryList from '../components/CategoryList.vue'
 import PromptCard from '../components/PromptCard.vue'
 import CreatePromptModal from '../components/CreatePromptModal.vue'
 import CreateCategoryModal from '../components/CreateCategoryModal.vue'
-import Toast from '../components/Toast.vue'
 
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
