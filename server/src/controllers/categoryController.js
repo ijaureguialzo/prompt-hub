@@ -68,7 +68,7 @@ exports.updateCategory = async (req, res) => {
       {
         name: name.trim(),
         description: description ? description.trim() : '',
-        updatedAt: Date.now()
+        updatedAt: new Date()
       },
       { new: true, runValidators: true }
     );
