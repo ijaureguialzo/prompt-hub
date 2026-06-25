@@ -10,13 +10,15 @@
         </router-link>
         <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ prompt.content }}</p>
         <div v-if="prompt.categoryId" class="mt-2">
-          <span class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+          <span @click="$emit('filterByCategory', prompt.categoryId.name)"
+            class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full cursor-pointer hover:bg-indigo-200">
             {{ prompt.categoryId.name || 'Uncategorized' }}
           </span>
         </div>
         <div v-if="prompt.tags && prompt.tags.length" class="mt-2 flex flex-wrap gap-1">
           <span v-for="tag in prompt.tags" :key="tag"
-            class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+            @click="$emit('filterByTag', tag)"
+            class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-gray-200">
             {{ tag }}
           </span>
         </div>
@@ -56,6 +58,8 @@ import { useI18nStore } from '../stores/useI18nStore.js'
 const props = defineProps({
   prompt: { type: Object, required: true },
 })
+
+const emit = defineEmits(['filterByCategory', 'filterByTag'])
 
 const uiStore = useUIStore()
 const i18nStore = useI18nStore()

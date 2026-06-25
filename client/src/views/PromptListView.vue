@@ -1,5 +1,8 @@
 <template>
   <div>
+    <!-- Toast notifications -->
+    <Toast />
+
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
       <h1 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ t('promptList.heading') }}</h1>
@@ -44,6 +47,8 @@
             v-for="prompt in filteredPrompts"
             :key="prompt._id"
             :prompt="prompt"
+            @filterByCategory="onFilterByCategory"
+            @filterByTag="onFilterByTag"
           />
         </div>
       </div>
@@ -53,12 +58,12 @@
     <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" @saved="() => { uiStore.setShowCreatePromptModal(false); promptStore.fetchPrompts(); }" />
 
     <!-- Create Category Modal -->
-    <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" @close="uiStore.setShowCreateCategoryModal(false)" />
+    <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" :editing="editingCategory" @close="onCategoryModalClose" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
@@ -68,6 +73,7 @@ import CategoryList from '../components/CategoryList.vue'
 import PromptCard from '../components/PromptCard.vue'
 import CreatePromptModal from '../components/CreatePromptModal.vue'
 import CreateCategoryModal from '../components/CreateCategoryModal.vue'
+import Toast from '../components/Toast.vue'
 
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
@@ -76,6 +82,38 @@ const i18nStore = useI18nStore()
 const t = i18nStore.t
 
 const searchQuery = ref('')
+const editingCategory = ref(null)
+const selectedTags = ref([])
+
+function onCategoryModalClose() {
+  editingCategory.value = null
+  uiStore.setShowCreateCategoryModal(false)
+  categoryStore.fetchCategories()
+}
+
+const handleEditCategory = (event) => {
+  editingCategory.value = event.detail
+  uiStore.setShowCreateCategoryModal(true)
+}
+
+window.addEventListener('edit-category', handleEditCategory)
+
+function onFilterByCategory(catName) {
+  const cat = categoryStore.categories.find(c => c.name === catName)
+  if (cat) {
+    categoryStore.selectCategory(cat._id)
+    selectedTags.value = []
+  }
+}
+
+function onFilterByTag(tag) {
+  const idx = selectedTags.value.indexOf(tag)
+  if (idx === -1) {
+    selectedTags.value.push(tag)
+  } else {
+    selectedTags.value.splice(idx, 1)
+  }
+}
 
 const filteredPrompts = computed(() => {
   let result = promptStore.prompts
@@ -95,6 +133,13 @@ const filteredPrompts = computed(() => {
     result = result.filter(p => p.categoryId?._id === categoryStore.selectedCategoryId)
   }
 
+  // AND-filter by selected tags
+  if (selectedTags.value.length > 0) {
+    result = result.filter(p =>
+      selectedTags.value.every(tag => p.tags && p.tags.includes(tag))
+    )
+  }
+
   return result
 })
 
@@ -107,5 +152,9 @@ onMounted(async () => {
   } catch (error) {
     uiStore.setError(error.message)
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('edit-category', handleEditCategory)
 })
 </script>

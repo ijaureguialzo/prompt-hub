@@ -1,0 +1,10 @@
+Fix 4 UI issues: broken search, category edit, clickable filters, copy toast
+
+- SearchBar: fix event name @update:value to @input
+- CategoryList: wire up edit-category window event in PromptListView
+- PromptCard: make category badges and tags clickable for filtering
+  - Category click selects the category (clears tag filters)
+  - Tag clicks toggle AND-filtering by selected tags
+- Toast: new component renders success/error from useUIStore
+
+Co-Authored-By: Claude <noreply@anthropic.com>

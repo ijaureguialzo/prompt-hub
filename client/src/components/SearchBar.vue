@@ -9,7 +9,7 @@
     </svg>
     <input
       :value="modelValue"
-      @update:value="$emit('update:modelValue', $event.target.value)"
+      @input="$emit('update:modelValue', $event.target.value)"
       type="text"
       :placeholder="t('searchBar.placeholder')"
       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
