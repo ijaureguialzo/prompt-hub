@@ -55,7 +55,7 @@ services:
       context: ./client
       args:
         NODE_VERSION: ${NODE_VERSION}
-        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_URL: https://${FQDN_API:-api.promthub.test}/api
     depends_on:
       api:
         condition: service_healthy
