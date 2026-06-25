@@ -50,7 +50,7 @@
     </div>
 
     <!-- Create Prompt Modal -->
-    <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" />
+    <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" @saved="() => { uiStore.setShowCreatePromptModal(false); promptStore.fetchPrompts(); }" />
 
     <!-- Create Category Modal -->
     <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" @close="uiStore.setShowCreateCategoryModal(false)" />
