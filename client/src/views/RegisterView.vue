@@ -3,12 +3,6 @@
     <!-- Registration disabled message -->
     <div v-if="!registrationEnabled" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
       <p class="text-gray-600">{{ t('admin.registrationDisabled') }}</p>
-      <p class="text-sm text-gray-500 mt-4">
-        {{ t('auth.hasAccount') }}
-        <router-link to="/login" class="text-indigo-600 hover:text-indigo-700">
-          {{ t('auth.loginLink') }}
-        </router-link>
-      </p>
     </div>
 
     <!-- Registration form -->
