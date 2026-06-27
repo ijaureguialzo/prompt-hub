@@ -142,6 +142,7 @@ export default {
   },
   profile: {
     heading: 'My Profile',
+    viewProfile: 'View Profile',
     roleLabel: 'Role',
     statusLabel: 'Status',
     backLink: 'Back to home',

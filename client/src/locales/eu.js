@@ -139,4 +139,13 @@ export default {
     registrationEnabled: 'Erregistroa aktibatuta.',
     registrationDisabled: 'Erregistroa desaktibatuta.',
   },
+  profile: {
+    heading: 'Nire Profila',
+    viewProfile: 'Profila ikusi',
+    roleLabel: 'Rola',
+    statusLabel: 'Egoera',
+    backLink: 'Itzuli hasierara',
+    nameUpdated: 'Izena arrakastaz eguneratuta!',
+    clickToEdit: 'Egin klik izena editatzeko',
+  },
 }

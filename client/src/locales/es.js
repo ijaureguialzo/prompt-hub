@@ -139,4 +139,13 @@ export default {
     registrationEnabled: 'Registro activado.',
     registrationDisabled: 'Registro desactivado.',
   },
+  profile: {
+    heading: 'Mi Perfil',
+    viewProfile: 'Ver perfil',
+    roleLabel: 'Rol',
+    statusLabel: 'Estado',
+    backLink: 'Volver al inicio',
+    nameUpdated: '¡Nombre actualizado correctamente!',
+    clickToEdit: 'Haz clic para editar el nombre',
+  },
 }
