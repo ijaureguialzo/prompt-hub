@@ -10,6 +10,7 @@ export default {
     heading: 'Kategoriak',
     loading: 'Kargatzen...',
     allCategories: 'Kategoria guztiak',
+    uncategorized: 'Kategoriarik gabe',
     edit: 'Editatu',
     delete: 'Ezabatu',
     noCategories: 'Oraindik ez dago kategoriarik.',

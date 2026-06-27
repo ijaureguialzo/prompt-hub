@@ -10,6 +10,7 @@ export default {
     heading: 'Categories',
     loading: 'Loading...',
     allCategories: 'All Categories',
+    uncategorized: 'Uncategorized',
     edit: 'Edit',
     delete: 'Delete',
     noCategories: 'No categories yet.',

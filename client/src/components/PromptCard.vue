@@ -12,7 +12,8 @@
             class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full cursor-pointer hover:bg-indigo-200">
             {{ prompt.categoryId.name }}
           </span>
-          <span v-else class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+          <span v-else @click.stop="$emit('filterByCategory', t('createPromptModal.uncategorized'))"
+            class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full cursor-pointer hover:bg-gray-300">
             {{ t('createPromptModal.uncategorized') }}
           </span>
         </div>

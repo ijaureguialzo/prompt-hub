@@ -6,7 +6,7 @@
 
     <ul v-else class="space-y-1">
       <li>
-        <button @click="categoryStore.clearSelection()"
+        <button @click="handleSelectCategory(ALL_CATEGORIES_ID)"
           :class="[
             'w-full text-left px-3 py-2 rounded-md text-sm transition-colors',
             !categoryStore.selectedCategoryId
@@ -17,9 +17,19 @@
         </button>
       </li>
 
+      <li v-if="getUncategorizedCount() > 0">
+        <button @click="handleSelectCategory(UNCATEGORIZED_ID)"
+          :class="[
+            'w-full text-left px-3 py-2 rounded-md text-sm transition-colors truncate',
+            isUncategorizedHighlighted()
+          ]">
+          {{ t('createPromptModal.uncategorized') }} <span class="text-gray-400">({{ getUncategorizedCount() }})</span>
+        </button>
+      </li>
+
       <li v-for="cat in categoryStore.categories" :key="cat._id">
         <div class="flex items-center group">
-          <button @click="categoryStore.selectCategory(cat._id)"
+          <button @click="handleSelectCategory(cat._id)"
             :class="[
               'flex-1 text-left px-3 py-2 rounded-md text-sm transition-colors truncate',
               categoryStore.selectedCategoryId === cat._id
@@ -75,6 +85,10 @@ const uiStore = useUIStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
+const uncategorizedCount = computed(() => {
+  return promptStore.prompts.filter(p => !p.categoryId || p.categoryId === '').length
+})
+
 const promptCounts = computed(() => {
   const counts = {}
   for (const cat of categoryStore.categories) {
@@ -82,6 +96,31 @@ const promptCounts = computed(() => {
   }
   return counts
 })
+
+const ALL_CATEGORIES_ID = null
+const UNCATEGORIZED_ID = '__uncategorized__'
+
+function handleSelectCategory(id) {
+  if (id === ALL_CATEGORIES_ID) {
+    categoryStore.clearSelection()
+  } else if (id === UNCATEGORIZED_ID) {
+    categoryStore.selectCategory(UNCATEGORIZED_ID)
+  } else {
+    categoryStore.selectCategory(id)
+  }
+}
+
+function isUncategorizedSelected() {
+  return categoryStore.selectedCategoryId === UNCATEGORIZED_ID
+}
+
+function isUncategorizedHighlighted() {
+  return isUncategorizedSelected() ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'
+}
+
+function getUncategorizedCount() {
+  return uncategorizedCount.value
+}
 
 const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)

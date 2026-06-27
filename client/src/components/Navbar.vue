@@ -44,7 +44,7 @@
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-indigo-600">
                 {{ t('profile.viewProfile') }}
               </router-link>
-              <button @click="handleLogout; isDropdownOpen = false"
+              <button @click="handleLogout(); isDropdownOpen = false"
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-indigo-600">
                 {{ t('nav.logout') }}
               </button>

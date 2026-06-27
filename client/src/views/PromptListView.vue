@@ -112,10 +112,16 @@ const handleEditCategory = (event) => {
 window.addEventListener('edit-category', handleEditCategory)
 
 function onFilterByCategory(catName) {
-  const cat = categoryStore.categories.find(c => c.name === catName)
-  if (cat) {
-    categoryStore.selectCategory(cat._id)
+  const uncategorizedLabel = t('createPromptModal.uncategorized')
+  if (catName === uncategorizedLabel) {
+    categoryStore.selectCategory('__uncategorized__')
     selectedTags.value = []
+  } else {
+    const cat = categoryStore.categories.find(c => c.name === catName)
+    if (cat) {
+      categoryStore.selectCategory(cat._id)
+      selectedTags.value = []
+    }
   }
 }
 
@@ -152,9 +158,14 @@ const filteredPrompts = computed(() => {
     )
   }
 
-  // Filter by selected category
+  // Filter by selected category (including virtual __uncategorized__)
   if (categoryStore.selectedCategoryId) {
-    result = result.filter(p => p.categoryId?._id === categoryStore.selectedCategoryId)
+    const isUncat = categoryStore.selectedCategoryId === '__uncategorized__'
+    if (isUncat) {
+      result = result.filter(p => !p.categoryId || p.categoryId === '')
+    } else {
+      result = result.filter(p => p.categoryId?._id === categoryStore.selectedCategoryId)
+    }
   }
 
   // AND-filter by selected tags
