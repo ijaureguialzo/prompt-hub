@@ -65,6 +65,12 @@
             ]">
             {{ user.isActive ? t('admin.deactivate') : t('admin.activate') }}
           </button>
+
+          <!-- Delete user -->
+          <button @click="handleDeleteUser(user)"
+            class="text-sm text-red-500 hover:text-red-700 font-medium">
+            {{ t('categoryList.delete') }}
+          </button>
         </div>
       </div>
 
@@ -175,6 +181,22 @@ async function handleToggleActive(user) {
     if (user._id === authStore.user?._id) {
       await authStore.updateUser()
     }
+  } catch (err) {
+    uiStore.setError(err.message)
+  }
+}
+
+async function handleDeleteUser(user) {
+  const confirmed = window.confirm(`${t('admin.usersHeading')}: ${user.email}?`)
+  if (!confirmed) return
+  try {
+    await usersApi.delete(user._id)
+    // Remove from local list without full refresh
+    const idx = users.value.findIndex(u => u._id === user._id)
+    if (idx !== -1) {
+      users.value.splice(idx, 1)
+    }
+    uiStore.setSuccess(t('admin.deactivated'))
   } catch (err) {
     uiStore.setError(err.message)
   }
