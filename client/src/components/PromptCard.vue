@@ -7,10 +7,13 @@
       <div class="flex-1 min-w-0">
         <p class="text-lg font-semibold text-gray-900 truncate">{{ prompt.title }}</p>
         <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ prompt.content }}</p>
-        <div v-if="prompt.categoryId" class="mt-2">
-          <span @click.stop="$emit('filterByCategory', prompt.categoryId.name)"
+        <div class="mt-2">
+          <span v-if="prompt.categoryId" @click.stop="$emit('filterByCategory', prompt.categoryId.name)"
             class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full cursor-pointer hover:bg-indigo-200">
-            {{ prompt.categoryId.name || 'Uncategorized' }}
+            {{ prompt.categoryId.name }}
+          </span>
+          <span v-else class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+            {{ t('createPromptModal.uncategorized') }}
           </span>
         </div>
         <div v-if="prompt.tags && prompt.tags.length" class="mt-2 flex flex-wrap gap-1">

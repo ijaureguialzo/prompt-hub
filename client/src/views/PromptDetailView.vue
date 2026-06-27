@@ -37,11 +37,16 @@
           </div>
         </div>
 
-        <div v-if="promptStore.currentPrompt.categoryId" class="mb-4">
-          <router-link :to="`/category/${promptStore.currentPrompt.categoryId._id}`"
+        <div class="mb-4">
+          <span v-if="promptStore.currentPrompt.categoryId"
             class="inline-block px-3 py-1 text-sm font-medium bg-indigo-100 text-indigo-700 rounded-full">
-            {{ promptStore.currentPrompt.categoryId.name }}
-          </router-link>
+            <router-link :to="`/category/${promptStore.currentPrompt.categoryId._id}`">
+              {{ promptStore.currentPrompt.categoryId.name }}
+            </router-link>
+          </span>
+          <span v-else class="inline-block px-3 py-1 text-sm font-medium bg-gray-200 text-gray-600 rounded-full">
+            {{ t('createPromptModal.uncategorized') }}
+          </span>
         </div>
 
         <pre class="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-md border">{{ promptStore.currentPrompt.content }}</pre>

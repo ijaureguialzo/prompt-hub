@@ -30,6 +30,7 @@ export default {
     titlePlaceholder: 'Prompten izenburua...',
     categoryLabel: 'Kategoria',
     selectCategoryOption: 'Hautatu kategoria bat...',
+    uncategorized: 'Kategoriarik gabe',
     contentLabel: 'Edukia',
     contentPlaceholder: 'Idatzi zure prompta hemen...',
     tagsLabel: 'Etiketak (koma bereiztu)',

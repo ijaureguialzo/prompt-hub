@@ -30,6 +30,7 @@ export default {
     titlePlaceholder: 'Título del prompt...',
     categoryLabel: 'Categoría',
     selectCategoryOption: 'Selecciona una categoría...',
+    uncategorized: 'Sin categoría',
     contentLabel: 'Contenido',
     contentPlaceholder: 'Escribe tu prompt aquí...',
     tagsLabel: 'Etiquetas (separadas por comas)',

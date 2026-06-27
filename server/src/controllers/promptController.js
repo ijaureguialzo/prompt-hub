@@ -36,9 +36,6 @@ exports.createPrompt = async (req, res) => {
     if (!content) {
       return res.status(400).json({ message: 'Prompt content is required' });
     }
-    if (!categoryId) {
-      return res.status(400).json({ message: 'Category ID is required' });
-    }
 
     const prompt = new Prompt({
       title: title.trim(),

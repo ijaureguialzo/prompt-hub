@@ -15,9 +15,12 @@
         <!-- Prompt content (editable) -->
         <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ prompt.title }}</h3>
 
-        <div v-if="prompt.categoryId" class="mb-3">
-          <span class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
-            {{ prompt.categoryId.name || 'Uncategorized' }}
+        <div class="mb-3">
+          <span v-if="prompt.categoryId" class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+            {{ prompt.categoryId.name }}
+          </span>
+          <span v-else class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+            {{ t('createPromptModal.uncategorized') }}
           </span>
         </div>
 

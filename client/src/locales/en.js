@@ -30,6 +30,7 @@ export default {
     titlePlaceholder: 'Prompt title...',
     categoryLabel: 'Category',
     selectCategoryOption: 'Select a category...',
+    uncategorized: 'Uncategorized',
     contentLabel: 'Content',
     contentPlaceholder: 'Write your prompt here...',
     tagsLabel: 'Tags (comma separated)',

@@ -14,7 +14,8 @@ const promptSchema = new mongoose.Schema({
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: true
+    required: false,
+    default: null
   },
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
