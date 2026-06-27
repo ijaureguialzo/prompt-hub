@@ -36,7 +36,7 @@ export default {
     tagsPlaceholder: 'ia, idazteko, chatgpt',
     cancel: 'Utzi',
     creating: 'Sortzen...',
-    create: 'Sortu Prompta',
+    create: 'Sortu prompta',
     update: 'Eguneratu',
   },
   createCategoryModal: {
@@ -48,7 +48,7 @@ export default {
     descriptionPlaceholder: 'Aukerazko deskribapena...',
     cancel: 'Utzi',
     saving: 'Gordetzen...',
-    create: 'Sortu Kategoria',
+    create: 'Sortu kategoria',
     update: 'Eguneratu',
   },
   promptList: {
