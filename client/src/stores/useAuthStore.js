@@ -64,10 +64,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async register(email, password) {
+    async register(name, email, password) {
       this.loading = true
       try {
-        const data = await authApi.register(email, password)
+        const data = await authApi.register(name, email, password)
         this.token = data.token
         this.user = data.user
         saveToken(data.token)

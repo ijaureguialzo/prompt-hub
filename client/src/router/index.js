@@ -32,6 +32,11 @@ const routes = [
     component: () => import('../views/SettingsView.vue'),
   },
   {
+    path: '/profile/:id',
+    name: 'Profile',
+    component: () => import('../views/ProfileView.vue'),
+  },
+  {
     path: '/admin/users',
     name: 'ManageUsers',
     component: () => import('../views/ManageUsersView.vue'),

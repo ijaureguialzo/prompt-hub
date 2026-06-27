@@ -31,6 +31,7 @@ async function seedAdmin() {
       console.log(`Promoted ${user.email} to admin`);
     } else {
       user = new User({
+        name: 'Admin',
         email: email.toLowerCase(),
         password,
         role: 'admin',

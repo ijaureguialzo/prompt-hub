@@ -109,6 +109,7 @@ export default {
   auth: {
     loginTitle: 'Sign In',
     registerTitle: 'Create Account',
+    nameLabel: 'Name',
     emailLabel: 'Email',
     passwordLabel: 'Password',
     confirmPasswordLabel: 'Confirm Password',
@@ -138,5 +139,13 @@ export default {
     registrationDesc: 'Allow or prevent new users from creating accounts.',
     registrationEnabled: 'Registration enabled.',
     registrationDisabled: 'Registration disabled.',
+  },
+  profile: {
+    heading: 'My Profile',
+    roleLabel: 'Role',
+    statusLabel: 'Status',
+    backLink: 'Back to home',
+    nameUpdated: 'Name updated successfully!',
+    clickToEdit: 'Click to edit name',
   },
 }

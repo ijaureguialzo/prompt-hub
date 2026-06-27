@@ -62,7 +62,7 @@ export const categoriesApi = {
 }
 
 export const authApi = {
-  register: (email, password) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  register: (name, email, password) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
   login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getCurrentUser: () => apiRequest('/auth/me'),
 }

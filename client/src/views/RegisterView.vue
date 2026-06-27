@@ -16,6 +16,13 @@
       <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('auth.registerTitle') }}</h1>
 
       <form @submit.prevent="handleRegister" class="space-y-4">
+        <!-- Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.nameLabel') }}</label>
+          <input v-model="name" type="text" required maxlength="100"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.emailLabel') }}</label>
@@ -71,6 +78,7 @@ const t = i18nStore.t
 const router = useRouter()
 
 const registrationEnabled = ref(true)
+const name = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -94,7 +102,7 @@ async function handleRegister() {
   error.value = ''
   loading.value = true
   try {
-    await authStore.register(email.value, password.value)
+    await authStore.register(name.value, email.value, password.value)
     router.push('/')
   } catch (err) {
     error.value = err.message

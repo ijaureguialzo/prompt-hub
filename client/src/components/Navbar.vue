@@ -24,7 +24,10 @@
         <div class="flex items-center space-x-4">
           <!-- User info (authenticated) -->
           <template v-if="authStore.isAuthenticated">
-            <span class="text-sm text-gray-600 hidden md:inline">{{ authStore.user.email }}</span>
+            <router-link :to="{ name: 'Profile', params: { id: authStore.user._id } }"
+              class="text-sm text-indigo-600 hover:text-indigo-800 hidden md:inline font-medium">
+              {{ authStore.user.name || authStore.user.email }}
+            </router-link>
             <button @click="handleLogout"
               class="text-sm text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md font-medium">
               {{ t('nav.logout') }}

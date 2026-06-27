@@ -26,9 +26,10 @@ exports.getUserById = async (req, res) => {
 // PUT /api/users/:id - Update user (admin only)
 exports.updateUser = async (req, res) => {
   try {
-    const { email, role, isActive } = req.body;
+    const { name, email, role, isActive } = req.body;
 
     const updateData = {};
+    if (name) updateData.name = name.trim();
     if (email) updateData.email = email.toLowerCase().trim();
     if (role) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
