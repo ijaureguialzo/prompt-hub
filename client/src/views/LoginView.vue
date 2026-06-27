@@ -28,7 +28,7 @@
         </button>
 
         <!-- Register link (only if registration is enabled) -->
-        <p v-if="!error && registrationEnabled" class="text-center text-sm text-gray-600">
+        <p v-if="!error && registrationEnabled === true" class="text-center text-sm text-gray-600">
           {{ t('auth.noAccount') }}
           <router-link to="/register" class="text-indigo-600 hover:text-indigo-700">
             {{ t('auth.registerLink') }}
@@ -54,7 +54,7 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const error = ref('')
-const registrationEnabled = ref(true)
+const registrationEnabled = ref(null)
 
 onMounted(async () => {
   try {

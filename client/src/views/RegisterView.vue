@@ -1,12 +1,13 @@
 <template>
   <div class="max-w-md mx-auto mt-12">
     <!-- Registration disabled message -->
-    <div v-if="!registrationEnabled" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+    <!-- Registration disabled message -->
+    <div v-if="registrationEnabled === false" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
       <p class="text-gray-600">{{ t('admin.registrationDisabled') }}</p>
     </div>
 
     <!-- Registration form -->
-    <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+    <div v-else-if="registrationEnabled" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
       <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('auth.registerTitle') }}</h1>
 
       <form @submit.prevent="handleRegister" class="space-y-4">
@@ -71,7 +72,7 @@ const i18nStore = useI18nStore()
 const t = i18nStore.t
 const router = useRouter()
 
-const registrationEnabled = ref(true)
+const registrationEnabled = ref(null)
 const name = ref('')
 const email = ref('')
 const password = ref('')
