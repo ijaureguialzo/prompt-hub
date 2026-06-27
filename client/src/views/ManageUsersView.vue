@@ -29,9 +29,21 @@
     <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 divide-y">
       <div v-for="user in users" :key="user._id" class="p-6 flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-gray-900">{{ user.email }}</p>
+          <!-- Name: display mode (click to edit) -->
+          <span v-if="editingUserId !== user._id"
+            @click="startEdit(user)"
+            class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-indigo-600"
+            :title="t('profile.clickToEdit')">
+            {{ user.name }}
+          </span>
+          <!-- Name: edit mode -->
+          <input v-else v-model="user.name" type="text" maxlength="100"
+            @blur="handleNameChange(user); cancelEdit()"
+            @keydown.enter="handleNameChange(user); cancelEdit()"
+            @keydown.escape="cancelEdit()"
+            class="text-lg font-semibold text-gray-900 border-b border-indigo-500 focus:outline-none focus:border-indigo-600 w-full" />
           <p class="text-xs text-gray-500">
-            {{ user.role }} · {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
+            {{ user.email }} · {{ user.role }} · {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
           </p>
         </div>
 
@@ -81,6 +93,15 @@ const siteConfig = ref(null)
 const loading = ref(false)
 const configLoading = ref(false)
 const error = ref('')
+const editingUserId = ref(null)
+
+function startEdit(user) {
+  editingUserId.value = user._id
+}
+
+function cancelEdit() {
+  editingUserId.value = null
+}
 
 function isRegistrationEnabled() {
   return siteConfig.value ? siteConfig.value.registrationEnabled : true
@@ -121,10 +142,25 @@ async function handleToggleRegistration() {
   }
 }
 
+async function handleNameChange(user) {
+  try {
+    await usersApi.update(user._id, { name: user.name })
+    uiStore.setSuccess(t('profile.nameUpdated'))
+    if (user._id === authStore.user?._id) {
+      await authStore.updateUser()
+    }
+  } catch (err) {
+    uiStore.setError(err.message)
+  }
+}
+
 async function handleRoleChange(user) {
   try {
     await usersApi.update(user._id, { role: user.role })
     uiStore.setSuccess(t('admin.roleUpdated'))
+    if (user._id === authStore.user?._id) {
+      await authStore.updateUser()
+    }
   } catch (err) {
     uiStore.setError(err.message)
   }
@@ -136,6 +172,9 @@ async function handleToggleActive(user) {
     await usersApi.update(user._id, { isActive: newStatus })
     user.isActive = newStatus
     uiStore.setSuccess(newStatus ? t('admin.activated') : t('admin.deactivated'))
+    if (user._id === authStore.user?._id) {
+      await authStore.updateUser()
+    }
   } catch (err) {
     uiStore.setError(err.message)
   }
