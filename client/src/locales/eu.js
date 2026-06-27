@@ -24,7 +24,7 @@ export default {
     failedCopyToast: 'Ezin izan da prompta kopiatu',
   },
   createPromptModal: {
-    newTitle: 'Gonbit berria',
+    newTitle: 'Prompt berria',
     editTitle: 'Editatu prompta',
     titleLabel: 'Izenburua',
     titlePlaceholder: 'Prompten izenburua...',
@@ -54,7 +54,7 @@ export default {
   promptList: {
     heading: 'Promptak',
     newCategoryBtn: 'Kategoria berria',
-    newPromptBtn: 'Gonbit berria',
+    newPromptBtn: 'Prompt berria',
     loading: 'Promptak kargatzen...',
     noPrompts: 'Ez da prompterik aurkitu.',
     filteredByTags: 'Etiketen arabera iragazitakoak',
