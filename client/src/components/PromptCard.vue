@@ -54,6 +54,7 @@ const emit = defineEmits(['filterByCategory', 'filterByTag'])
 
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
+const t = i18nStore.t
 
 function isOwnPrompt() {
   if (!authStore.isAuthenticated || !props.prompt.ownerId) return false
