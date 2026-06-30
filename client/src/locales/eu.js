@@ -123,6 +123,7 @@ export default {
     registerLink: 'Erregistratu',
     loginLink: 'Hasi saioa',
     passwordMismatch: 'Pasahitzak ez datoz bat',
+    nameLabel: 'Izena',
   },
   admin: {
     usersHeading: 'Erabiltzaileen kudeaketa',

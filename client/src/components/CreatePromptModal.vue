@@ -113,7 +113,7 @@ onMounted(() => {
     form.value = {
       title: props.prompt.title,
       content: props.prompt.content,
-      categoryId: props.prompt.categoryId._id || props.prompt.categoryId,
+      categoryId: props.prompt.categoryId?._id || props.prompt.categoryId || '',
     }
     tagsInput.value = (props.prompt.tags || []).join(', ')
   } else {

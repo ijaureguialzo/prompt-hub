@@ -123,6 +123,7 @@ export default {
     registerLink: 'Regístrate',
     loginLink: 'Inicia sesión',
     passwordMismatch: 'Las contraseñas no coinciden',
+    nameLabel: 'Nombre',
   },
   admin: {
     usersHeading: 'Gestión de usuarios',
