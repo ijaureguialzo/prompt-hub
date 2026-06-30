@@ -117,3 +117,5 @@ dist/
 client/dist/
 
 traefik/certs/
+
+.serena/
