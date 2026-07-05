@@ -12,12 +12,12 @@
         {{ t('categoryView.backLink') }}
       </router-link>
 
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div class="flex items-center justify-between mb-4">
-          <h1 class="text-2xl font-bold text-gray-900">{{ categoryStore.currentCategory.name }}</h1>
+          <h1 class="text-2xl font-bold text-gray-100">{{ categoryStore.currentCategory.name }}</h1>
           <div v-if="authStore.isAuthenticated && isOwnCategory" class="flex space-x-2">
             <button @click="editModalOpen = true"
-              class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+              class="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
               {{ t('categoryView.editCategoryBtn') }}
             </button>
             <button @click="openDeleteDialog"
@@ -27,11 +27,11 @@
           </div>
         </div>
 
-        <p v-if="categoryStore.currentCategory.description" class="text-gray-600 mb-4">
+        <p v-if="categoryStore.currentCategory.description" class="text-gray-400 mb-4">
           {{ categoryStore.currentCategory.description }}
         </p>
 
-        <h2 class="text-lg font-semibold text-gray-900 mb-3">{{ t('categoryView.sectionHeading') }}</h2>
+        <h2 class="text-lg font-semibold text-gray-100 mb-3">{{ t('categoryView.sectionHeading') }}</h2>
 
         <div v-if="categoryPrompts.length === 0" class="text-gray-500 italic">
           {{ t('categoryView.noPromptsInCat') }}

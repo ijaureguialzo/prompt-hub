@@ -1,11 +1,11 @@
 <template>
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <!-- Header -->
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-gray-900">{{ t('promptDetail.useTitle') }}</h2>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ t('promptDetail.useTitle') }}</h2>
+          <button @click="$emit('close')" class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -13,23 +13,23 @@
         </div>
 
         <!-- Prompt content (editable) -->
-        <h3 class="text-lg font-semibold text-gray-800 mb-2">{{ prompt.title }}</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ prompt.title }}</h3>
 
         <div class="mb-3">
-          <span v-if="prompt.categoryId" class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+          <span v-if="prompt.categoryId" class="inline-block px-2 py-1 text-xs font-medium bg-indigo-100/80 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full">
             {{ prompt.categoryId.name }}
           </span>
-          <span v-else class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full">
+          <span v-else class="inline-block px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full">
             {{ t('createPromptModal.uncategorized') }}
           </span>
         </div>
 
         <textarea v-model="editedContent"
-          class="w-full h-48 text-sm font-mono bg-gray-50 p-4 rounded-md border resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          class="w-full h-48 text-sm font-mono bg-white dark:bg-gray-50 p-4 rounded-md border border-gray-300 dark:border-gray-600 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
 
         <div v-if="prompt.tags && prompt.tags.length" class="mb-4 flex flex-wrap gap-2">
           <span v-for="tag in prompt.tags" :key="tag"
-            class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+            class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full border border-gray-300 dark:border-gray-600">
             {{ tag }}
           </span>
         </div>

@@ -1,10 +1,10 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-6">
     <!-- Site registration setting -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900">{{ t('admin.registrationTitle') }}</h2>
+          <h2 class="text-lg font-semibold text-gray-100">{{ t('admin.registrationTitle') }}</h2>
           <p class="text-sm text-gray-500 mt-1">{{ t('admin.registrationDesc') }}</p>
         </div>
         <button @click="handleToggleRegistration" :disabled="configLoading"
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <h1 class="text-2xl font-bold text-gray-900">{{ t('admin.usersHeading') }}</h1>
+    <h1 class="text-2xl font-bold text-gray-100">{{ t('admin.usersHeading') }}</h1>
 
     <!-- Loading state -->
     <div v-if="loading || configLoading" class="text-center text-gray-500 py-8">{{ t('common.loading') }}</div>
@@ -26,13 +26,13 @@
     <div v-else-if="error" class="text-red-600 text-sm mb-4">{{ error }}</div>
 
     <!-- User list -->
-    <div v-else class="bg-white rounded-lg shadow-sm border border-gray-200 divide-y">
+    <div v-else class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-gray-200 dark:divide-gray-700">
       <div v-for="user in users" :key="user._id" class="p-6 flex items-center justify-between">
         <div>
           <!-- Name: display mode (click to edit) -->
           <span v-if="editingUserId !== user._id"
             @click="startEdit(user)"
-            class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-indigo-600"
+            class="text-lg font-semibold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-indigo-600"
             :title="t('profile.clickToEdit')">
             {{ user.name }}
           </span>
@@ -41,7 +41,7 @@
             @blur="handleNameChange(user); cancelEdit()"
             @keydown.enter="handleNameChange(user); cancelEdit()"
             @keydown.escape="cancelEdit()"
-            class="text-lg font-semibold text-gray-900 border-b border-indigo-500 focus:outline-none focus:border-indigo-600 w-full" />
+            class="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b border-indigo-500 focus:outline-none focus:border-indigo-600 w-full" />
           <p class="text-xs text-gray-500">
             {{ user.email }} · {{ user.role }} · {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
           </p>
@@ -50,7 +50,7 @@
         <div class="flex items-center space-x-2">
           <!-- Role dropdown (admin only) -->
           <select v-model="user.role" @change="handleRoleChange(user)"
-            class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            class="text-sm border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="user">{{ t('admin.roleUser') }}</option>
             <option value="admin">{{ t('admin.roleAdmin') }}</option>
           </select>
@@ -59,8 +59,8 @@
           <button @click="handleToggleActive(user)"
             :class="[
               user.isActive
-                ? 'text-red-600 hover:text-red-800'
-                : 'text-green-600 hover:text-green-800',
+                ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300'
+                : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300',
               'text-sm font-medium'
             ]">
             {{ user.isActive ? t('admin.deactivate') : t('admin.activate') }}
@@ -68,7 +68,7 @@
 
           <!-- Delete user -->
           <button @click="handleDeleteUser(user)"
-            class="text-sm text-red-500 hover:text-red-700 font-medium">
+            class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
             {{ t('categoryList.delete') }}
           </button>
         </div>

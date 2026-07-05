@@ -151,4 +151,9 @@ export default {
     nameUpdated: '¡Nombre actualizado correctamente!',
     clickToEdit: 'Haz clic para editar el nombre',
   },
+  theme: {
+    lightMode: 'Modo Claro',
+    darkMode: 'Modo Oscuro',
+    autoMode: 'Automático',
+  },
 }

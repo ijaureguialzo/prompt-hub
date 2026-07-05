@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen" :class="themeStore.isDark ? 'dark' : ''">
     <Navbar />
     <Toast />
     <main class="container mx-auto px-4 py-6">
@@ -9,14 +9,20 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import Navbar from './components/Navbar.vue'
 import Toast from './components/Toast.vue'
 import { useAuthStore } from './stores/useAuthStore'
+import { useThemeStore } from './stores/useThemeStore'
 
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 
 onMounted(() => {
   authStore.init()
+})
+
+onUnmounted(() => {
+  themeStore.dispose()
 })
 </script>

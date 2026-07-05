@@ -1,25 +1,25 @@
 <template>
   <div class="max-w-md mx-auto mt-12">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-      <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('auth.loginTitle') }}</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">{{ t('auth.loginTitle') }}</h1>
 
       <form @submit.prevent="handleLogin" class="space-y-4">
         <!-- Email -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.emailLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.emailLabel') }}</label>
           <input v-model="email" type="email" required maxlength="255"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Password -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.passwordLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.passwordLabel') }}</label>
           <input v-model="password" type="password" required minlength="8"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Error message -->
-        <div v-if="error" class="text-red-600 text-sm">{{ error }}</div>
+        <div v-if="error" class="text-red-600 dark:text-red-400 text-sm">{{ error }}</div>
 
         <!-- Submit -->
         <button type="submit" :disabled="loading"
@@ -28,7 +28,7 @@
         </button>
 
         <!-- Register link (only if registration is enabled) -->
-        <p v-if="!error && registrationEnabled === true" class="text-center text-sm text-gray-600">
+        <p v-if="!error && registrationEnabled === true" class="text-center text-sm text-gray-500 dark:text-gray-400">
           {{ t('auth.noAccount') }}
           <router-link to="/register" class="text-indigo-600 hover:text-indigo-700">
             {{ t('auth.registerLink') }}

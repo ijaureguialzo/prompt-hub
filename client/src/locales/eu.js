@@ -151,4 +151,9 @@ export default {
     nameUpdated: 'Izena arrakastaz eguneratuta!',
     clickToEdit: 'Egin klik izena editatzeko',
   },
+  theme: {
+    lightMode: 'Argi Modua',
+    darkMode: 'Ilun Modua',
+    autoMode: 'Automatikoa',
+  },
 }

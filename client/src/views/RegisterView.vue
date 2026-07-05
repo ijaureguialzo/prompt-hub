@@ -1,46 +1,45 @@
 <template>
   <div class="max-w-md mx-auto mt-12">
     <!-- Registration disabled message -->
-    <!-- Registration disabled message -->
-    <div v-if="registrationEnabled === false" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-      <p class="text-gray-600">{{ t('admin.registrationDisabled') }}</p>
+    <div v-if="registrationEnabled === false" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+      <p class="text-gray-500 dark:text-gray-400">{{ t('admin.registrationDisabled') }}</p>
     </div>
 
     <!-- Registration form -->
-    <div v-else-if="registrationEnabled" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-      <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('auth.registerTitle') }}</h1>
+    <div v-else-if="registrationEnabled" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">{{ t('auth.registerTitle') }}</h1>
 
       <form @submit.prevent="handleRegister" class="space-y-4">
         <!-- Name -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.nameLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.nameLabel') }}</label>
           <input v-model="name" type="text" required maxlength="100"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Email -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.emailLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.emailLabel') }}</label>
           <input v-model="email" type="email" required maxlength="255"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Password -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.passwordLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.passwordLabel') }}</label>
           <input v-model="password" type="password" required minlength="8"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Confirm Password -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('auth.confirmPasswordLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.confirmPasswordLabel') }}</label>
           <input v-model="confirmPassword" type="password" required minlength="8"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <!-- Error message -->
-        <div v-if="error" class="text-red-600 text-sm">{{ error }}</div>
+        <div v-if="error" class="text-red-600 dark:text-red-400 text-sm">{{ error }}</div>
 
         <!-- Submit -->
         <button type="submit" :disabled="loading || password !== confirmPassword"
@@ -49,7 +48,7 @@
         </button>
 
         <!-- Login link -->
-        <p v-if="!error" class="text-center text-sm text-gray-600">
+        <p v-if="!error" class="text-center text-sm text-gray-500 dark:text-gray-400">
           {{ t('auth.hasAccount') }}
           <router-link to="/login" class="text-indigo-600 hover:text-indigo-700">
             {{ t('auth.loginLink') }}

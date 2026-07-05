@@ -1,10 +1,10 @@
 <template>
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-gray-900">{{ isEdit ? t('createCategoryModal.editTitle') : t('createCategoryModal.newTitle') }}</h2>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ isEdit ? t('createCategoryModal.editTitle') : t('createCategoryModal.newTitle') }}</h2>
+          <button @click="$emit('close')" class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -14,24 +14,24 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createCategoryModal.nameLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">{{ t('createCategoryModal.nameLabel') }}</label>
             <input v-model="form.name" type="text" required maxlength="50" data-1p-ignore
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500"
               :placeholder="t('createCategoryModal.namePlaceholder')" />
           </div>
 
           <!-- Description -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createCategoryModal.descriptionLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-300 mb-1">{{ t('createCategoryModal.descriptionLabel') }}</label>
             <input v-model="form.description" type="text" maxlength="255" data-1p-ignore
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500"
               :placeholder="t('createCategoryModal.descriptionPlaceholder')" />
           </div>
 
           <!-- Actions -->
           <div class="flex justify-end space-x-3 pt-4">
             <button type="button" @click="$emit('close')"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">
               {{ t('createCategoryModal.cancel') }}
             </button>
             <button type="submit" :disabled="saving"

@@ -1,12 +1,12 @@
 <template>
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-gray-900">{{ isEdit ? t('createPromptModal.editTitle') : t('createPromptModal.newTitle') }}</h2>
-          <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ isEdit ? t('createPromptModal.editTitle') : t('createPromptModal.newTitle') }}</h2>
+          <button @click="$emit('close')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path stroke-linecap="round" stroke-linejoin="round" width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -14,17 +14,17 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Title -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createPromptModal.titleLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.titleLabel') }}</label>
             <input v-model="form.title" type="text" required maxlength="100"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               :placeholder="t('createPromptModal.titlePlaceholder')" />
           </div>
 
           <!-- Category -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createPromptModal.categoryLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.categoryLabel') }}</label>
             <select v-model="form.categoryId"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
               <option value="">{{ t('createPromptModal.selectCategoryOption') }}</option>
               <option v-for="cat in categoriesWithUncategorized" :key="cat._id" :value="cat._id">
                 {{ cat.name }}
@@ -34,24 +34,24 @@
 
           <!-- Content -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createPromptModal.contentLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.contentLabel') }}</label>
             <textarea v-model="form.content" rows="8" required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
               :placeholder="t('createPromptModal.contentPlaceholder')"></textarea>
           </div>
 
           <!-- Tags -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('createPromptModal.tagsLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.tagsLabel') }}</label>
             <input v-model="tagsInput" type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               :placeholder="t('createPromptModal.tagsPlaceholder')" />
           </div>
 
           <!-- Actions -->
           <div class="flex justify-end space-x-3 pt-4">
             <button type="button" @click="$emit('close')"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">
               {{ t('createPromptModal.cancel') }}
             </button>
             <button type="submit" :disabled="saving"
