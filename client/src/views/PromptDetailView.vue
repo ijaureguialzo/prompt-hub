@@ -15,7 +15,7 @@
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
           <h1 class="text-2xl font-bold text-gray-100">{{ promptStore.currentPrompt.title }}</h1>
-          <div class="flex space-x-2">
+          <div class="flex space-x-2 mt-3 sm:mt-0">
             <button @click="copyToClipboard(promptStore.currentPrompt.content)"
               class="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
               {{ t('promptDetail.copyBtn') }}
