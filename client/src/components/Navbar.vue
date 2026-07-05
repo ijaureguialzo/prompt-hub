@@ -64,7 +64,7 @@
             </button>
             <button @click="themeStore.setMode('dark')"
               :class="[
-                'px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600',
+                'px-2 py-1.5 transition-colors',
                 themeStore.mode === 'dark'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -73,7 +73,7 @@
             </button>
             <button @click="themeStore.setMode('auto')"
               :class="[
-                'px-2 py-1.5 transition-colors border-l border-gray-300 dark:border-gray-600',
+                'px-2 py-1.5 transition-colors',
                 themeStore.mode === 'auto'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
