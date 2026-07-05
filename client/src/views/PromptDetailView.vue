@@ -13,7 +13,7 @@
       </router-link>
 
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div class="flex items-start justify-between mb-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
           <h1 class="text-2xl font-bold text-gray-100">{{ promptStore.currentPrompt.title }}</h1>
           <div class="flex space-x-2">
             <button @click="copyToClipboard(promptStore.currentPrompt.content)"
