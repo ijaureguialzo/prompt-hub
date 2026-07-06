@@ -14,28 +14,28 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.nameLabel') }}</label>
           <input v-model="name" type="text" required maxlength="100"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
         </div>
 
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.emailLabel') }}</label>
           <input v-model="email" type="email" required maxlength="255"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
         </div>
 
         <!-- Password -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.passwordLabel') }}</label>
           <input v-model="password" type="password" required minlength="8"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
         </div>
 
         <!-- Confirm Password -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('auth.confirmPasswordLabel') }}</label>
           <input v-model="confirmPassword" type="password" required minlength="8"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
         </div>
 
         <!-- Error message -->
@@ -50,7 +50,7 @@
         <!-- Login link -->
         <p v-if="!error" class="text-center text-sm text-gray-500 dark:text-gray-400">
           {{ t('auth.hasAccount') }}
-          <router-link to="/login" class="text-indigo-600 hover:text-indigo-700">
+          <router-link to="/login" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
             {{ t('auth.loginLink') }}
           </router-link>
         </p>

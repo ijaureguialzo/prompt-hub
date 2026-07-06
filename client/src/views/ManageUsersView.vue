@@ -4,12 +4,12 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-semibold text-gray-100">{{ t('admin.registrationTitle') }}</h2>
-          <p class="text-sm text-gray-500 mt-1">{{ t('admin.registrationDesc') }}</p>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t('admin.registrationTitle') }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ t('admin.registrationDesc') }}</p>
         </div>
         <button @click="handleToggleRegistration" :disabled="configLoading"
           class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-          :class="isRegistrationEnabled() ? 'bg-indigo-600' : 'bg-gray-200'"
+          :class="isRegistrationEnabled() ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'"
           role="switch" :aria-checked="isRegistrationEnabled()">
           <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
             :class="isRegistrationEnabled() ? 'translate-x-6' : 'translate-x-1'" />
@@ -17,13 +17,13 @@
       </div>
     </div>
 
-    <h1 class="text-2xl font-bold text-gray-100">{{ t('admin.usersHeading') }}</h1>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ t('admin.usersHeading') }}</h1>
 
     <!-- Loading state -->
-    <div v-if="loading || configLoading" class="text-center text-gray-500 py-8">{{ t('common.loading') }}</div>
+    <div v-if="loading || configLoading" class="text-center text-gray-500 dark:text-gray-400 py-8">{{ t('common.loading') }}</div>
 
     <!-- Error state -->
-    <div v-else-if="error" class="text-red-600 text-sm mb-4">{{ error }}</div>
+    <div v-else-if="error" class="text-red-600 dark:text-red-400 text-sm mb-4">{{ error }}</div>
 
     <!-- User list -->
     <div v-else class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-gray-200 dark:divide-gray-700">
@@ -42,7 +42,7 @@
             @keydown.enter="handleNameChange(user); cancelEdit()"
             @keydown.escape="cancelEdit()"
             class="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b border-indigo-500 focus:outline-none focus:border-indigo-600 w-full" />
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-gray-500 dark:text-gray-400">
             {{ user.email }} · {{ user.role }} · {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
           </p>
         </div>
@@ -50,7 +50,7 @@
         <div class="flex items-center space-x-2">
           <!-- Role dropdown (admin only) -->
           <select v-model="user.role" @change="handleRoleChange(user)"
-            class="text-sm border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            class="text-sm border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100">
             <option value="user">{{ t('admin.roleUser') }}</option>
             <option value="admin">{{ t('admin.roleAdmin') }}</option>
           </select>
@@ -75,7 +75,7 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="users.length === 0" class="p-6 text-center text-gray-500">
+      <div v-if="users.length === 0" class="p-6 text-center text-gray-500 dark:text-gray-400">
         {{ t('admin.noUsers') }}
       </div>
     </div>

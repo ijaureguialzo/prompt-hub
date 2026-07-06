@@ -25,7 +25,7 @@
         </div>
 
         <textarea v-model="editedContent"
-          class="w-full h-48 text-sm font-mono bg-white dark:bg-gray-50 p-4 rounded-md border border-gray-300 dark:border-gray-600 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
+          class="w-full h-48 text-sm font-mono bg-gray-50 dark:bg-gray-900 p-4 rounded-md border border-gray-300 dark:border-gray-600 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100" />
 
         <div v-if="prompt.tags && prompt.tags.length" class="mb-4 flex flex-wrap gap-2">
           <span v-for="tag in prompt.tags" :key="tag"

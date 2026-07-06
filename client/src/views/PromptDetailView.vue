@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <div v-if="promptStore.loading" class="text-center py-8">
-      <p class="text-gray-500">{{ t('common.loading') }}</p>
+      <p class="text-gray-500 dark:text-gray-400">{{ t('common.loading') }}</p>
     </div>
 
     <div v-else-if="promptStore.currentPrompt" class="max-w-4xl mx-auto">
@@ -14,7 +14,7 @@
 
       <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
-          <h1 class="text-2xl font-bold text-gray-100">{{ promptStore.currentPrompt.title }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ promptStore.currentPrompt.title }}</h1>
           <div class="flex space-x-2 mt-3 sm:mt-0">
             <button @click="copyToClipboard(promptStore.currentPrompt.content)"
               class="px-3 py-1.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -49,7 +49,7 @@
           </span>
         </div>
 
-        <pre class="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-900 p-4 rounded-md border border-gray-200 dark:border-gray-700">{{ promptStore.currentPrompt.content }}</pre>
+        <pre class="whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-900 p-4 rounded-md border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">{{ promptStore.currentPrompt.content }}</pre>
 
         <div v-if="promptStore.currentPrompt.tags && promptStore.currentPrompt.tags.length" class="mt-4 flex flex-wrap gap-2">
           <span v-for="tag in promptStore.currentPrompt.tags" :key="tag"
@@ -80,8 +80,8 @@
     </div>
 
     <div v-else class="text-center py-8">
-      <p class="text-gray-500">{{ t('promptDetail.notFound') }}</p>
-      <router-link to="/" class="text-indigo-600 hover:underline">{{ t('promptDetail.backLink') }}</router-link>
+      <p class="text-gray-500 dark:text-gray-400">{{ t('promptDetail.notFound') }}</p>
+      <router-link to="/" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ t('promptDetail.backLink') }}</router-link>
     </div>
   </div>
 </template>

@@ -2,40 +2,40 @@
   <div class="max-w-md mx-auto mt-12">
     <!-- Loading state -->
     <div v-if="loading" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-      <p class="text-gray-500">{{ t('common.loading') }}</p>
+      <p class="text-gray-500 dark:text-gray-400">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Error state -->
     <div v-else-if="error" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-      <p class="text-red-600">{{ error }}</p>
+      <p class="text-red-600 dark:text-red-400">{{ error }}</p>
     </div>
 
     <!-- User profile -->
     <div v-else-if="user" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
-      <h1 class="text-2xl font-bold text-gray-100 mb-6 text-center">{{ t('profile.heading') }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">{{ t('profile.heading') }}</h1>
 
       <div class="space-y-4">
         <!-- Name -->
         <div>
-          <label class="block text-sm font-medium text-gray-500">{{ t('auth.nameLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('auth.nameLabel') }}</label>
           <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ user.name }}</p>
         </div>
 
         <!-- Email -->
         <div>
-          <label class="block text-sm font-medium text-gray-500">{{ t('auth.emailLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('auth.emailLabel') }}</label>
           <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ user.email }}</p>
         </div>
 
         <!-- Role -->
         <div>
-          <label class="block text-sm font-medium text-gray-500">{{ t('profile.roleLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('profile.roleLabel') }}</label>
           <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ user.role === 'admin' ? t('admin.roleAdmin') : t('admin.roleUser') }}</p>
         </div>
 
         <!-- Active status -->
         <div>
-          <label class="block text-sm font-medium text-gray-500">{{ t('profile.statusLabel') }}</label>
+          <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('profile.statusLabel') }}</label>
           <p class="mt-1 text-lg" :class="user.isActive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
             {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
           </p>
@@ -43,14 +43,14 @@
 
         <!-- Created at -->
         <div>
-          <label class="block text-sm font-medium text-gray-500">{{ t('date.created') }}</label>
+          <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">{{ t('date.created') }}</label>
           <p class="mt-1 text-lg text-gray-900 dark:text-gray-100">{{ formatDate(user.createdAt) }}</p>
         </div>
       </div>
 
       <!-- Back link -->
       <div class="mt-6 text-center">
-        <router-link to="/" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+        <router-link to="/" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-sm font-medium">
           {{ t('profile.backLink') }}
         </router-link>
       </div>

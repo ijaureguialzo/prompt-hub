@@ -24,7 +24,7 @@
 
     <!-- Tag filter bar -->
     <div v-if="selectedTags.length > 0" class="mt-4 flex flex-wrap items-center gap-2">
-      <span class="text-sm text-gray-400 mr-1">{{ t('promptList.filteredByTags') }}:</span>
+      <span class="text-sm text-gray-500 dark:text-gray-400 mr-1">{{ t('promptList.filteredByTags') }}:</span>
       <button v-for="tag in selectedTags" :key="tag" @click="removeTag(tag)"
         class="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100/80 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 rounded-full text-sm font-semibold border border-indigo-300 dark:border-indigo-700 hover:bg-indigo-200/80 dark:hover:bg-indigo-800/60">
         {{ tag }}
@@ -47,11 +47,11 @@
       <!-- Prompts list -->
       <div class="flex-1">
         <div v-if="promptStore.loading" class="text-center py-8">
-          <p class="text-gray-500">{{ t('promptList.loading') }}</p>
+          <p class="text-gray-500 dark:text-gray-400">{{ t('promptList.loading') }}</p>
         </div>
 
         <div v-else-if="filteredPrompts.length === 0" class="text-center py-8">
-          <p class="text-gray-500">{{ t('promptList.noPrompts') }}</p>
+          <p class="text-gray-500 dark:text-gray-400">{{ t('promptList.noPrompts') }}</p>
         </div>
 
         <div v-else class="space-y-4">

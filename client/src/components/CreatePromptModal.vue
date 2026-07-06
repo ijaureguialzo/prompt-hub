@@ -4,7 +4,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ isEdit ? t('createPromptModal.editTitle') : t('createPromptModal.newTitle') }}</h2>
-          <button @click="$emit('close')" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+          <button @click="$emit('close')" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -16,7 +16,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.titleLabel') }}</label>
             <input v-model="form.title" type="text" required maxlength="100"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-gray-100"
               :placeholder="t('createPromptModal.titlePlaceholder')" />
           </div>
 
@@ -24,7 +24,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.categoryLabel') }}</label>
             <select v-model="form.categoryId"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-gray-100">
               <option value="">{{ t('createPromptModal.selectCategoryOption') }}</option>
               <option v-for="cat in categoriesWithUncategorized" :key="cat._id" :value="cat._id">
                 {{ cat.name }}
@@ -36,7 +36,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.contentLabel') }}</label>
             <textarea v-model="form.content" rows="8" required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               :placeholder="t('createPromptModal.contentPlaceholder')"></textarea>
           </div>
 
@@ -44,7 +44,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createPromptModal.tagsLabel') }}</label>
             <input v-model="tagsInput" type="text"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 dark:text-gray-100"
               :placeholder="t('createPromptModal.tagsPlaceholder')" />
           </div>
 

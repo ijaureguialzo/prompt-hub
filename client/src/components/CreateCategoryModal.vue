@@ -14,17 +14,17 @@
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">{{ t('createCategoryModal.nameLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createCategoryModal.nameLabel') }}</label>
             <input v-model="form.name" type="text" required maxlength="50" data-1p-ignore
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100"
               :placeholder="t('createCategoryModal.namePlaceholder')" />
           </div>
 
           <!-- Description -->
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-1">{{ t('createCategoryModal.descriptionLabel') }}</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('createCategoryModal.descriptionLabel') }}</label>
             <input v-model="form.description" type="text" maxlength="255" data-1p-ignore
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100"
               :placeholder="t('createCategoryModal.descriptionPlaceholder')" />
           </div>
 
