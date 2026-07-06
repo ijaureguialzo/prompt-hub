@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for Claude Code (claude.ai/code) working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project: PromptHub
 
@@ -13,9 +13,12 @@ make start          # docker-compose up --build (recommended)
 make stop           # docker-compose down
 make restart        # docker-compose down && up --build
 make build          # docker-compose pull && build --pull
+make test           # run both server and client test suites
 make clean          # docker-compose down -v (removes volumes)
 make certs          # Generate TLS certs via traefik/crear_certs.sh
 ```
+
+Local dev: `cd server && npm run dev` (port 3000) + `cd client && npm run dev` (port 5173, proxies /api to :3000).
 
 ## Architecture
 
@@ -25,9 +28,9 @@ prompt-hub/
 │   ├── main.js                    # Bootstrap: Pinia, Router, i18n
 │   ├── App.vue                    # Root: <Navbar> + <Toast> + <router-view>
 │   ├── api/index.js               # API client (wrappers for all endpoints)
-│   ├── router/index.js            # 7 routes with auth + admin guards
+│   ├── router/index.js            # 8 routes with auth + admin guards
 │   ├── stores/                    # 6 Pinia stores (auth, prompts, categories, i18n, UI, theme)
-│   ├── components/                # 8 components (Navbar, Toast, PromptCard, SearchBar,
+│   ├── components/                # 9 components (Navbar, Toast, PromptCard, SearchBar,
 │   │                              #   3 modals, CategoryList, UsePromptModal)
 │   ├── views/                     # 8 pages (Login, Register, PromptList/Detail,
 │   │                              #   Category, Settings, Profile, ManageUsers)
@@ -37,8 +40,10 @@ prompt-hub/
 │   ├── models/                    # User, Prompt, Category, SiteConfig (Mongoose)
 │   ├── controllers/               # auth, prompt, category, user, siteConfig (5)
 │   ├── routes/                    # auth, prompt, category, user, siteConfig (5)
-│   ├── middleware/                # auth.js (JWT + role), errorHandler, ownership.js (unused)
+│   ├── middleware/                # auth.js (JWT + role), errorHandler, ownership.js
 │   └── scripts/                   # seedAdmin, migrateAddName
+├── server/test/                   # 8 Vitest integration tests (auth, categories, health,
+│                                   #   integration, prompts, siteConfig, smoke, users)
 ├── traefik/                       # Reverse proxy: TLS, routing, HTTP→HTTPS redirect
 ├── docker-compose.yml             # 4 services: traefik, api, frontend, db
 └── .env / .env.example            # Configuration template
@@ -49,7 +54,7 @@ prompt-hub/
 - **Stores**: `useAuthStore`, `usePromptStore`, `useCategoryStore`, `useI18nStore`, `useUIStore`, `useThemeStore`. All persist to localStorage.
 - **API client**: Centralized in `client/src/api/index.js` — all backend calls through here with Bearer token.
 - **Auth**: JWT (hs256) in localStorage. Server `middleware/auth.js` verifies tokens. Vue Router `beforeEach` guards routes.
-- **Ownership**: Resources (Prompt, Category) have `ownerId`. Ownership checks inline in controllers; admins bypass.
+- **Ownership**: Resources (Prompt, Category) have `ownerId`. `middleware/ownership.js` provides reusable `requireOwnership()` middleware; admins bypass.
 - **i18n**: Three locales (en/es/eu). `useI18nStore` provides `t()` function. Locale persists in localStorage + reads `navigator.language`.
 - **Role system**: `user` (default) and `admin`. First registered user auto-promoted to admin. Admin routes: `/api/users/*`, `/api/site-config`, ManageUsersView, SettingsView.
 - **Theme**: `useThemeStore` supports light/dark/auto with system preference listener (Tailwind CSS 4).
@@ -62,13 +67,15 @@ prompt-hub/
 - API client functions match backend route prefixes (`/api/prompts`, `/api/categories`, etc.).
 - Locale files parallel: en.js, es.js, eu.js must always have matching keys.
 
-## i18n
-
-**Fully localized** in Spanish (es), Basque/Euskara (eu), English (en). Every UI string must exist in all three locale files. Update all three simultaneously — missing keys break translations.
-
 ## Testing
 
-Project follows TDD/SDD but **no tests exist yet**. When adding features: write tests first (Vitest), implement, update `SPECIFICATION.md` if API/models/architecture change.
+Both client and server use **Vitest**. Server tests: 8 files in `server/test/` (auth, categories, health, integration, prompts, siteConfig, smoke, users). Client tests: Vitest + Vue Test Utils.
+
+```bash
+make test           # Run both suites
+cd server && npm test   # Server only
+cd client && npm test   # Client only
+```
 
 ## Commit Convention
 

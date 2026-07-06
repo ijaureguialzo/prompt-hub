@@ -81,22 +81,25 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 
 ### Views (8): LoginView, RegisterView, PromptListView, PromptDetailView, CategoryView, SettingsView, ProfileView, ManageUsersView
 
-### Components (8): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal
+### Components (9): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal
 
 ### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt), useCategoryStore (CRUD + selection), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
 
-### Routes (7): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/admin/users` (admin guard)
+### Routes (8): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/profile/:id` → ProfileView, `/admin/users` (admin guard)
 
-### Guards: `beforeEach` redirects unauthenticated to login. `/admin/users` checks `role === 'admin'`.
+### Guards: `beforeEach` redirects unauthenticated to login. `/profile/:id` and `/admin/users` check `role === 'admin'`.
 
 ---
 
-## 5. Testing Strategy
+## 5. Testing
 
-Uses **Vitest** for both client and server. No tests exist yet — write before implementation (TDD/SDD).
+Both client and server use **Vitest**. Server test suite: 8 files in `server/test/` (auth, categories, health, integration, prompts, siteConfig, smoke, users).
 
-- **Backend**: Unit tests for controllers, models, middleware. Integration tests with Supertest + test database.
-- **Frontend**: Component tests with Vitest + Vue Test Utils. Mock Pinia stores. E2E tests planned (Playwright).
+```bash
+make test           # Run both suites
+cd server && npm test   # Server only (Vitest)
+cd client && npm test   # Client only (Vitest + Vue Test Utils)
+```
 
 ---
 

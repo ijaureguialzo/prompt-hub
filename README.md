@@ -50,12 +50,14 @@ cd client && npm install && npm run dev
 make start    # docker-compose up --build
 make stop     # docker-compose down
 make restart  # full restart with rebuild
+make test     # run both server and client tests
 make clean    # remove containers + volumes
 ```
 
 ## Project Structure
 
-- `/client` — Vue 3 SPA (8 views, 8 components, 6 Pinia stores)
+- `/client` — Vue 3 SPA (8 views, 9 components, 6 Pinia stores)
 - `/server/src` — Express API (5 controllers, 4 models, JWT auth)
+- `/server/test` — 8 integration test files (Vitest + Supertest)
 - `docker-compose.yml` — Traefik + API + Frontend + MongoDB
 - `SPECIFICATION.md` — Full API contracts and data models
