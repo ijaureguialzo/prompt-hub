@@ -59,7 +59,7 @@
                 themeStore.mode === 'light'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]" :title="t('theme.lightTooltip')">
+              ]" :title="t('theme.lightMode')">
               &#9788;
             </button>
             <button @click="themeStore.setMode('dark')"
@@ -68,7 +68,7 @@
                 themeStore.mode === 'dark'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]" :title="t('theme.darkTooltip')">
+              ]" :title="t('theme.darkMode')">
               &#9790;
             </button>
             <button @click="themeStore.setMode('auto')"
@@ -77,7 +77,7 @@
                 themeStore.mode === 'auto'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]" :title="t('theme.autoTooltip')">
+              ]" :title="t('theme.autoMode')">
               &#9881;
             </button>
           </div>
