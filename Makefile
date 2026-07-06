@@ -7,6 +7,7 @@ help: _header
 	@echo build / certs
 	@echo start / stop / restart
 	@echo ----------------------
+	@echo test
 	@echo clean
 	@echo ----------------------
 
@@ -27,7 +28,11 @@ build:
 	@docker-compose pull && docker-compose build --pull
 
 test:
+	@echo "Running server tests..."
 	@cd server && npm test
+	@echo ""
+	@echo "Running client tests..."
+	@cd client && npm test
 
 certs:
 	@traefik/crear_certs.sh prompthub.test
