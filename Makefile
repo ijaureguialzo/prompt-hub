@@ -26,6 +26,9 @@ _header:
 build:
 	@docker-compose pull && docker-compose build --pull
 
+test:
+	@cd server && npm test
+
 certs:
 	@traefik/crear_certs.sh prompthub.test
 
