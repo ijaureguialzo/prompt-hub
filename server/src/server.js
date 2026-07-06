@@ -38,17 +38,19 @@ app.get('/api/health', (req, res) => {
 // Error handler (must be last)
 app.use(errorHandler);
 
-// Database connection
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/promptdb')
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
-
 module.exports = app;
+
+// Only auto-connect and listen when run directly (not when imported for testing)
+if (require.main === module) {
+  mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/promptdb')
+    .then(() => {
+      console.log('Connected to MongoDB');
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('MongoDB connection error:', err);
+      process.exit(1);
+    });
+}
