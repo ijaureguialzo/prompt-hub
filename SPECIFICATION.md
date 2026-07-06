@@ -1,205 +1,110 @@
-# Technical Specification Document: Prompt Management System
+# Technical Specification: PromptHub
 
 ## 1. Overview
-This document outlines the technical architecture and design specifications for the Prompt Management System. The system is designed to allow users to create, manage, and categorize various AI prompts using a modern full-stack architecture.
 
-**Tech Stack:**
-- **Frontend:** Vue 3 (Composition API), Pinia (State Management), Vue Router
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB (via Mongoose ODM)
-- **Infrastructure:** Docker, Docker Compose
+Full-stack AI prompt management system. Vue 3 frontend + Express/Mongoose backend with JWT auth, deployed via Docker Compose behind Traefik with TLS.
+
+**Tech Stack:** Vue 3 (Composition API), Pinia, Vue Router 5, Tailwind CSS 4, Vite | Express 5, Mongoose 9, JWT (hs256) | MongoDB 8, Docker Compose, Traefik 3
 
 ---
 
 ## 2. API Specification
-The backend provides a RESTful API for interacting with Prompts and Categories.
 
-### 2.1 Authentication (Optional/Placeholder)
-All protected routes require a Bearer Token in the `Authorization` header.
+All protected routes require a Bearer Token (`Authorization` header). Admin routes additionally require `role === 'admin'`.
 
-### 2.2 Prompts API
+### 2.1 Auth API
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/prompts` | `GET` | Retrieve all prompts | N/A | `Array<Prompt>` | 200, 500 |
-| `/api/prompts` | `POST` | Create a new prompt | `{ title, content, categoryId }` | `Prompt` | 201, 400, 500 |
-| `/api/prompts/:id` | `GET` | Retrieve a specific prompt | N/A | `Prompt` | 200, 404, 500 |
-| `/api/prompts/:id` | `PUT` | Update an existing prompt | `{ title, content, categoryId }` | `Prompt` | 200, 400, 404, 500 |
-| `/api/prompts/:id` | `DELETE` | Remove a prompt | N/A | `{ message: string }` | 200, 404, 500 |
+| `/api/auth/register` | `POST` | Register (first user → admin) | `{ name, email, password }` | `{ token, user }` | 201, 400, 500 |
+| `/api/auth/login` | `POST` | Login (checks isActive) | `{ email, password }` | `{ token, user }` | 200, 401, 500 |
+| `/api/auth/me` | `GET` | Get current user | — | `{ user }` | 200, 401, 500 |
 
-### 2.3 Categories API
+### 2.2 Prompts API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/categories` | `GET` | Retrieve all categories | N/A | `Array<Category>` | 200, 500 |
-| `/api/categories` | `POST` | Create a new category | `{ name, description }` | `Category` | 201, 400, 500 |
-| `/api/categories/:id` | `GET` | Retrieve a category | N/A | `Category` | 200, 404, 500 |
-| `/api/categories/:id` | `PUT` | Update a category | `{ name, description }` | `Category` | 200, 400, 404, 500 |
-| `/api/categories/:id` | `DELETE` | Remove a category | N/A | `{ message: string }` | 200, 404, 500 |
+| `/api/prompts` | `GET` | List all prompts (populate categoryId.name) | — | `Array<Prompt>` | 200, 500 |
+| `/api/prompts` | `POST` | Create prompt (ownership check) | `{ title, content, categoryId?, tags[] }` | `Prompt` | 201, 400, 500 |
+| `/api/prompts/:id` | `GET` | Get single prompt (populate categoryId.name) | — | `Prompt` | 200, 404, 500 |
+| `/api/prompts/:id` | `PUT` | Update prompt (ownership check) | `{ title?, content?, categoryId? }` | `Prompt` | 200, 400, 404, 500 |
+| `/api/prompts/:id` | `DELETE` | Delete prompt (ownership check) | — | `{ message }` | 200, 404, 500 |
+
+### 2.3 Categories API (authenticated)
+| Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/api/categories` | `GET` | List all categories (populate ownerId) | — | `Array<Category>` | 200, 500 |
+| `/api/categories` | `POST` | Create category (ownership check) | `{ name, description? }` | `Category` | 201, 400, 500 |
+| `/api/categories/:id` | `GET` | Get single category (populate ownerId) | — | `Category` | 200, 404, 500 |
+| `/api/categories/:id` | `PUT` | Update category (ownership check) | `{ name?, description? }` | `Category` | 200, 400, 404, 500 |
+| `/api/categories/:id` | `DELETE` | Delete category (cascade delete prompts) | — | `{ message }` | 200, 404, 500 |
+
+### 2.4 Users API (admin-only)
+| Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/api/users` | `GET` | List all users (including inactive) | — | `Array<User>` | 200, 500 |
+| `/api/users/:id` | `PUT` | Update user (role, isActive toggle) | `{ name?, role?, isActive? }` | `User` | 200, 400, 404, 500 |
+| `/api/users/:id` | `DELETE` | Soft-delete user (set isActive=false) | — | `{ message }` | 200, 404, 500 |
+
+### 2.5 Site Config API
+| Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/api/site-config/public` | `GET` | Get registration status (no auth) | — | `{ config }` | 200, 500 |
+| `/api/site-config` | `GET` | Get full config (authenticated) | — | `{ config }` | 200, 401, 500 |
+| `/api/site-config` | `PUT` | Update config (admin-only) | `{ registrationEnabled }` | `{ config }` | 200, 401, 403, 500 |
 
 ---
 
-## 3. Data Model (Mongoose Schemas)
+## 3. Data Models (Mongoose Schemas)
 
-### 3.1 Category Schema
+### User
 ```javascript
-const categorySchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    maxlength: 50
-  },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 255
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+{ name: String(required), email: String(unique), password: String(hash), role: String(user/admin, default:'user'), isActive: Boolean(default:true) }
 ```
 
-### 3.2 Prompt Schema
+### Prompt
 ```javascript
-const promptSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  content: {
-    type: String,
-    required: true
-  },
-  categoryId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Category',
-    required: true
-  },
-  tags: [String],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+{ title: String(required), content: String(required), categoryId: ObjectId(ref:'Category', nullable), ownerId: ObjectId(required), tags: [String], createdAt: Date, updatedAt: Date }
+```
+
+### Category
+```javascript
+{ name: String(required, unique), description: String, ownerId: ObjectId(required), createdAt: Date, updatedAt: Date }
+```
+
+### SiteConfig (singleton _id='site')
+```javascript
+{ registrationEnabled: Boolean(default:true) }
 ```
 
 ---
 
 ## 4. Frontend Architecture
 
-### 4.1 Component Hierarchy
-- `App.vue` (Root Component)
-    - `Navbar.vue` (Navigation Links)
-    - `MainView.vue` (Dynamic View Container)
-        - **Prompt Management Views**
-            - `PromptList.vue` (List View)
-                - `PromptCard.vue` (Individual Item)
-                - `SearchBar.vue` (Filter functionality)
-            - `PromptDetail.vue` (Single View)
-                - `PromptEditor.vue` (Form for Create/Edit)
-        - **Category Management Views**
-            - `CategoryList.vue` (Sidebar/List)
-            - `CategoryForm.vue` (Add/Edit Category)
+### Views (8): LoginView, RegisterView, PromptListView, PromptDetailView, CategoryView, SettingsView, ProfileView, ManageUsersView
 
-### 4.2 State Management (Pinia)
-- `usePromptStore`: Manages the array of prompts, handles API calls for fetching, creating, updating, and deleting prompts.
-- `useCategoryStore`: Manages the list of categories and current selection.
-- `useUIStore`: Manages global UI states like loading indicators, error messages, and modal visibility.
+### Components (8): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal
 
-### 4.3 Routing (Vue Router)
-- `/` -> `PromptListView`
-- `/prompt/:id` -> `PromptDetailView`
-- `/category/:id` -> `CategoryView`
-- `/settings` -> `SettingsView`
+### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt), useCategoryStore (CRUD + selection), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
+
+### Routes (7): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/admin/users` (admin guard)
+
+### Guards: `beforeEach` redirects unauthenticated to login. `/admin/users` checks `role === 'admin'`.
 
 ---
 
-## 5. Testing Strategy (Strict TDD)
+## 5. Testing Strategy
 
-The project follows a Test-Driven Development (TDD) approach to ensure high code quality and prevent regressions.
+Uses **Vitest** for both client and server. No tests exist yet — write before implementation (TDD/SDD).
 
-### 5.1 Backend Testing
-- **Unit Testing:** Using **Jest**.
-    - Test Mongoose models for validation logic.
-    - Test utility functions and middleware (e.g., error handlers).
-- **Integration Testing:** Using **Supertest**.
-    - Test RESTful endpoints in isolation by mocking the database or using a dedicated test database.
-    - Validate successful CRUD operations and correct HTTP status codes.
-
-### 5.2 Frontend Testing
-- **Component Testing:** Using **Vitest** and **Vue Test Utils**.
-    - Verify component rendering, prop passing, and event emission.
-    - Mock Pinia stores to test component behavior in isolation.
-- **End-to-End (E2E) Testing:** Using **Playwright**.
-    - Test critical user flows (e.g., creating a category, then creating a prompt within that category, then verifying it appears in the list).
-    - Ensure all routing and navigation work as expected.
+- **Backend**: Unit tests for controllers, models, middleware. Integration tests with Supertest + test database.
+- **Frontend**: Component tests with Vitest + Vue Test Utils. Mock Pinia stores. E2E tests planned (Playwright).
 
 ---
 
 ## 6. Deployment Architecture
 
-The application is containerized using Docker to ensure environment parity between development, staging, and production.
+Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `healthy`. Frontend depends on api `healthy`.
 
-### 6.1 Dockerfile (Backend)
-A multi-stage build is recommended for the backend to minimize image size.
-```dockerfile
-# Build Stage
-FROM node:18-slim AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-# Production Stage
-FROM node:18-slim
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package*.json ./
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-```
-
-### 6.2 Docker Compose (Development/Local Orchestration)
-```yaml
-version: '3.8'
-services:
-  api:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    environment:
-      - MONGO_URI=mongodb://db:27117/promptdb
-    depends_on:
-      - db
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:3000/api
-
-  db:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
-```
+- **Traefik**: HTTP 80 → HTTPS redirect, TLS 443 (dynamic certs), routes for api + frontend.
+- **Backend Dockerfile**: Multi-stage build, `node:18-slim`, exposes port 3000.
+- **Frontend Dockerfile**: Multi-stage build, `node:18-slim`, serves `dist/` on port 5173.
+- **DB**: MongoDB 8, named volumes (`mongo_data`, `mongo_config`).

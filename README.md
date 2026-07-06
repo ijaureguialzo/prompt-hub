@@ -1,57 +1,61 @@
 # PromptHub
 
-PromptHub is a modern, full-stack web application designed for managing AI prompts. It allows users to create, categorize, and store prompts for easy reuse.
+Full-stack AI prompt management application with authentication, categorization, and multi-language support.
 
 ## Features
-- **Prompt Management**: CRUD operations for your favorite AI prompts.
-- **Categorization**: Organize prompts into logical categories.
-- **Search**: Quickly find prompts using search functionality.
-- **Reusability**: Easy copy-to-clipboard for rapid prompt usage.
+
+- **Auth**: JWT-based registration/login (first user auto-promoted to admin)
+- **Prompt Management**: Full CRUD with ownership checks and tags
+- **Categories**: Organize prompts, cascade delete on category removal
+- **Search & Filter**: Debounced search by title/content/tags, filter by category
+- **Copy-to-Clipboard**: One-click prompt reuse via read-only modal
+- **i18n**: Full localization in English, Spanish, and Basque (Euskara)
+- **Dark Mode**: Light/dark/auto theme with system preference detection
+- **Role System**: User and admin roles; admin panel for user management
 
 ## Tech Stack
-- **Frontend**: Vue 3 (Composition API), Pinia, Vue Router, Tailwind CSS, Vite.
-- **Backend**: Node.js, Express.js, Mongoose (MongoDB ODM).
-- **Database**: MongoDB.
-- **Deployment**: Docker & Docker Compose.
+
+Vue 3 (Composition API), Pinia, Vue Router 5, Tailwind CSS 4, Vite | Express 5, Mongoose 9, JWT (hs256) | MongoDB 8, Docker Compose, Traefik 3
 
 ## Getting Started
 
 ### Prerequisites
+
 - [Docker](https://www.docker.com/products/docker-desktop/)
-- [Node.js](https://nodejs.org/) (for local development)
+- Node.js (local development only)
 
 ### Running with Docker (Recommended)
-The easiest way to start the application is using Docker Compose.
 
-1. Clone this repository.
-2. Open a terminal in the project root.
-3. Run the following command:
-   ```bash
-   docker-compose up --build
-   ```
-4. Access the application at:
-   - Frontend: [http://localhost:5173](http://localhost:5173)
-   - Backend API: [http://localhost:3000](http://localhost:3000)
+```bash
+git clone <repo> && cd prompt-hub
+cp .env.example .env   # Set JWT_SECRET and other vars
+make start
+```
+
+Access at your configured domain (e.g. `https://prompthub.test`). Frontend and API are served through Traefik with TLS.
 
 ### Local Development
 
-#### Backend
-1. Navigate to the `server` directory.
-2. Install dependencies: `npm install`
-3. Create a `.env` file with the following credentials:
-   ```env
-   MONGO_USER=root
-   MONGO_PASSWORD=12345Abcde
-   ```
-4. Start the server: `npm run dev`
+```bash
+# Backend (server/) — port 3000, .env required
+cd server && npm install && npm run dev
 
-#### Frontend
-1. Navigate to the `client` directory.
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
+# Frontend (client/) — port 5173, proxies /api to localhost:3000
+cd client && npm install && npm run dev
+```
+
+## Quick Commands
+
+```bash
+make start    # docker-compose up --build
+make stop     # docker-compose down
+make restart  # full restart with rebuild
+make clean    # remove containers + volumes
+```
 
 ## Project Structure
-- `/client`: Vue 3 frontend application.
-- `/server`: Node.js backend API.
-- `docker-compose.yml`: Orchestration for the entire stack.
-- `SPECIFICATION.md`: Detailed technical design document.
+
+- `/client` — Vue 3 SPA (8 views, 8 components, 6 Pinia stores)
+- `/server/src` — Express API (5 controllers, 4 models, JWT auth)
+- `docker-compose.yml` — Traefik + API + Frontend + MongoDB
+- `SPECIFICATION.md` — Full API contracts and data models
