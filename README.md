@@ -51,13 +51,25 @@ make start    # docker-compose up --build
 make stop     # docker-compose down
 make restart  # full restart with rebuild
 make test     # run both server and client tests
+make lint     # lint both packages (ESLint)
 make clean    # remove containers + volumes
 ```
 
 ## Project Structure
 
 - `/client` — Vue 3 SPA (8 views, 9 components, 6 Pinia stores)
-- `/server/src` — Express API (5 controllers, 4 models, JWT auth)
-- `/server/test` — 8 integration test files (Vitest + Supertest)
+- `/server/src` — Express API (5 controllers, 5 models, JWT auth, audit trail)
+- `/server/test` — 15 test files (Vitest + Supertest, `mongodb-memory-server`)
+- `/server/src/scripts` — `seedAdmin` (idempotent admin bootstrap), `seedData` (demo content)
 - `docker-compose.yml` — Traefik + API + Frontend + MongoDB
-- `SPECIFICATION.md` — Full API contracts and data models
+- `SPECIFICATION.md` — Full API contracts, data models and security notes
+
+## Security & Operations
+
+- **JWT secret (required):** the API refuses to start without a `JWT_SECRET` of 32+ chars in `server/.env`. Generate one with `openssl rand -hex 32`. Never commit the real `.env`.
+- **First admin:** the first user to register via the UI automatically becomes admin (race-safe). Alternative for a blank DB: `cd server && SEED_EMAIL=you@example.com SEED_PASSWORD=… npm run seed:admin` (idempotent). Demo content for one user: `SEED_USER_EMAIL=… npm run seed:data` (idempotent, `[demo]`-marked).
+- **Rate limiting:** login 10/15 min, register 5/15 min, API 300/15 min per IP (429 on excess); disabled in tests.
+- **Containers run non-root** (`node` user); images built reproducibly with `npm ci`.
+- **Traefik dashboard** (ops only): `https://traefik.<base-domain>/dashboard/` — the domain is not expected to resolve publicly in production.
+- **Audit trail:** admin actions (role changes, deactivations, site-wide registration switch, category cascades) are logged to the `Audit` collection.
+- Known residual: `braces` (high, dev-only transitive dep, no upstream fix) — never ships in the production images.
