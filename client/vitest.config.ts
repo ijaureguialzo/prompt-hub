@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-    },
+      '@': resolve(__dirname, 'src')
+    }
   },
   test: {
     globals: true,
@@ -17,7 +17,7 @@ export default defineConfig({
       lines: 80,
       statements: 80,
       branches: 85,
-      functions: 80,
-    },
-  },
+      functions: 80
+    }
+  }
 })

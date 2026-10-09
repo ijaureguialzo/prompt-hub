@@ -177,7 +177,7 @@ async function handleToggleActive(user) {
     const newStatus = !user.isActive
     await usersApi.update(user._id, { isActive: newStatus })
     user.isActive = newStatus
-    uiStore.setSuccess(newStatus ? t('admin.activated') : t('admin.deactivated'))
+    uiStore.setSuccess(newStatus ? t('admin.activated') : t('admin.deactivatedMsg'))
     if (user._id === authStore.user?._id) {
       await authStore.updateUser()
     }
@@ -196,7 +196,7 @@ async function handleDeleteUser(user) {
     if (idx !== -1) {
       users.value.splice(idx, 1)
     }
-    uiStore.setSuccess(t('admin.deactivated'))
+    uiStore.setSuccess(t('admin.deactivatedMsg'))
   } catch (err) {
     uiStore.setError(err.message)
   }

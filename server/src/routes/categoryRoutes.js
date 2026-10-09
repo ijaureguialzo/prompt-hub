@@ -14,7 +14,15 @@ router.post('/', categoryController.createCategory);
 
 // Write routes require ownership (owner or admin), enforced BEFORE the
 // controller writes anything.
-router.put('/:id', requireOwnership('Category', 'id', 'You can only modify your own categories'), categoryController.updateCategory);
-router.delete('/:id', requireOwnership('Category', 'id', 'You can only delete your own categories'), categoryController.deleteCategory);
+router.put(
+  '/:id',
+  requireOwnership('Category', 'id', 'You can only modify your own categories'),
+  categoryController.updateCategory
+);
+router.delete(
+  '/:id',
+  requireOwnership('Category', 'id', 'You can only delete your own categories'),
+  categoryController.deleteCategory
+);
 
 module.exports = router;

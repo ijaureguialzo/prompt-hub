@@ -13,37 +13,62 @@ vi.mock('vue-router', async (importOriginal) => {
 
 const mockAuthStoreState = {
   token: 'test-token',
-  user: { _id: 'user-1', name: 'Test User', email: 'test@example.com', role: 'user', isActive: true, createdAt: '2024-01-01T00:00:00.000Z' },
+  user: {
+    _id: 'user-1',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'user',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z'
+  },
   loading: false,
   login: vi.fn().mockResolvedValue(undefined),
   register: vi.fn().mockResolvedValue({}),
   fetchCurrentUser: vi.fn().mockResolvedValue(null),
   updateUser: vi.fn().mockResolvedValue(undefined),
-  updateMe: vi.fn().mockResolvedValue({ user: { _id: 'user-1', name: 'Test User', email: 'test@example.com', role: 'user', isActive: true, createdAt: '2024-01-01T00:00:00.000Z' } }),
-  logout: vi.fn(),
+  updateMe: vi.fn().mockResolvedValue({
+    user: {
+      _id: 'user-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'user',
+      isActive: true,
+      createdAt: '2024-01-01T00:00:00.000Z'
+    }
+  }),
+  logout: vi.fn()
 }
 
 const mockUIStoreState = {
   setError: vi.fn(),
-  setSuccess: vi.fn(),
+  setSuccess: vi.fn()
 }
 
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/api/index.js', () => ({
-  usersApi: { getById: vi.fn().mockResolvedValue({ _id: 'user-2', name: 'Other User', email: 'other@example.com', role: 'user', isActive: true, createdAt: '2024-06-01T00:00:00.000Z' }) },
+  usersApi: {
+    getById: vi.fn().mockResolvedValue({
+      _id: 'user-2',
+      name: 'Other User',
+      email: 'other@example.com',
+      role: 'user',
+      isActive: true,
+      createdAt: '2024-06-01T00:00:00.000Z'
+    })
+  }
 }))
 
 // Stub router-link.
@@ -53,9 +78,9 @@ function getWrapper() {
   return mount(ProfileView, {
     global: {
       components: { routerLink: routerLinkStub },
-      stubs: { RouterView: '<div />' },
+      stubs: { RouterView: '<div />' }
     },
-    attachTo: document.body,
+    attachTo: document.body
   })
 }
 
@@ -134,7 +159,7 @@ describe('ProfileView', () => {
 
     expect(mockAuthStoreState.updateMe).toHaveBeenCalledWith({
       currentPassword: 'current-pass-123',
-      newPassword: 'new-password-456',
+      newPassword: 'new-password-456'
     })
     expect(mockUIStoreState.setSuccess).toHaveBeenCalledWith('profile.passwordChanged')
   })

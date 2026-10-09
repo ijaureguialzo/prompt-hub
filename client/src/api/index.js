@@ -5,8 +5,18 @@ function getToken() {
 }
 
 function clearAuth() {
-  try { localStorage.removeItem('token') } catch {}
-  try { localStorage.removeItem('user') } catch {}
+  // localStorage access can throw in hardened browsers — auth is a
+  // convenience, never a crash
+  try {
+    localStorage.removeItem('token')
+  } catch {
+    /* ignore */
+  }
+  try {
+    localStorage.removeItem('user')
+  } catch {
+    /* ignore */
+  }
 }
 
 // Registered by main.js (avoids a circular import between the API client
@@ -30,7 +40,7 @@ export async function apiRequest(endpoint, options = {}) {
   try {
     response = await fetch(url, {
       headers,
-      ...options,
+      ...options
     })
   } catch {
     throw new Error('Network error. Is the API reachable?')
@@ -38,7 +48,7 @@ export async function apiRequest(endpoint, options = {}) {
 
   // Safe body parsing: a reverse proxy may return non-JSON error pages.
   const text = await response.text()
-  let data = {}
+  let data
   try {
     data = text ? JSON.parse(text) : {}
   } catch {
@@ -65,33 +75,39 @@ export const promptsApi = {
   getById: (id) => apiRequest(`/prompts/${id}`),
   create: (data) => apiRequest('/prompts', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' }),
+  delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' })
 }
 
 export const categoriesApi = {
   getAll: () => apiRequest('/categories'),
   getById: (id) => apiRequest(`/categories/${id}`),
   create: (data) => apiRequest('/categories', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id, data) => apiRequest(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/categories/${id}`, { method: 'DELETE' }),
+  update: (id, data) =>
+    apiRequest(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id) => apiRequest(`/categories/${id}`, { method: 'DELETE' })
 }
 
 export const authApi = {
-  register: (name, email, password) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
-  login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  register: (name, email, password) =>
+    apiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password })
+    }),
+  login: (email, password) =>
+    apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getCurrentUser: () => apiRequest('/auth/me'),
-  updateMe: (data) => apiRequest('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  updateMe: (data) => apiRequest('/auth/me', { method: 'PATCH', body: JSON.stringify(data) })
 }
 
 export const usersApi = {
   getAll: () => apiRequest('/users'),
   getById: (id) => apiRequest(`/users/${id}`),
   update: (id, data) => apiRequest(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/users/${id}`, { method: 'DELETE' }),
+  delete: (id) => apiRequest(`/users/${id}`, { method: 'DELETE' })
 }
 
 export const siteConfigApi = {
   getPublicConfig: () => apiRequest('/site-config/public'),
   getConfig: () => apiRequest('/site-config'),
-  updateConfig: (data) => apiRequest('/site-config', { method: 'PUT', body: JSON.stringify(data) }),
+  updateConfig: (data) => apiRequest('/site-config', { method: 'PUT', body: JSON.stringify(data) })
 }

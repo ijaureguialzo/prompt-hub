@@ -22,13 +22,15 @@ describe('Router Guards (canNavigate)', () => {
 
   it('redirects public route (Register) when authenticated', () => {
     setSession('tok', { email: 'a@b.com' })
-    expect(canNavigate({ name: 'Register', params: {}, fullPath: '/register' })).toEqual({ name: 'PromptList' })
+    expect(canNavigate({ name: 'Register', params: {}, fullPath: '/register' })).toEqual({
+      name: 'PromptList'
+    })
   })
 
   it('redirects to Login when accessing protected route without token', () => {
     expect(canNavigate({ name: 'PromptList', params: {}, fullPath: '/' })).toEqual({
       name: 'Login',
-      query: { redirect: '/' },
+      query: { redirect: '/' }
     })
   })
 
@@ -39,7 +41,9 @@ describe('Router Guards (canNavigate)', () => {
 
   it('allows PromptDetail when authenticated', () => {
     setSession('tok', { email: 'a@b.com' })
-    expect(canNavigate({ name: 'PromptDetail', params: { id: 'x' }, fullPath: '/prompt/x' })).toBe(true)
+    expect(canNavigate({ name: 'PromptDetail', params: { id: 'x' }, fullPath: '/prompt/x' })).toBe(
+      true
+    )
   })
 
   it('allows SettingsView when authenticated', () => {
@@ -49,18 +53,39 @@ describe('Router Guards (canNavigate)', () => {
 
   it('redirects to PromptList when accessing admin route without admin role', () => {
     setSession('tok', { email: 'a@b.com', role: 'user' })
-    expect(canNavigate({ name: 'ManageUsers', params: {}, fullPath: '/admin/users', meta: { requiresAdmin: true } })).toEqual({ name: 'PromptList' })
+    expect(
+      canNavigate({
+        name: 'ManageUsers',
+        params: {},
+        fullPath: '/admin/users',
+        meta: { requiresAdmin: true }
+      })
+    ).toEqual({ name: 'PromptList' })
   })
 
   it('allows admin route when user is admin', () => {
     setSession('tok', { email: 'admin@test.com', role: 'admin' })
-    expect(canNavigate({ name: 'ManageUsers', params: {}, fullPath: '/admin/users', meta: { requiresAdmin: true } })).toBe(true)
+    expect(
+      canNavigate({
+        name: 'ManageUsers',
+        params: {},
+        fullPath: '/admin/users',
+        meta: { requiresAdmin: true }
+      })
+    ).toBe(true)
   })
 
   it('redirects to Login when no token for admin route', () => {
-    expect(canNavigate({ name: 'ManageUsers', params: {}, fullPath: '/admin/users', meta: { requiresAdmin: true } })).toEqual({
+    expect(
+      canNavigate({
+        name: 'ManageUsers',
+        params: {},
+        fullPath: '/admin/users',
+        meta: { requiresAdmin: true }
+      })
+    ).toEqual({
       name: 'Login',
-      query: { redirect: '/admin/users' },
+      query: { redirect: '/admin/users' }
     })
   })
 
@@ -68,24 +93,32 @@ describe('Router Guards (canNavigate)', () => {
 
   it('allows OWN profile for any authenticated user', () => {
     setSession('tok', { _id: 'u1', email: 'a@b.com', role: 'user' })
-    expect(canNavigate({ name: 'Profile', params: { id: 'u1' }, fullPath: '/profile/u1' })).toBe(true)
+    expect(canNavigate({ name: 'Profile', params: { id: 'u1' }, fullPath: '/profile/u1' })).toBe(
+      true
+    )
   })
 
   it('blocks OTHER users profiles for non-admins', () => {
     setSession('tok', { _id: 'u1', email: 'a@b.com', role: 'user' })
-    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toEqual({ name: 'PromptList' })
+    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toEqual(
+      { name: 'PromptList' }
+    )
   })
 
   it('allows other users profiles for admins', () => {
     setSession('tok', { _id: 'u1', email: 'a@b.com', role: 'admin' })
-    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toBe(true)
+    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toBe(
+      true
+    )
   })
 
   it('redirects unauthenticated visitors of a profile to Login', () => {
-    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toEqual({
-      name: 'Login',
-      query: { redirect: '/profile/u2' },
-    })
+    expect(canNavigate({ name: 'Profile', params: { id: 'u2' }, fullPath: '/profile/u2' })).toEqual(
+      {
+        name: 'Login',
+        query: { redirect: '/profile/u2' }
+      }
+    )
   })
 
   // --- helpers ---

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useI18nStore } from '@/stores/useI18nStore'
 
@@ -27,13 +27,13 @@ describe('useI18nStore', () => {
     expect(store.t('nav.title')).toBe('PromptHub')
   })
 
-  it("t() resolves a nested key with dot notation", () => {
+  it('t() resolves a nested key with dot notation', () => {
     const store = getI18nStore()
     // en.js has categoryList.heading: 'Categories'
     expect(store.t('categoryList.heading')).toBe('Categories')
   })
 
-  it("t() returns the key itself when not found (fallback)", () => {
+  it('t() returns the key itself when not found (fallback)', () => {
     const store = getI18nStore()
     expect(store.t('nonexistent.key')).toBe('nonexistent.key')
   })
@@ -67,7 +67,7 @@ describe('useI18nStore', () => {
     expect(store.language).toBe('en')
   })
 
-  it("setLanguage with invalid language does not change language", () => {
+  it('setLanguage with invalid language does not change language', () => {
     const store = getI18nStore()
     store.setLanguage('xx')
     expect(store.language).not.toBe('xx')
@@ -75,14 +75,14 @@ describe('useI18nStore', () => {
 
   // --- init() ---
 
-  it("init() restores language from localStorage when saved", () => {
+  it('init() restores language from localStorage when saved', () => {
     const store = useI18nStore()
     ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('language', 'es')
     store.init()
     expect(store.language).toBe('es')
   })
 
-  it("init() does not change language when nothing is saved in localStorage", () => {
+  it('init() does not change language when nothing is saved in localStorage', () => {
     const store = useI18nStore()
     // Default language is detected from browser (mocked as 'en').
     const initialLang = store.language

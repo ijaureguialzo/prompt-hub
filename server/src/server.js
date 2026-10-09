@@ -31,7 +31,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGIN || 'https://prompthub.test').split(',').map(o => o.trim()).filter(Boolean);
+const allowedOrigins = (process.env.CORS_ORIGIN || 'https://prompthub.test')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
 
 // Security headers (CSP, nosniff, frame denial, ...)
 app.use(helmet());
@@ -45,10 +48,12 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 // JSON-only API: no form/urlencoded body parsing (avoids the `qs`
 // dependency and its historical DoS surface)
-app.use(compression({
-  // API payloads are small; compress everything rather than a 1kb threshold
-  threshold: 0,
-}));
+app.use(
+  compression({
+    // API payloads are small; compress everything rather than a 1kb threshold
+    threshold: 0
+  })
+);
 
 // Loose per-IP limiter for the whole API (DoS protection).
 // Strict per-endpoint limiters live on /api/auth (see routes/authRoutes.js).
@@ -73,7 +78,8 @@ module.exports = app;
 
 // Only auto-connect and listen when run directly (not when imported for testing)
 if (require.main === module) {
-  mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/promptdb')
+  mongoose
+    .connect(process.env.MONGO_URI || 'mongodb://localhost:27017/promptdb')
     .then(() => {
       console.log('Connected to MongoDB');
       app.listen(PORT, () => {

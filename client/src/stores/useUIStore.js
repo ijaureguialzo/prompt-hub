@@ -6,18 +6,22 @@ export const useUIStore = defineStore('ui', {
     successMessage: null,
     showCreatePromptModal: false,
     showCreateCategoryModal: false,
-    editingCategory: null,
+    editingCategory: null
   }),
 
   actions: {
     setError(message) {
       this.error = message
-      setTimeout(() => { this.error = null }, 5000)
+      setTimeout(() => {
+        this.error = null
+      }, 5000)
     },
 
     setSuccess(message) {
       this.successMessage = message
-      setTimeout(() => { this.successMessage = null }, 3000)
+      setTimeout(() => {
+        this.successMessage = null
+      }, 3000)
     },
 
     clearError() {
@@ -34,6 +38,6 @@ export const useUIStore = defineStore('ui', {
 
     setEditingCategory(category) {
       this.editingCategory = category
-    },
-  },
+    }
+  }
 })

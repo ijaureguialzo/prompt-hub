@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import SearchBar from '@/components/SearchBar.vue'
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => ({ t: (key: string) => key })),
+  useI18nStore: vi.fn(() => ({ t: (key: string) => key }))
 }))
 
 describe('SearchBar', () => {

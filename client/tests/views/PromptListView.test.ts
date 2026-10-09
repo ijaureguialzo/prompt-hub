@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest'
-import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import PromptListView from '@/views/PromptListView.vue'
 
@@ -12,14 +11,20 @@ const mockAuthStoreState = {
   fetchCurrentUser: vi.fn().mockResolvedValue(null),
   updateUser: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn(),
-  isAuthenticated: true,
+  isAuthenticated: true
 }
 
 const mockPromptStoreState = {
   prompts: [
     { _id: 'p1', title: 'Prompt One', content: 'Content one.', tags: ['tag1', 'tag2'] },
     { _id: 'p2', title: 'Prompt Two', content: 'Content two.', tags: ['tag3'] },
-    { _id: 'p3', title: 'Uncategorized Prompt', content: 'No category.', tags: [], categoryId: null },
+    {
+      _id: 'p3',
+      title: 'Uncategorized Prompt',
+      content: 'No category.',
+      tags: [],
+      categoryId: null
+    }
   ],
   currentPrompt: null,
   loading: false,
@@ -28,7 +33,7 @@ const mockPromptStoreState = {
   createPrompt: vi.fn().mockResolvedValue({}),
   updatePrompt: vi.fn().mockResolvedValue({}),
   deletePrompt: vi.fn().mockResolvedValue(undefined),
-  clearCurrent: vi.fn(),
+  clearCurrent: vi.fn()
 }
 
 const mockCategoryStoreState = {
@@ -42,30 +47,37 @@ const mockCategoryStoreState = {
   updateCategory: vi.fn().mockResolvedValue({}),
   deleteCategory: vi.fn().mockResolvedValue(undefined),
   selectCategory: vi.fn(),
-  clearSelection: vi.fn(),
+  clearSelection: vi.fn()
 }
 
-const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn(), setShowCreatePromptModal: vi.fn(), setShowCreateCategoryModal: vi.fn(), showCreatePromptModal: false, showCreateCategoryModal: false }
+const mockUIStoreState = {
+  setSuccess: vi.fn(),
+  setError: vi.fn(),
+  setShowCreatePromptModal: vi.fn(),
+  setShowCreateCategoryModal: vi.fn(),
+  showCreatePromptModal: false,
+  showCreateCategoryModal: false
+}
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/usePromptStore', () => ({
-  usePromptStore: vi.fn(() => mockPromptStoreState),
+  usePromptStore: vi.fn(() => mockPromptStoreState)
 }))
 
 vi.mock('@/stores/useCategoryStore', () => ({
-  useCategoryStore: vi.fn(() => mockCategoryStoreState),
+  useCategoryStore: vi.fn(() => mockCategoryStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 // Stub router-link and child components.
@@ -75,19 +87,18 @@ function getWrapper() {
   return mount(PromptListView, {
     global: {
       components: { routerLink: routerLinkStub },
-      stubs: { CategoryList: '<div><h2>Categories</h2></div>', PromptCard: '<div class="prompt-card"><slot /></div>', CreatePromptModal: '<div />', CreateCategoryModal: '<div />' },
+      stubs: {
+        CategoryList: '<div><h2>Categories</h2></div>',
+        PromptCard: '<div class="prompt-card"><slot /></div>',
+        CreatePromptModal: '<div />',
+        CreateCategoryModal: '<div />'
+      }
     },
-    attachTo: document.body,
+    attachTo: document.body
   })
 }
 
 describe('PromptListView', () => {
-  async function setup() {
-    const wrapper = await getWrapper()
-    await nextTick() // wait for onMounted to complete
-    return wrapper
-  }
-
   it('shows loading state while fetching', async () => {
     mockPromptStoreState.loading = true
     const wrapper = await getWrapper()

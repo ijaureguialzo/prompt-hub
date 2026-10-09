@@ -4,7 +4,7 @@ export default {
     promptsLink: 'Promptak',
     settingsLink: 'Ezarpenak',
     adminLink: 'Administrazioa',
-    logout: 'Amaitu saioa',
+    logout: 'Amaitu saioa'
   },
   categoryList: {
     heading: 'Kategoriak',
@@ -13,16 +13,16 @@ export default {
     uncategorized: 'Kategoriarik gabe',
     edit: 'Editatu',
     delete: 'Ezabatu',
-    noCategories: 'Oraindik ez dago kategoriarik.',
+    noCategories: 'Oraindik ez dago kategoriarik.'
   },
   searchBar: {
-    placeholder: 'Bilatu promptak izenburu, eduki edo etiketen arabera...',
+    placeholder: 'Bilatu promptak izenburu, eduki edo etiketen arabera...'
   },
   promptCard: {
     copyTitle: 'Kopiatu prompta',
     editTitle: 'Editatu',
     copiedToast: 'Prompta arbelera kopiatuta!',
-    failedCopyToast: 'Ezin izan da prompta kopiatu',
+    failedCopyToast: 'Ezin izan da prompta kopiatu'
   },
   createPromptModal: {
     newTitle: 'Prompt berria',
@@ -39,7 +39,7 @@ export default {
     cancel: 'Utzi',
     creating: 'Sortzen...',
     create: 'Sortu prompta',
-    update: 'Eguneratu',
+    update: 'Eguneratu'
   },
   createCategoryModal: {
     newTitle: 'Kategoria berria',
@@ -51,7 +51,7 @@ export default {
     cancel: 'Utzi',
     saving: 'Gordetzen...',
     create: 'Sortu kategoria',
-    update: 'Eguneratu',
+    update: 'Eguneratu'
   },
   promptList: {
     heading: 'Promptak',
@@ -60,7 +60,7 @@ export default {
     loading: 'Promptak kargatzen...',
     noPrompts: 'Ez da prompterik aurkitu.',
     filteredByTags: 'Etiketen arabera iragazitakoak',
-    clearAllTags: 'Garbi etiketa guztiak',
+    clearAllTags: 'Garbi etiketa guztiak'
   },
   promptDetail: {
     backLink: 'Itzuli promptetara',
@@ -71,14 +71,14 @@ export default {
     useTitle: 'Erabili prompta',
     createdLabel: 'Sortua:',
     updatedLabel: 'Eguneratua:',
-    notFound: 'Ez da prompterik aurkitu.',
+    notFound: 'Ez da prompterik aurkitu.'
   },
   categoryView: {
     backLink: 'Itzuli promptetara',
     editCategoryBtn: 'Editatu kategoria',
     deleteBtn: 'Ezabatu',
     sectionHeading: 'Kategoria honetako promptak',
-    noPromptsInCat: 'Ez dago prompterik kategoria honetan oraindik.',
+    noPromptsInCat: 'Ez dago prompterik kategoria honetan oraindik.'
   },
   settings: {
     heading: 'Ezarpenak',
@@ -88,7 +88,8 @@ export default {
     refreshBtn: 'Freskatu datu guztiak',
     refreshingBtn: 'Freskatzen...',
     aboutTitle: 'Honi buruz',
-    aboutText: 'PromptHub v1.0.0 - Vue 3, Express eta MongoDB erabiliz eraikitako prompt kudeaketa sistema modernoa.',
+    aboutText:
+      'PromptHub v1.0.0 - Vue 3, Express eta MongoDB erabiliz eraikitako prompt kudeaketa sistema modernoa.'
   },
   common: {
     loading: 'Kargatzen...',
@@ -102,11 +103,11 @@ export default {
     promptCreated: 'Prompta arrakastaz sortuta!',
     categoryUpdated: 'Kategoria arrakastaz eguneratuta!',
     categoryCreated: 'Kategoria arrakastaz sortuta!',
-    dataRefreshed: 'Datuak arrakastaz freskatu dira!',
+    dataRefreshed: 'Datuak arrakastaz freskatu dira!'
   },
   date: {
     created: 'Sortua:',
-    updated: 'Eguneratua:',
+    updated: 'Eguneratua:'
   },
   auth: {
     loginTitle: 'Hasi saioa',
@@ -123,7 +124,7 @@ export default {
     registerLink: 'Erregistratu',
     loginLink: 'Hasi saioa',
     passwordMismatch: 'Pasahitzak ez datoz bat',
-    nameLabel: 'Izena',
+    nameLabel: 'Izena'
   },
   admin: {
     usersHeading: 'Erabiltzaileen kudeaketa',
@@ -136,11 +137,11 @@ export default {
     noUsers: 'Ez da erabiltzailerik aurkitu.',
     roleUpdated: 'Rola arrakastaz eguneratuta!',
     activated: 'Erabiltzailea aktibatuta.',
-    deactivated: 'Erabiltzailea desaktibatuta.',
+    deactivatedMsg: 'Erabiltzailea desaktibatuta.',
     registrationTitle: 'Erregistroa',
     registrationDesc: 'Baimendu edo eragoz berri erabiltzaileek kontuak sortzea.',
     registrationEnabled: 'Erregistroa aktibatuta.',
-    registrationDisabled: 'Erregistroa desaktibatuta.',
+    registrationDisabled: 'Erregistroa desaktibatuta.'
   },
   profile: {
     heading: 'Nire Profila',
@@ -160,11 +161,11 @@ export default {
     passwordChanged: 'Pasahitza arrakastaz aldatua!',
     passwordMismatch: 'Pasahitzek ez dute bat egiten',
     passwordTooShort: 'Pasahitu berriak gutxienez 8 karaktere izan behar ditu',
-    passwordFillAll: 'Bete pasahitzaren eremu guztiak',
+    passwordFillAll: 'Bete pasahitzaren eremu guztiak'
   },
   theme: {
     lightMode: 'Argi Modua',
     darkMode: 'Ilun Modua',
-    autoMode: 'Automatikoa',
-  },
+    autoMode: 'Automatikoa'
+  }
 }

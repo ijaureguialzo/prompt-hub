@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useThemeStore } from '@/stores/useThemeStore'
 
@@ -23,7 +23,10 @@ describe('useThemeStore', () => {
 
   it('init() reads mode from localStorage when saved', () => {
     const store = useThemeStore()
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('themeMode', 'dark')
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'themeMode',
+      'dark'
+    )
     store.init()
     expect(store.mode).toBe('dark')
   })
@@ -56,7 +59,7 @@ describe('useThemeStore', () => {
     expect(store.mode).toBe('auto')
   })
 
-  it("setMode with invalid value does not change mode", () => {
+  it('setMode with invalid value does not change mode', () => {
     const store = getThemeStore()
     store.setMode('invalid' as any)
     expect(store.mode).toBe('auto')
@@ -118,6 +121,9 @@ describe('useThemeStore', () => {
 
   it('dispose() does not throw when called multiple times', () => {
     const store = getThemeStore()
-    expect(() => { store.dispose(); store.dispose() }).not.toThrow()
+    expect(() => {
+      store.dispose()
+      store.dispose()
+    }).not.toThrow()
   })
 })

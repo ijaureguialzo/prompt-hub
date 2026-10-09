@@ -53,14 +53,14 @@ exports.updateUser = async (req, res) => {
     logAudit(req, 'user.role_change', {
       targetId: user._id,
       targetEmail: user.email,
-      details: { from: existing.role, to: role },
+      details: { from: existing.role, to: role }
     });
   }
   if (isActive !== undefined && isActive !== existing.isActive) {
     logAudit(req, isActive ? 'user.activate' : 'user.deactivate', {
       targetId: user._id,
       targetEmail: user.email,
-      details: { from: existing.isActive, to: isActive },
+      details: { from: existing.isActive, to: isActive }
     });
   }
 
@@ -87,5 +87,7 @@ exports.deleteUser = async (req, res) => {
 
   logAudit(req, 'user.deactivate', { targetId: target._id, targetEmail: target.email });
 
-  res.status(200).json({ message: 'User deactivated', user: { _id: target._id, email: target.email } });
+  res
+    .status(200)
+    .json({ message: 'User deactivated', user: { _id: target._id, email: target.email } });
 };

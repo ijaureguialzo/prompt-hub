@@ -11,7 +11,7 @@ const auditSchema = new mongoose.Schema({
   targetId: { type: String }, // String on purpose: targets are heterogeneous resources
   targetEmail: { type: String },
   details: { type: mongoose.Schema.Types.Mixed },
-  createdAt: { type: Date, default: Date.now, immutable: true },
+  createdAt: { type: Date, default: Date.now, immutable: true }
 });
 
 // Who did what, most recent first; plus an action index for filtering

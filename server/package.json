@@ -7,7 +7,10 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "eslint . && prettier --check ."
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -21,8 +24,12 @@
     "mongoose": "^9.7.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.14",
+    "prettier": "^3.9.9",
     "supertest": "^7.2.2",
     "vitest": "^4.1.10"
   }

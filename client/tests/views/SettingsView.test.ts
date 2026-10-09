@@ -11,7 +11,7 @@ const mockPromptStoreState = {
   createPrompt: vi.fn().mockResolvedValue({}),
   updatePrompt: vi.fn().mockResolvedValue({}),
   deletePrompt: vi.fn().mockResolvedValue(undefined),
-  clearCurrent: vi.fn(),
+  clearCurrent: vi.fn()
 }
 
 const mockCategoryStoreState = {
@@ -25,30 +25,30 @@ const mockCategoryStoreState = {
   updateCategory: vi.fn().mockResolvedValue({}),
   deleteCategory: vi.fn().mockResolvedValue(undefined),
   selectCategory: vi.fn(),
-  clearSelection: vi.fn(),
+  clearSelection: vi.fn()
 }
 
 const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn() }
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
 vi.mock('@/stores/usePromptStore', () => ({
-  usePromptStore: vi.fn(() => mockPromptStoreState),
+  usePromptStore: vi.fn(() => mockPromptStoreState)
 }))
 
 vi.mock('@/stores/useCategoryStore', () => ({
-  useCategoryStore: vi.fn(() => mockCategoryStoreState),
+  useCategoryStore: vi.fn(() => mockCategoryStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/api/index.js', () => ({
-  siteConfigApi: { getPublicConfig: vi.fn().mockResolvedValue({}) },
+  siteConfigApi: { getPublicConfig: vi.fn().mockResolvedValue({}) }
 }))
 
 describe('SettingsView', () => {
@@ -63,7 +63,7 @@ describe('SettingsView', () => {
   })
 
   it('renders a refresh data button', () => {
-    const wrapper = mount(SettingsView)
+    mount(SettingsView)
   })
 
   it('calls fetchPrompts and fetchCategories when refresh button is clicked', async () => {

@@ -6,7 +6,7 @@ const MODES = ['light', 'dark', 'auto']
 export const useThemeStore = defineStore('theme', {
   state: () => ({
     mode: 'auto', // 'light' | 'dark' | 'auto'
-    _systemDark: false, // updated by matchMedia listener when mode is 'auto'
+    _systemDark: false // updated by matchMedia listener when mode is 'auto'
   }),
 
   getters: {
@@ -14,7 +14,7 @@ export const useThemeStore = defineStore('theme', {
       if (state.mode === 'dark') return true
       if (state.mode === 'light') return false
       return state._systemDark
-    },
+    }
   },
 
   actions: {
@@ -26,7 +26,9 @@ export const useThemeStore = defineStore('theme', {
         } else {
           this.mode = 'auto'
         }
-      } catch {}
+      } catch {
+        /* non-JSON or unavailable storage — fall through to defaults */
+      }
 
       // Initialize _systemDark from current system preference
       if (typeof window !== 'undefined' && window.matchMedia) {
@@ -40,7 +42,11 @@ export const useThemeStore = defineStore('theme', {
     setMode(mode) {
       if (MODES.includes(mode)) {
         this.mode = mode
-        try { localStorage.setItem(STORAGE_KEY, mode) } catch {}
+        try {
+          localStorage.setItem(STORAGE_KEY, mode)
+        } catch {
+          /* non-JSON or unavailable storage — fall through to defaults */
+        }
 
         // Re-setup listener in case mode changed (e.g., auto → dark → auto)
         this._setupMediaQueryListener()
@@ -57,11 +63,12 @@ export const useThemeStore = defineStore('theme', {
       // Clean up previous listener if re-initializing
       if (this._mediaQueryListener) {
         try {
-          window.matchMedia('(prefers-color-scheme: dark)').removeEventListener(
-            'change',
-            this._mediaQueryListener
-          )
-        } catch {}
+          window
+            .matchMedia('(prefers-color-scheme: dark)')
+            .removeEventListener('change', this._mediaQueryListener)
+        } catch {
+          /* non-JSON or unavailable storage — fall through to defaults */
+        }
       }
 
       if (typeof window !== 'undefined' && window.matchMedia) {
@@ -85,13 +92,14 @@ export const useThemeStore = defineStore('theme', {
     dispose() {
       if (this._mediaQueryListener) {
         try {
-          window.matchMedia('(prefers-color-scheme: dark)').removeEventListener(
-            'change',
-            this._mediaQueryListener
-          )
-        } catch {}
+          window
+            .matchMedia('(prefers-color-scheme: dark)')
+            .removeEventListener('change', this._mediaQueryListener)
+        } catch {
+          /* non-JSON or unavailable storage — fall through to defaults */
+        }
         this._mediaQueryListener = null
       }
-    },
-  },
+    }
+  }
 })

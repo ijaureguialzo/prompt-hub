@@ -10,7 +10,7 @@ export function createMockApi() {
     getById: vi.fn().mockResolvedValue({}),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
-    delete: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({})
   }
 }
 
@@ -22,13 +22,13 @@ export function createFullApiMock() {
     authApi: {
       register: vi.fn().mockResolvedValue({ token: 'fake-token', user: {} }),
       login: vi.fn().mockResolvedValue({ token: 'fake-token', user: {} }),
-      getCurrentUser: vi.fn().mockResolvedValue({ user: {} }),
+      getCurrentUser: vi.fn().mockResolvedValue({ user: {} })
     },
     usersApi: createMockApi(),
     siteConfigApi: {
       getPublicConfig: vi.fn().mockResolvedValue({ registrationEnabled: true }),
       getConfig: vi.fn().mockResolvedValue({ registrationEnabled: true }),
-      updateConfig: vi.fn().mockResolvedValue({}),
-    },
+      updateConfig: vi.fn().mockResolvedValue({})
+    }
   }
 }

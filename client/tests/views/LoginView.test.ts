@@ -11,7 +11,7 @@ const mockAuthStoreState = {
   register: vi.fn().mockResolvedValue({}),
   fetchCurrentUser: vi.fn().mockResolvedValue(null),
   updateUser: vi.fn().mockResolvedValue(undefined),
-  logout: vi.fn(),
+  logout: vi.fn()
 }
 
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
@@ -20,26 +20,29 @@ const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 const mockSiteConfigState = { registrationEnabled: true }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/api/index.js', () => ({
   siteConfigApi: {
     getPublicConfig: vi.fn().mockImplementation(async () => ({
-      registrationEnabled: mockSiteConfigState.registrationEnabled,
-    })),
-  },
+      registrationEnabled: mockSiteConfigState.registrationEnabled
+    }))
+  }
 }))
 
 // Stub router-link as an anchor element.
 const routerLinkStub = { template: '<a><slot /></a>' }
 
 function getWrapper() {
-  return mount(LoginView, { global: { components: { routerLink: routerLinkStub } }, attachTo: document.body })
+  return mount(LoginView, {
+    global: { components: { routerLink: routerLinkStub } },
+    attachTo: document.body
+  })
 }
 
 describe('LoginView', () => {

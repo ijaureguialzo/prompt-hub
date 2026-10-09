@@ -15,7 +15,7 @@ function logAudit(req, action, { targetId, targetEmail, details } = {}) {
   const entry = {
     actorId: req.user._id,
     actorEmail: req.user.email,
-    action,
+    action
   };
   if (targetId !== undefined && targetId !== null) entry.targetId = String(targetId);
   if (targetEmail) entry.targetEmail = targetEmail;

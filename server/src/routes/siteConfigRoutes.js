@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
-const { getOrCreateSiteConfig, getConfig, updateConfig } = require('../controllers/siteConfigController');
+const {
+  getOrCreateSiteConfig,
+  getConfig,
+  updateConfig
+} = require('../controllers/siteConfigController');
 
 // Public route: return registration status (no auth required).
 // Atomic upsert — a plain GET must never fail on the cold-start race

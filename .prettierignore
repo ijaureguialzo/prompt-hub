@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+package-lock.json
+client/dist
+server/coverage
+**/*.vue

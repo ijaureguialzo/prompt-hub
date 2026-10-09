@@ -15,9 +15,7 @@ describe('Response compression', () => {
   });
 
   it('compresses JSON responses when the client accepts gzip', async () => {
-    const res = await request(app)
-      .get('/api/health')
-      .set('Accept-Encoding', 'gzip');
+    const res = await request(app).get('/api/health').set('Accept-Encoding', 'gzip');
 
     expect(res.status).toBe(200);
     // The wire payload is gzip-encoded... (superagent decodes it back for us)

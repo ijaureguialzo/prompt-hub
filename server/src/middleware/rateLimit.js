@@ -12,7 +12,7 @@ function createLimiter({ windowMs, limit, message }) {
     standardHeaders: 'draft-8', // RateLimit-* headers
     legacyHeaders: false, // disable the old X-RateLimit-* headers
     skip: skipInTests,
-    message: { message }, // JSON response on 429
+    message: { message } // JSON response on 429
   });
 }
 
@@ -20,19 +20,19 @@ function createLimiter({ windowMs, limit, message }) {
 exports.authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: Number(process.env.RATE_LIMIT_AUTH) || 10,
-  message: 'Too many login attempts. Please try again in 15 minutes.',
+  message: 'Too many login attempts. Please try again in 15 minutes.'
 });
 
 // Anti-spam for the public registration endpoint (per client IP).
 exports.registerLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: Number(process.env.RATE_LIMIT_REGISTER) || 5,
-  message: 'Too many signups. Please try again later.',
+  message: 'Too many signups. Please try again later.'
 });
 
 // Loose global API limiter (general DoS protection, per client IP).
 exports.apiLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: Number(process.env.RATE_LIMIT_API) || 300,
-  message: 'Too many requests. Please slow down.',
+  message: 'Too many requests. Please slow down.'
 });

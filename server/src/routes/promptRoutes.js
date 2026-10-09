@@ -14,7 +14,15 @@ router.post('/', promptController.createPrompt);
 
 // Write routes require ownership (owner or admin), enforced BEFORE the
 // controller writes anything.
-router.put('/:id', requireOwnership('Prompt', 'id', 'You can only modify your own prompts'), promptController.updatePrompt);
-router.delete('/:id', requireOwnership('Prompt', 'id', 'You can only delete your own prompts'), promptController.deletePrompt);
+router.put(
+  '/:id',
+  requireOwnership('Prompt', 'id', 'You can only modify your own prompts'),
+  promptController.updatePrompt
+);
+router.delete(
+  '/:id',
+  requireOwnership('Prompt', 'id', 'You can only delete your own prompts'),
+  promptController.deletePrompt
+);
 
 module.exports = router;

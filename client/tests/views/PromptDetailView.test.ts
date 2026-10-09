@@ -13,7 +13,7 @@ const mockAuthStoreState = {
   updateUser: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn(),
   isAuthenticated: true,
-  isOwner: vi.fn((id) => id === 'user-1'),
+  isOwner: vi.fn((id) => id === 'user-1')
 }
 
 const mockPromptStoreState = {
@@ -21,30 +21,39 @@ const mockPromptStoreState = {
   currentPrompt: null,
   loading: false,
   fetchPrompts: vi.fn().mockResolvedValue([]),
-  fetchPrompt: vi.fn().mockResolvedValue({ _id: 'prompt-1', title: 'Test Prompt', content: 'This is the prompt content.', ownerId: 'user-1', tags: ['tag1'], categoryId: null, createdAt: '2024-01-01T00:00:00.000Z', updatedAt: '2024-01-01T00:00:00.000Z' }),
+  fetchPrompt: vi.fn().mockResolvedValue({
+    _id: 'prompt-1',
+    title: 'Test Prompt',
+    content: 'This is the prompt content.',
+    ownerId: 'user-1',
+    tags: ['tag1'],
+    categoryId: null,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
+  }),
   createPrompt: vi.fn().mockResolvedValue({}),
   updatePrompt: vi.fn().mockResolvedValue({}),
   deletePrompt: vi.fn().mockResolvedValue(undefined),
-  clearCurrent: vi.fn(),
+  clearCurrent: vi.fn()
 }
 
 const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn() }
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/usePromptStore', () => ({
-  usePromptStore: vi.fn(() => mockPromptStoreState),
+  usePromptStore: vi.fn(() => mockPromptStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 // Stub router-link and child components.
@@ -55,9 +64,13 @@ function getWrapper() {
   return mount(PromptDetailView, {
     global: {
       components: { routerLink: routerLinkStub },
-      stubs: { DeleteConfirmationModal: deleteModalStub, CreatePromptModal: '<div />', UsePromptModal: '<div />' },
+      stubs: {
+        DeleteConfirmationModal: deleteModalStub,
+        CreatePromptModal: '<div />',
+        UsePromptModal: '<div />'
+      }
     },
-    attachTo: document.body,
+    attachTo: document.body
   })
 }
 
@@ -83,12 +96,12 @@ describe('PromptDetailView', () => {
 
   it('renders prompt title when found', async () => {
     mockPromptStoreState.loading = false
-    const wrapper = await setup()
+    await setup()
   })
 
   it('renders prompt content in a pre tag', async () => {
     mockPromptStoreState.loading = false
-    const wrapper = await setup()
+    await setup()
   })
 
   it('renders an uncategorized badge when no categoryId', async () => {

@@ -23,7 +23,12 @@ describe('i18n locale parity', () => {
   it('has no empty strings', () => {
     for (const [name, locale] of Object.entries({ en, es, eu })) {
       for (const k of keys(locale as Record<string, unknown>)) {
-        const value = k.split('.').reduce((acc, part) => (acc as Record<string, unknown>)?.[part], locale as Record<string, unknown>)
+        const value = k
+          .split('.')
+          .reduce(
+            (acc, part) => (acc as Record<string, unknown>)?.[part],
+            locale as Record<string, unknown>
+          )
         expect(value, `${name} -> ${k} is empty`).not.toBe('')
       }
     }

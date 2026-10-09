@@ -3,15 +3,24 @@ import { apiRequest, registerUnauthorizedHandler } from '@/api/index.js'
 
 // Tests the REAL api client (not mocked) with a mocked global fetch.
 
-function mockFetch(response: { ok: boolean; status: number; body?: string; json?: unknown; networkError?: boolean }) {
-  vi.stubGlobal('fetch', vi.fn(async () => {
-    if (response.networkError) throw new Error('fetch failed')
-    return {
-      ok: response.ok,
-      status: response.status,
-      text: async () => response.body ?? JSON.stringify(response.json ?? {}),
-    }
-  }))
+function mockFetch(response: {
+  ok: boolean
+  status: number
+  body?: string
+  json?: unknown
+  networkError?: boolean
+}) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => {
+      if (response.networkError) throw new Error('fetch failed')
+      return {
+        ok: response.ok,
+        status: response.status,
+        text: async () => response.body ?? JSON.stringify(response.json ?? {})
+      }
+    })
+  )
 }
 
 describe('api client', () => {
@@ -34,7 +43,9 @@ describe('api client', () => {
   it('sends the Bearer token when present', async () => {
     window.localStorage.setItem('token', 'my-token')
     const fetchMock = vi.fn(async () => ({
-      ok: true, status: 200, text: async () => 'null',
+      ok: true,
+      status: 200,
+      text: async () => 'null'
     }))
     vi.stubGlobal('fetch', fetchMock)
 

@@ -73,9 +73,7 @@ describe('Integration Smoke - MongoDB + Auth', () => {
       .send({ email: 'admin@test.com', password: 'password123' });
 
     const token = loginRes.body.token;
-    const meRes = await request(app)
-      .get('/api/auth/me')
-      .set('Authorization', `Bearer ${token}`);
+    const meRes = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
 
     expect(meRes.status).toBe(200);
     expect(meRes.body.user.email).toBe('admin@test.com');

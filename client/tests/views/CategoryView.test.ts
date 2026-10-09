@@ -13,7 +13,7 @@ const mockAuthStoreState = {
   updateUser: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn(),
   isAuthenticated: true,
-  isOwner: vi.fn((id) => id === 'user-1'),
+  isOwner: vi.fn((id) => id === 'user-1')
 }
 
 const mockPromptStoreState = {
@@ -25,12 +25,18 @@ const mockPromptStoreState = {
   createPrompt: vi.fn().mockResolvedValue({}),
   updatePrompt: vi.fn().mockResolvedValue({}),
   deletePrompt: vi.fn().mockResolvedValue(undefined),
-  clearCurrent: vi.fn(),
+  clearCurrent: vi.fn()
 }
 
 const mockCategoryStoreState = {
   categories: [],
-  currentCategory: { _id: 'cat-1', name: 'Test Category', description: 'A test category.', ownerId: 'user-1', createdAt: '2024-01-01T00:00:00.000Z' },
+  currentCategory: {
+    _id: 'cat-1',
+    name: 'Test Category',
+    description: 'A test category.',
+    ownerId: 'user-1',
+    createdAt: '2024-01-01T00:00:00.000Z'
+  },
   selectedCategoryId: '',
   loading: false,
   fetchCategories: vi.fn().mockResolvedValue([]),
@@ -39,30 +45,30 @@ const mockCategoryStoreState = {
   updateCategory: vi.fn().mockResolvedValue({}),
   deleteCategory: vi.fn().mockResolvedValue(undefined),
   selectCategory: vi.fn(),
-  clearSelection: vi.fn(),
+  clearSelection: vi.fn()
 }
 
 const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn() }
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/usePromptStore', () => ({
-  usePromptStore: vi.fn(() => mockPromptStoreState),
+  usePromptStore: vi.fn(() => mockPromptStoreState)
 }))
 
 vi.mock('@/stores/useCategoryStore', () => ({
-  useCategoryStore: vi.fn(() => mockCategoryStoreState),
+  useCategoryStore: vi.fn(() => mockCategoryStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 // Stub router-link and child components.
@@ -73,9 +79,9 @@ function getWrapper() {
   return mount(CategoryView, {
     global: {
       components: { routerLink: routerLinkStub },
-      stubs: { DeleteConfirmationModal: deleteModalStub, CreateCategoryModal: '<div />' },
+      stubs: { DeleteConfirmationModal: deleteModalStub, CreateCategoryModal: '<div />' }
     },
-    attachTo: document.body,
+    attachTo: document.body
   })
 }
 
@@ -94,7 +100,7 @@ describe('CategoryView', () => {
 
   it('renders category name when found', async () => {
     mockCategoryStoreState.loading = false
-    const wrapper = await setup()
+    await setup()
   })
 
   it('renders category description when present', async () => {
@@ -104,7 +110,7 @@ describe('CategoryView', () => {
   it('shows "not found" when category does not exist', async () => {
     mockCategoryStoreState.loading = false
     mockCategoryStoreState.currentCategory = null
-    const wrapper = await setup()
+    await setup()
   })
 
   it('renders edit button when authenticated and is own category', async () => {

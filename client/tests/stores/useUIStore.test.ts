@@ -66,13 +66,13 @@ describe('useUIStore', () => {
 
   // --- setShowCreatePromptModal() ---
 
-  it("setShowCreatePromptModal(true) sets the flag to true", () => {
+  it('setShowCreatePromptModal(true) sets the flag to true', () => {
     const store = getUIStore()
     store.setShowCreatePromptModal(true)
     expect(store.showCreatePromptModal).toBe(true)
   })
 
-  it("setShowCreatePromptModal(false) sets the flag to false", () => {
+  it('setShowCreatePromptModal(false) sets the flag to false', () => {
     const store = getUIStore()
     store.setShowCreatePromptModal(false)
     expect(store.showCreatePromptModal).toBe(false)
@@ -80,13 +80,13 @@ describe('useUIStore', () => {
 
   // --- setShowCreateCategoryModal() ---
 
-  it("setShowCreateCategoryModal(true) sets the flag to true", () => {
+  it('setShowCreateCategoryModal(true) sets the flag to true', () => {
     const store = getUIStore()
     store.setShowCreateCategoryModal(true)
     expect(store.showCreateCategoryModal).toBe(true)
   })
 
-  it("setShowCreateCategoryModal(false) sets the flag to false", () => {
+  it('setShowCreateCategoryModal(false) sets the flag to false', () => {
     const store = getUIStore()
     store.setShowCreateCategoryModal(false)
     expect(store.showCreateCategoryModal).toBe(false)

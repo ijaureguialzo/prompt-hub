@@ -43,18 +43,24 @@ exports.updateConfig = async (req, res) => {
     // Site-wide switches affect every user — audit them. The previous
     // effective value defaults to the schema default (true) when the
     // document didn't exist yet.
-    if (registrationEnabled !== undefined && registrationEnabled !== (existing ? existing.registrationEnabled : true)) {
+    if (
+      registrationEnabled !== undefined &&
+      registrationEnabled !== (existing ? existing.registrationEnabled : true)
+    ) {
       logAudit(req, 'siteconfig.update', {
         details: {
-          registrationEnabled: { from: existing ? existing.registrationEnabled : true, to: registrationEnabled },
-        },
+          registrationEnabled: {
+            from: existing ? existing.registrationEnabled : true,
+            to: registrationEnabled
+          }
+        }
       });
     }
 
     res.status(200).json(config);
   } catch (error) {
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(e => e.message);
+      const messages = Object.values(error.errors).map((e) => e.message);
       return res.status(400).json({ message: messages.join(' ') });
     }
     console.error('[site-config] error updating config:', error);

@@ -6,11 +6,9 @@ const { getJwtSecret, ConfigError } = require('../config');
 function generateToken(user) {
   // Never sign with a default/weak secret: the server refuses to start
   // without a valid JWT_SECRET (see src/config.js and server.js).
-  return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
-    getJwtSecret(),
-    { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-  );
+  return jwt.sign({ id: user._id, email: user.email, role: user.role }, getJwtSecret(), {
+    expiresIn: process.env.JWT_EXPIRES_IN || '1h'
+  });
 }
 
 // Shared error handling for register/login: developer-defined and mapped
@@ -26,7 +24,7 @@ function handleAuthError(res, error) {
   }
   // Developer-defined schema messages (e.g. email format) — safe to return
   if (error.name === 'ValidationError') {
-    const messages = Object.values(error.errors).map(e => e.message);
+    const messages = Object.values(error.errors).map((e) => e.message);
     return res.status(400).json({ message: messages.join(' ') });
   }
   console.error('[auth] unexpected error:', error);
@@ -47,7 +45,9 @@ exports.register = async (req, res) => {
     const isEnabled = config ? config.registrationEnabled : true;
 
     if (!isEnabled) {
-      return res.status(403).json({ message: 'Registration is currently disabled by the administrator.' });
+      return res
+        .status(403)
+        .json({ message: 'Registration is currently disabled by the administrator.' });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase().trim() });

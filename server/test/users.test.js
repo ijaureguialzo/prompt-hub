@@ -43,9 +43,7 @@ describe('Users (Admin CRUD)', () => {
 
   describe('GET /api/users', () => {
     it('admin sees all users without passwords', async () => {
-      const res = await request(app)
-        .get('/api/users')
-        .set('Authorization', `Bearer ${adminToken}`);
+      const res = await request(app).get('/api/users').set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -262,8 +260,7 @@ describe('Users (Admin CRUD)', () => {
     });
 
     it('returns 401 without token', async () => {
-      const res = await request(app)
-        .delete('/api/users/' + regularUserId);
+      const res = await request(app).delete('/api/users/' + regularUserId);
 
       expect(res.status).toBe(401);
     });

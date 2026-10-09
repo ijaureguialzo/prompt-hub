@@ -15,7 +15,11 @@ const mongoose = require('mongoose');
  * NOTE: the check-then-write sequence is safe here because `ownerId` is
  * set at creation and never changed by any API.
  */
-function requireOwnership(modelName, idParam = 'id', forbiddenMessage = 'You can only modify your own resources') {
+function requireOwnership(
+  modelName,
+  idParam = 'id',
+  forbiddenMessage = 'You can only modify your own resources'
+) {
   return async (req, res, next) => {
     try {
       const Model = mongoose.model(modelName);

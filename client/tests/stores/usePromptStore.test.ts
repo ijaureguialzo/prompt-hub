@@ -5,11 +5,13 @@ import { usePromptStore } from '@/stores/usePromptStore'
 vi.mock('@/api/index.js', () => ({
   promptsApi: {
     getAll: vi.fn().mockResolvedValue([]),
-    getById: vi.fn().mockResolvedValue({ _id: 'prompt-1', title: 'Test Prompt', content: 'Content here' }),
+    getById: vi
+      .fn()
+      .mockResolvedValue({ _id: 'prompt-1', title: 'Test Prompt', content: 'Content here' }),
     create: vi.fn().mockResolvedValue({ _id: 'prompt-new', title: 'New Prompt' }),
     update: vi.fn().mockResolvedValue({ _id: 'prompt-1', title: 'Updated Prompt' }),
-    delete: vi.fn().mockResolvedValue({}),
-  },
+    delete: vi.fn().mockResolvedValue({})
+  }
 }))
 
 function createStoresAndSetActive() {
@@ -32,7 +34,10 @@ describe('usePromptStore', () => {
 
   it('fetchPrompts() stores results in state.prompts', async () => {
     const store = getPromptStore()
-    const mockPrompts = [{ _id: 'p1', title: 'P1' }, { _id: 'p2', title: 'P2' }]
+    const mockPrompts = [
+      { _id: 'p1', title: 'P1' },
+      { _id: 'p2', title: 'P2' }
+    ]
     const { promptsApi } = await import('@/api/index.js')
     ;(promptsApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockPrompts)
     await store.fetchPrompts()

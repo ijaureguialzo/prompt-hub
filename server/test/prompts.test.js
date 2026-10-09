@@ -3,9 +3,7 @@ const request = require('supertest');
 describe('Prompts (CRUD + Ownership)', () => {
   let app;
   let adminToken;
-  let adminUserId;
   let regularToken;
-  let regularUserId;
   let category1Id;
   let category2Id;
 
@@ -30,7 +28,6 @@ describe('Prompts (CRUD + Ownership)', () => {
       .send({ name: 'Admin', email: 'admin@test.com', password: 'password123' });
 
     adminToken = adminRes.body.token;
-    adminUserId = adminRes.body.user._id;
 
     // Create regular user (second user)
     const regularRes = await request(app)
@@ -38,7 +35,6 @@ describe('Prompts (CRUD + Ownership)', () => {
       .send({ name: 'Regular', email: 'regular@test.com', password: 'password456' });
 
     regularToken = regularRes.body.token;
-    regularUserId = regularRes.body.user._id;
 
     // Create two categories (one owned by admin, one by regular user)
     const cat1Res = await request(app)
@@ -91,7 +87,7 @@ describe('Prompts (CRUD + Ownership)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ title: 'First', content: 'Content A' });
 
-      await new Promise(r => setTimeout(r, 50)); // ensure different timestamps
+      await new Promise((r) => setTimeout(r, 50)); // ensure different timestamps
 
       await request(app)
         .post('/api/prompts')
@@ -449,8 +445,7 @@ describe('Prompts (CRUD + Ownership)', () => {
     });
 
     it('returns 401 without token', async () => {
-      const res = await request(app)
-        .delete('/api/prompts/507f1f77bcf86cd799439011');
+      const res = await request(app).delete('/api/prompts/507f1f77bcf86cd799439011');
 
       expect(res.status).toBe(401);
     });
@@ -472,7 +467,11 @@ describe('Prompts (CRUD + Ownership)', () => {
       const res = await request(app)
         .post('/api/prompts')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Taggy', content: 'c', tags: Array.from({ length: 21 }, (_, i) => `t${i}`) });
+        .send({
+          title: 'Taggy',
+          content: 'c',
+          tags: Array.from({ length: 21 }, (_, i) => `t${i}`)
+        });
 
       expect(res.status).toBe(400);
     });
@@ -523,11 +522,20 @@ describe('Prompts (CRUD + Ownership)', () => {
 
   describe('GET /api/prompts pagination', () => {
     it('supports limit and page, defaults return all (under cap)', async () => {
-      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P1', content: 'c' });
-      await new Promise(r => setTimeout(r, 50));
-      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P2', content: 'c' });
-      await new Promise(r => setTimeout(r, 50));
-      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P3', content: 'c' });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'P1', content: 'c' });
+      await new Promise((r) => setTimeout(r, 50));
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'P2', content: 'c' });
+      await new Promise((r) => setTimeout(r, 50));
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'P3', content: 'c' });
 
       const page1 = await request(app)
         .get('/api/prompts?limit=2&page=1')
@@ -560,7 +568,8 @@ describe('Prompts (CRUD + Ownership)', () => {
   describe('Prompt schema indexes', () => {
     it('declares indexes on createdAt, categoryId and ownerId', () => {
       const Prompt = require('../src/models/Prompt');
-      const indexedFields = Prompt.schema.indexes()
+      const indexedFields = Prompt.schema
+        .indexes()
         .map(([spec]) => spec)
         .flatMap(Object.keys);
 

@@ -3,10 +3,10 @@
 // Security: developer-written messages (Mongoose validators, mapped
 // duplicate-key/cast errors) are safe to return. Raw error messages from
 // drivers/OS are logged server-side and NOT exposed in production.
-exports.errorHandler = (err, req, res, next) => {
+exports.errorHandler = (err, req, res, _next) => {
   // Mongoose validation error (developer-defined messages — safe to expose)
   if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map(e => e.message);
+    const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({ message: messages.join(', ') });
   }
 

@@ -8,7 +8,10 @@ const DEFAULT_PAGE_SIZE = 500;
 // GET /api/prompts - Retrieve prompts (authenticated), newest first
 exports.getAllPrompts = async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE));
+  const limit = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE)
+  );
 
   const prompts = await Prompt.find()
     .populate('categoryId', 'name')
@@ -84,11 +87,10 @@ exports.updatePrompt = async (req, res) => {
     }
   }
 
-  const prompt = await Prompt.findByIdAndUpdate(
-    req.params.id,
-    updateData,
-    { new: true, runValidators: true }
-  );
+  const prompt = await Prompt.findByIdAndUpdate(req.params.id, updateData, {
+    new: true,
+    runValidators: true
+  });
 
   if (!prompt) {
     return res.status(404).json({ message: 'Prompt not found' });

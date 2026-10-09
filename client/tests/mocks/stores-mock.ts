@@ -9,14 +9,24 @@ export function createMockAuthStore(overrides: Record<string, unknown> = {}) {
     isAuthenticated: true,
     isAdmin: true,
     isOwner: vi.fn(() => false),
-    login: vi.fn().mockResolvedValue({ token: 'fake-jwt-token', user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const } }),
-    register: vi.fn().mockResolvedValue({ token: 'fake-jwt-token', user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const } }),
-    fetchCurrentUser: vi.fn().mockResolvedValue({ user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const } }),
+    login: vi.fn().mockResolvedValue({
+      token: 'fake-jwt-token',
+      user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const }
+    }),
+    register: vi.fn().mockResolvedValue({
+      token: 'fake-jwt-token',
+      user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const }
+    }),
+    fetchCurrentUser: vi.fn().mockResolvedValue({
+      user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const }
+    }),
     updateUser: vi.fn().mockResolvedValue(undefined),
-    updateMe: vi.fn().mockResolvedValue({ _id: 'user-1', email: 'test@example.com', role: 'admin' as const }),
+    updateMe: vi
+      .fn()
+      .mockResolvedValue({ _id: 'user-1', email: 'test@example.com', role: 'admin' as const }),
     logout: vi.fn(),
     init: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -32,7 +42,7 @@ export function createMockPromptStore(overrides: Record<string, unknown> = {}) {
     updatePrompt: vi.fn().mockResolvedValue({}),
     deletePrompt: vi.fn().mockResolvedValue(undefined),
     clearCurrent: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -51,7 +61,7 @@ export function createMockCategoryStore(overrides: Record<string, unknown> = {})
     deleteCategory: vi.fn().mockResolvedValue(undefined),
     selectCategory: vi.fn(),
     clearSelection: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -67,7 +77,7 @@ export function createMockUIStore(overrides: Record<string, unknown> = {}) {
     clearError: vi.fn(),
     setShowCreatePromptModal: vi.fn(),
     setShowCreateCategoryModal: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -80,7 +90,7 @@ export function createMockI18nStore(overrides: Record<string, unknown> = {}) {
     currentLocale: {},
     setLanguage: vi.fn(),
     init: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -94,6 +104,6 @@ export function createMockThemeStore(overrides: Record<string, unknown> = {}) {
     setMode: vi.fn(),
     toggleTheme: vi.fn(),
     dispose: vi.fn(),
-    ...overrides,
+    ...overrides
   }
 }

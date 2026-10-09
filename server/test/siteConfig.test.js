@@ -61,7 +61,7 @@ describe('Site Config (Public + Admin)', () => {
       // first-reads both tried to insert and one failed on the unique _id
       const [a, b] = await Promise.all([
         request(app).get('/api/site-config/public'),
-        request(app).get('/api/site-config/public'),
+        request(app).get('/api/site-config/public')
       ]);
 
       expect(a.status).toBe(200);
@@ -154,9 +154,7 @@ describe('Site Config (Public + Admin)', () => {
     });
 
     it('returns 401 without token', async () => {
-      const res = await request(app)
-        .put('/api/site-config')
-        .send({ registrationEnabled: false });
+      const res = await request(app).put('/api/site-config').send({ registrationEnabled: false });
 
       expect(res.status).toBe(401);
     });

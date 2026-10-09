@@ -60,13 +60,16 @@ describe('Auth', () => {
           .send({ name: 'First A', email: 'a@test.com', password: 'password123' }),
         request(app)
           .post('/api/auth/register')
-          .send({ name: 'First B', email: 'b@test.com', password: 'password123' }),
+          .send({ name: 'First B', email: 'b@test.com', password: 'password123' })
       ]);
 
-      expect({ a: { status: resA.status, role: resA.body?.user?.role },
-             b: { status: resB.status, role: resB.body?.user?.role } })
-        .toEqual({ a: expect.objectContaining({ status: 201 }),
-                   b: expect.objectContaining({ status: 201 }) });
+      expect({
+        a: { status: resA.status, role: resA.body?.user?.role },
+        b: { status: resB.status, role: resB.body?.user?.role }
+      }).toEqual({
+        a: expect.objectContaining({ status: 201 }),
+        b: expect.objectContaining({ status: 201 })
+      });
 
       const roles = [resA.body.user.role, resB.body.user.role].sort();
       expect(roles).toEqual(['admin', 'user']);
@@ -218,17 +221,13 @@ describe('Auth', () => {
     });
 
     it('returns 400 when email is missing', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ password: 'password123' });
+      const res = await request(app).post('/api/auth/login').send({ password: 'password123' });
 
       expect(res.status).toBe(400);
     });
 
     it('returns 400 when password is missing', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'test@test.com' });
+      const res = await request(app).post('/api/auth/login').send({ email: 'test@test.com' });
 
       expect(res.status).toBe(400);
     });
@@ -273,9 +272,7 @@ describe('Auth', () => {
         .send({ name: 'Me', email: 'me@test.com', password: 'password123' });
 
       const token = registerRes.body.token;
-      const res = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.user.name).toBe('Me');
@@ -338,9 +335,7 @@ describe('Auth', () => {
         .send({ isActive: false });
 
       // Try to access /me with the old (now invalid) token
-      const res = await request(app)
-        .get('/api/auth/me')
-        .set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(401);
     });

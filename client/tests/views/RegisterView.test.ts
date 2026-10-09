@@ -11,7 +11,7 @@ const mockAuthStoreState = {
   register: vi.fn().mockResolvedValue({}),
   fetchCurrentUser: vi.fn().mockResolvedValue(null),
   updateUser: vi.fn().mockResolvedValue(undefined),
-  logout: vi.fn(),
+  logout: vi.fn()
 }
 
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
@@ -20,26 +20,29 @@ const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 const mockSiteConfigState = { registrationEnabled: true }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/api/index.js', () => ({
   siteConfigApi: {
     getPublicConfig: vi.fn().mockImplementation(async () => ({
-      registrationEnabled: mockSiteConfigState.registrationEnabled,
-    })),
-  },
+      registrationEnabled: mockSiteConfigState.registrationEnabled
+    }))
+  }
 }))
 
 // Stub router-link as an anchor element.
 const routerLinkStub = { template: '<a><slot /></a>' }
 
 function getWrapper() {
-  return mount(RegisterView, { global: { components: { routerLink: routerLinkStub } }, attachTo: document.body })
+  return mount(RegisterView, {
+    global: { components: { routerLink: routerLinkStub } },
+    attachTo: document.body
+  })
 }
 
 describe('RegisterView', () => {
@@ -80,7 +83,7 @@ describe('RegisterView', () => {
     // Fill password and confirmPassword with different values.
     const inputs = wrapper.findAll('input')
     await inputs[2].setValue('password123') // password
-    await inputs[3].setValue('different')  // confirmPassword
+    await inputs[3].setValue('different') // confirmPassword
     await form.trigger('submit')
     expect(wrapper.text()).toContain('auth.passwordMismatch')
   })
@@ -90,12 +93,16 @@ describe('RegisterView', () => {
     const wrapper = await setup()
     const form = wrapper.find('form')
     const inputs = wrapper.findAll('input')
-    await inputs[0].setValue('Test User')   // name
+    await inputs[0].setValue('Test User') // name
     await inputs[1].setValue('test@example.com') // email
-    await inputs[2].setValue('password123')  // password
-    await inputs[3].setValue('password123')  // confirmPassword
+    await inputs[2].setValue('password123') // password
+    await inputs[3].setValue('password123') // confirmPassword
     await form.trigger('submit')
-    expect(mockAuthStoreState.register).toHaveBeenCalledWith('Test User', 'test@example.com', 'password123')
+    expect(mockAuthStoreState.register).toHaveBeenCalledWith(
+      'Test User',
+      'test@example.com',
+      'password123'
+    )
   })
 
   it('navigates to / on successful registration', async () => {
@@ -127,8 +134,8 @@ describe('RegisterView', () => {
     mockSiteConfigState.registrationEnabled = true
     const wrapper = await setup()
     const inputs = wrapper.findAll('input')
-    await inputs[2].setValue('password123')  // password
-    await inputs[3].setValue('different')    // confirmPassword
+    await inputs[2].setValue('password123') // password
+    await inputs[3].setValue('different') // confirmPassword
     const btn = wrapper.find('button[type="submit"]')
     expect(btn.attributes('disabled')).toBeDefined()
   })

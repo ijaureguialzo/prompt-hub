@@ -5,11 +5,13 @@ import { useCategoryStore } from '@/stores/useCategoryStore'
 vi.mock('@/api/index.js', () => ({
   categoriesApi: {
     getAll: vi.fn().mockResolvedValue([]),
-    getById: vi.fn().mockResolvedValue({ _id: 'cat-1', name: 'Test Category', description: 'A test category' }),
+    getById: vi
+      .fn()
+      .mockResolvedValue({ _id: 'cat-1', name: 'Test Category', description: 'A test category' }),
     create: vi.fn().mockResolvedValue({ _id: 'cat-new', name: 'New Category' }),
     update: vi.fn().mockResolvedValue({ _id: 'cat-1', name: 'Updated Category' }),
-    delete: vi.fn().mockResolvedValue({}),
-  },
+    delete: vi.fn().mockResolvedValue({})
+  }
 }))
 
 function createStoresAndSetActive() {
@@ -34,7 +36,7 @@ describe('useCategoryStore', () => {
     const store = getCategoryStore()
     const mockCategories = [
       { _id: 'c1', name: 'Cat 1' },
-      { _id: 'c2', name: 'Cat 2' },
+      { _id: 'c2', name: 'Cat 2' }
     ]
     const { categoriesApi } = await import('@/api/index.js')
     ;(categoriesApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockCategories)
@@ -105,7 +107,10 @@ describe('useCategoryStore', () => {
 
   it('deleteCategory() removes the category from state', async () => {
     const store = getCategoryStore()
-    store.categories = [{ _id: 'cat-1', name: 'Cat 1' }, { _id: 'cat-2', name: 'Cat 2' }]
+    store.categories = [
+      { _id: 'cat-1', name: 'Cat 1' },
+      { _id: 'cat-2', name: 'Cat 2' }
+    ]
     await store.deleteCategory('cat-1')
     expect(store.categories).toHaveLength(1)
     expect(store.categories[0]._id).toBe('cat-2')
@@ -151,7 +156,10 @@ describe('useCategoryStore', () => {
 
   it('selectedCategory returns the category matching selectedCategoryId', () => {
     const store = getCategoryStore()
-    store.categories = [{ _id: 'cat-1', name: 'Cat 1' }, { _id: 'cat-2', name: 'Cat 2' }]
+    store.categories = [
+      { _id: 'cat-1', name: 'Cat 1' },
+      { _id: 'cat-2', name: 'Cat 2' }
+    ]
     store.selectCategory('cat-1')
     expect(store.selectedCategory?._id).toBe('cat-1')
   })

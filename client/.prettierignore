@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+package-lock.json
+# Vue SFCs: kept hand-formatted (the built-in Prettier Vue parser
+# mangles multi-statement template handlers); ESLint (eslint-plugin-vue)
+# still enforces correctness on them
+**/*.vue

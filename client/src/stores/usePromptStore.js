@@ -5,7 +5,7 @@ export const usePromptStore = defineStore('prompts', {
   state: () => ({
     prompts: [],
     currentPrompt: null,
-    loading: false,
+    loading: false
   }),
 
   actions: {
@@ -14,7 +14,7 @@ export const usePromptStore = defineStore('prompts', {
       try {
         this.prompts = await promptsApi.getAll()
       } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message, { cause: error })
       } finally {
         this.loading = false
       }
@@ -26,7 +26,7 @@ export const usePromptStore = defineStore('prompts', {
         this.currentPrompt = await promptsApi.getById(id)
         return this.currentPrompt
       } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message, { cause: error })
       } finally {
         this.loading = false
       }
@@ -40,7 +40,7 @@ export const usePromptStore = defineStore('prompts', {
 
     async updatePrompt(id, promptData) {
       const prompt = await promptsApi.update(id, promptData)
-      const index = this.prompts.findIndex(p => p._id === id)
+      const index = this.prompts.findIndex((p) => p._id === id)
       if (index !== -1) {
         this.prompts[index] = prompt
       }
@@ -52,7 +52,7 @@ export const usePromptStore = defineStore('prompts', {
 
     async deletePrompt(id) {
       await promptsApi.delete(id)
-      this.prompts = this.prompts.filter(p => p._id !== id)
+      this.prompts = this.prompts.filter((p) => p._id !== id)
       if (this.currentPrompt?._id === id) {
         this.currentPrompt = null
       }
@@ -60,6 +60,6 @@ export const usePromptStore = defineStore('prompts', {
 
     clearCurrent() {
       this.currentPrompt = null
-    },
-  },
+    }
+  }
 })

@@ -27,7 +27,9 @@ exports.createCategory = async (req, res) => {
 
   const trimmedName = name.trim();
   // Case-insensitive check: use $regex with i flag since MongoDB unique index is case-sensitive
-  const existing = await Category.findOne({ name: new RegExp('^' + trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') });
+  const existing = await Category.findOne({
+    name: new RegExp('^' + trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+  });
   if (existing) {
     return res.status(400).json({ message: 'Category name must be unique' });
   }
@@ -52,7 +54,9 @@ exports.updateCategory = async (req, res) => {
 
   const trimmedName = name.trim();
   // Case-insensitive check: use $regex with i flag since MongoDB unique index is case-sensitive
-  const existing = await Category.findOne({ name: new RegExp('^' + trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') });
+  const existing = await Category.findOne({
+    name: new RegExp('^' + trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+  });
   if (existing && existing._id.toString() !== req.params.id) {
     return res.status(400).json({ message: 'Category name must be unique' });
   }
@@ -90,7 +94,7 @@ exports.deleteCategory = async (req, res) => {
   // owner only destroys prompts THEY own; prompts belonging to other users
   // are unlinked (categoryId -> null), never destroyed — otherwise a
   // category owner could delete other people's content.
-  let destroyed = 0;
+  let destroyed;
   let unlinked = 0;
   if (req.user.role === 'admin') {
     const result = await Prompt.deleteMany({ categoryId: req.params.id });
@@ -107,7 +111,7 @@ exports.deleteCategory = async (req, res) => {
 
   logAudit(req, 'category.delete', {
     targetId: category._id,
-    details: { name: category.name, destroyedPrompts: destroyed, unlinkedPrompts: unlinked },
+    details: { name: category.name, destroyedPrompts: destroyed, unlinkedPrompts: unlinked }
   });
 
   res.status(200).json({ message: 'Category and associated prompts deleted successfully' });

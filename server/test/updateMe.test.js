@@ -2,10 +2,7 @@ const request = require('supertest');
 
 describe('PATCH /api/auth/me (self-service profile updates)', () => {
   let app;
-  let adminToken;
-  let adminUserId;
   let regularToken;
-  let regularUserId;
 
   beforeAll(async () => {
     const utils = require('./utils');
@@ -22,25 +19,21 @@ describe('PATCH /api/auth/me (self-service profile updates)', () => {
     const utils = require('./utils');
     await utils.clearDatabase();
 
-    const adminRes = await request(app)
+    // The first registration becomes the admin (the tests below need an
+    // active admin to exist); only the regular user's token is used.
+    await request(app)
       .post('/api/auth/register')
       .send({ name: 'Admin', email: 'admin@test.com', password: 'password123' });
-
-    adminToken = adminRes.body.token;
-    adminUserId = adminRes.body.user._id;
 
     const regularRes = await request(app)
       .post('/api/auth/register')
       .send({ name: 'Regular', email: 'regular@test.com', password: 'password123' });
 
     regularToken = regularRes.body.token;
-    regularUserId = regularRes.body.user._id;
   });
 
   it('returns 401 without a token', async () => {
-    const res = await request(app)
-      .patch('/api/auth/me')
-      .send({ name: 'X' });
+    const res = await request(app).patch('/api/auth/me').send({ name: 'X' });
 
     expect(res.status).toBe(401);
   });

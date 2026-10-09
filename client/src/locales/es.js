@@ -4,7 +4,7 @@ export default {
     promptsLink: 'Prompts',
     settingsLink: 'Ajustes',
     adminLink: 'Administración',
-    logout: 'Cerrar sesión',
+    logout: 'Cerrar sesión'
   },
   categoryList: {
     heading: 'Categorías',
@@ -13,16 +13,16 @@ export default {
     uncategorized: 'Sin categoría',
     edit: 'Editar',
     delete: 'Eliminar',
-    noCategories: 'Aún no hay categorías.',
+    noCategories: 'Aún no hay categorías.'
   },
   searchBar: {
-    placeholder: 'Buscar prompts por título, contenido o etiquetas...',
+    placeholder: 'Buscar prompts por título, contenido o etiquetas...'
   },
   promptCard: {
     copyTitle: 'Copiar prompt',
     editTitle: 'Editar',
     copiedToast: 'Prompt copiado al portapapeles',
-    failedCopyToast: 'Error al copiar el prompt',
+    failedCopyToast: 'Error al copiar el prompt'
   },
   createPromptModal: {
     newTitle: 'Nuevo prompt',
@@ -39,7 +39,7 @@ export default {
     cancel: 'Cancelar',
     creating: 'Creando...',
     create: 'Crear prompt',
-    update: 'Actualizar',
+    update: 'Actualizar'
   },
   createCategoryModal: {
     newTitle: 'Nueva categoría',
@@ -51,7 +51,7 @@ export default {
     cancel: 'Cancelar',
     saving: 'Guardando...',
     create: 'Crear categoría',
-    update: 'Actualizar',
+    update: 'Actualizar'
   },
   promptList: {
     heading: 'Prompts',
@@ -60,7 +60,7 @@ export default {
     loading: 'Cargando prompts...',
     noPrompts: 'No se encontraron prompts.',
     filteredByTags: 'Filtrado por etiquetas',
-    clearAllTags: 'Limpiar todas las etiquetas',
+    clearAllTags: 'Limpiar todas las etiquetas'
   },
   promptDetail: {
     backLink: 'Volver a prompts',
@@ -71,14 +71,14 @@ export default {
     useTitle: 'Usar prompt',
     createdLabel: 'Creado:',
     updatedLabel: 'Actualizado:',
-    notFound: 'Prompt no encontrado.',
+    notFound: 'Prompt no encontrado.'
   },
   categoryView: {
     backLink: 'Volver a prompts',
     editCategoryBtn: 'Editar categoría',
     deleteBtn: 'Eliminar',
     sectionHeading: 'Prompts en esta categoría',
-    noPromptsInCat: 'Aún no hay prompts en esta categoría.',
+    noPromptsInCat: 'Aún no hay prompts en esta categoría.'
   },
   settings: {
     heading: 'Ajustes',
@@ -88,7 +88,8 @@ export default {
     refreshBtn: 'Actualizar todos los datos',
     refreshingBtn: 'Actualizando...',
     aboutTitle: 'Acerca de',
-    aboutText: 'PromptHub v1.0.0 - Un sistema moderno de gestión de prompts construido con Vue 3, Express y MongoDB.',
+    aboutText:
+      'PromptHub v1.0.0 - Un sistema moderno de gestión de prompts construido con Vue 3, Express y MongoDB.'
   },
   common: {
     loading: 'Cargando...',
@@ -102,11 +103,11 @@ export default {
     promptCreated: '¡Prompt creado correctamente!',
     categoryUpdated: '¡Categoría actualizada correctamente!',
     categoryCreated: '¡Categoría creada correctamente!',
-    dataRefreshed: '¡Datos actualizados correctamente!',
+    dataRefreshed: '¡Datos actualizados correctamente!'
   },
   date: {
     created: 'Creado:',
-    updated: 'Actualizado:',
+    updated: 'Actualizado:'
   },
   auth: {
     loginTitle: 'Iniciar sesión',
@@ -123,7 +124,7 @@ export default {
     registerLink: 'Regístrate',
     loginLink: 'Inicia sesión',
     passwordMismatch: 'Las contraseñas no coinciden',
-    nameLabel: 'Nombre',
+    nameLabel: 'Nombre'
   },
   admin: {
     usersHeading: 'Gestión de usuarios',
@@ -136,11 +137,11 @@ export default {
     noUsers: 'No se encontraron usuarios.',
     roleUpdated: '¡Rol actualizado correctamente!',
     activated: 'Usuario activado.',
-    deactivated: 'Usuario desactivado.',
+    deactivatedMsg: 'Usuario desactivado.',
     registrationTitle: 'Registro',
     registrationDesc: 'Permitir o impedir que nuevos usuarios creen cuentas.',
     registrationEnabled: 'Registro activado.',
-    registrationDisabled: 'Registro desactivado.',
+    registrationDisabled: 'Registro desactivado.'
   },
   profile: {
     heading: 'Mi Perfil',
@@ -160,11 +161,11 @@ export default {
     passwordChanged: '¡Contraseña cambiada con éxito!',
     passwordMismatch: 'Las contraseñas no coinciden',
     passwordTooShort: 'La nueva contraseña debe tener al menos 8 caracteres',
-    passwordFillAll: 'Completa todos los campos de contraseña',
+    passwordFillAll: 'Completa todos los campos de contraseña'
   },
   theme: {
     lightMode: 'Modo Claro',
     darkMode: 'Modo Oscuro',
-    autoMode: 'Automático',
-  },
+    autoMode: 'Automático'
+  }
 }

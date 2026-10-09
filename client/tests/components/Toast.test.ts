@@ -5,7 +5,7 @@ import Toast from '@/components/Toast.vue'
 // Mutable mock — tests update its properties directly.
 const mockUIStoreState = { error: null, successMessage: null }
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 describe('Toast', () => {

@@ -34,6 +34,13 @@ test:
 	@echo "Running client tests..."
 	@cd client && npm test
 
+lint:
+	@echo "Linting server..."
+	@cd server && npm run lint
+	@echo ""
+	@echo "Linting client..."
+	@cd client && npm run lint
+
 certs:
 	@traefik/crear_certs.sh prompthub.test
 

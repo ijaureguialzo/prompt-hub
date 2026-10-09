@@ -6,14 +6,14 @@ export const useCategoryStore = defineStore('categories', {
     categories: [],
     currentCategory: null,
     selectedCategoryId: null,
-    loading: false,
+    loading: false
   }),
 
   getters: {
     selectedCategory: (state) => {
       if (!state.selectedCategoryId) return null
-      return state.categories.find(c => c._id === state.selectedCategoryId) || null
-    },
+      return state.categories.find((c) => c._id === state.selectedCategoryId) || null
+    }
   },
 
   actions: {
@@ -22,7 +22,7 @@ export const useCategoryStore = defineStore('categories', {
       try {
         this.categories = await categoriesApi.getAll()
       } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message, { cause: error })
       } finally {
         this.loading = false
       }
@@ -34,7 +34,7 @@ export const useCategoryStore = defineStore('categories', {
         this.currentCategory = await categoriesApi.getById(id)
         return this.currentCategory
       } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message, { cause: error })
       } finally {
         this.loading = false
       }
@@ -48,7 +48,7 @@ export const useCategoryStore = defineStore('categories', {
 
     async updateCategory(id, categoryData) {
       const category = await categoriesApi.update(id, categoryData)
-      const index = this.categories.findIndex(c => c._id === id)
+      const index = this.categories.findIndex((c) => c._id === id)
       if (index !== -1) {
         this.categories[index] = category
       }
@@ -57,7 +57,7 @@ export const useCategoryStore = defineStore('categories', {
 
     async deleteCategory(id) {
       await categoriesApi.delete(id)
-      this.categories = this.categories.filter(c => c._id !== id)
+      this.categories = this.categories.filter((c) => c._id !== id)
       if (this.selectedCategoryId === id) {
         this.selectedCategoryId = null
       }
@@ -69,6 +69,6 @@ export const useCategoryStore = defineStore('categories', {
 
     clearSelection() {
       this.selectedCategoryId = null
-    },
-  },
+    }
+  }
 })

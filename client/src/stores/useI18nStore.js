@@ -8,7 +8,7 @@ const localeMap = { es: 'es', eu: 'eu', en: 'en', 'en-us': 'en', 'en-gb': 'en' }
 function detectBrowserLanguage() {
   if (typeof navigator === 'undefined') return 'en'
   const lang = (navigator.language || navigator.languages?.[0] || 'en').toLowerCase()
-  return localeMap[lang] || (lang.startsWith('eu') ? 'eu' : (lang.startsWith('es') ? 'es' : 'en'))
+  return localeMap[lang] || (lang.startsWith('eu') ? 'eu' : lang.startsWith('es') ? 'es' : 'en')
 }
 
 function resolve(obj, key) {
@@ -24,19 +24,23 @@ function resolve(obj, key) {
 export const useI18nStore = defineStore('i18n', {
   state: () => ({
     language: detectBrowserLanguage(),
-    locales: { en, es, eu },
+    locales: { en, es, eu }
   }),
 
   getters: {
     t: (state) => (key) => resolve(state.locales[state.language], key),
-    currentLocale: (state) => state.locales[state.language] || en,
+    currentLocale: (state) => state.locales[state.language] || en
   },
 
   actions: {
     setLanguage(lang) {
       if (this.locales[lang]) {
         this.language = lang
-        try { localStorage.setItem('language', lang) } catch {}
+        try {
+          localStorage.setItem('language', lang)
+        } catch {
+          /* storage may be unavailable */
+        }
       }
     },
 
@@ -46,7 +50,9 @@ export const useI18nStore = defineStore('i18n', {
         if (saved && this.locales[saved]) {
           this.language = saved
         }
-      } catch {}
-    },
-  },
+      } catch {
+        /* non-JSON stored value — fall through to defaults */
+      }
+    }
+  }
 })

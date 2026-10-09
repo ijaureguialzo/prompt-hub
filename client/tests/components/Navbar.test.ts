@@ -8,7 +8,7 @@ const mockAuthStoreState = {
   user: { _id: 'user-1', name: 'Test User', email: 'test@example.com', role: 'user' },
   isAuthenticated: true,
   isAdmin: false,
-  logout: vi.fn(),
+  logout: vi.fn()
 }
 
 const mockI18nStoreState = { t: (key: string) => key, language: 'en', setLanguage: vi.fn() }
@@ -16,15 +16,15 @@ const mockI18nStoreState = { t: (key: string) => key, language: 'en', setLanguag
 const mockThemeStoreState = { mode: 'auto', isDark: false, setMode: vi.fn() }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/stores/useThemeStore', () => ({
-  useThemeStore: vi.fn(() => mockThemeStoreState),
+  useThemeStore: vi.fn(() => mockThemeStoreState)
 }))
 
 vi.mock('vue-router', async (importOriginal) => {

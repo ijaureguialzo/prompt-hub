@@ -7,7 +7,9 @@ async function migrateAddName() {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/promptdb');
     console.log('Connected to MongoDB');
 
-    const usersWithoutName = await User.find({ name: { $exists: false, $eq: null } }).countDocuments();
+    const usersWithoutName = await User.find({
+      name: { $exists: false, $eq: null }
+    }).countDocuments();
 
     if (usersWithoutName === 0) {
       console.log('All users already have a name. No migration needed.');

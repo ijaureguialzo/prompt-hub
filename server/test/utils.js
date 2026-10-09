@@ -28,7 +28,11 @@ async function disconnectDB() {
   if (mongoose.connection.readyState) {
     const collections = mongoose.connection.collections;
     for (const name in collections) {
-      try { await collections[name].deleteMany({}); } catch (_) { /* ignore */ }
+      try {
+        await collections[name].deleteMany({});
+      } catch (_) {
+        /* ignore */
+      }
     }
     await mongoose.disconnect();
   }
@@ -63,7 +67,7 @@ async function seedTestUser(extraFields = {}) {
       name: 'Test User',
       email: 'test@example.com',
       password: 'password123',
-      ...extraFields,
+      ...extraFields
     });
 
   const { token, user } = response.body;
@@ -83,7 +87,7 @@ async function seedRegularUser(extraFields = {}) {
       name: 'Regular User',
       email: 'regular@example.com',
       password: 'password456',
-      ...extraFields,
+      ...extraFields
     });
 
   const { token, user } = response.body;
@@ -104,5 +108,5 @@ module.exports = {
   clearDatabase,
   seedTestUser,
   seedRegularUser,
-  authRequest,
+  authRequest
 };

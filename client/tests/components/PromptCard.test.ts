@@ -3,16 +3,24 @@ import { mount } from '@vue/test-utils'
 import PromptCard from '@/components/PromptCard.vue'
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => ({ t: (key: string) => key })),
+  useI18nStore: vi.fn(() => ({ t: (key: string) => key }))
 }))
 
-const basePrompt = { _id: 'prompt-1', title: 'Test Prompt Title', content: 'This is the prompt content.', tags: ['tag1', 'tag2'] }
+const basePrompt = {
+  _id: 'prompt-1',
+  title: 'Test Prompt Title',
+  content: 'This is the prompt content.',
+  tags: ['tag1', 'tag2']
+}
 
 // Stub router-link to render as an anchor element.
 const routerLinkStub = { template: '<a><slot /></a>' }
 
 function getWrapper(prompt = basePrompt) {
-  return mount(PromptCard, { props: { prompt }, global: { components: { routerLink: routerLinkStub } } })
+  return mount(PromptCard, {
+    props: { prompt },
+    global: { components: { routerLink: routerLinkStub } }
+  })
 }
 
 describe('PromptCard', () => {
@@ -79,7 +87,7 @@ describe('PromptCard', () => {
 
   it('does not crash when tags is undefined', () => {
     const prompt = { ...basePrompt, tags: undefined }
-    const wrapper = getWrapper(prompt)
+    getWrapper(prompt)
     // When categoryId is null and tags is undefined, only the uncategorized span renders.
   })
 })

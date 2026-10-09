@@ -14,6 +14,7 @@ make stop           # docker-compose down
 make restart        # docker-compose down && up --build
 make build          # docker-compose pull && build --pull
 make test           # run both server and client test suites
+make lint           # lint both (ESLint) — CI runs lint + test
 make clean          # docker-compose down -v (removes volumes)
 make certs          # Generate TLS certs via traefik/crear_certs.sh
 ```
@@ -70,13 +71,17 @@ prompt-hub/
 
 ## Testing
 
-Both client and server use **Vitest**. Server tests: 8 files in `server/test/` (auth, categories, health, integration, prompts, siteConfig, smoke, users). Client tests: Vitest + Vue Test Utils.
+Both client and server use **Vitest**. Server: 13 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, via `.env.test`). Client: 26 test files (Vitest + Vue Test Utils, jsdom).
 
 ```bash
 make test           # Run both suites
 cd server && npm test   # Server only
 cd client && npm test   # Client only
 ```
+
+## Linting
+
+ESLint (flat config) + Prettier on both packages; `make lint` (or CI) runs ESLint, `npm run format` runs Prettier. Vue SFCs are linted by `eslint-plugin-vue` but kept hand-formatted (Prettier's Vue parser mangles multi-statement handlers); `.js`/`.ts` are Prettier-formatted (2-space, single quotes; server keeps semicolons, client doesn't — see root `.prettierrc`).
 
 ## Commit Convention
 

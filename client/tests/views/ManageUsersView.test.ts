@@ -1,7 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
-import { nextTick } from 'vue'
-import { mount } from '@vue/test-utils'
-import ManageUsersView from '@/views/ManageUsersView.vue'
+import { describe, it, vi } from 'vitest'
 
 const mockAuthStoreState = {
   token: 'test-token',
@@ -11,7 +8,7 @@ const mockAuthStoreState = {
   register: vi.fn().mockResolvedValue({}),
   fetchCurrentUser: vi.fn().mockResolvedValue(null),
   updateUser: vi.fn().mockResolvedValue(undefined),
-  logout: vi.fn(),
+  logout: vi.fn()
 }
 
 const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn() }
@@ -20,21 +17,21 @@ const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 // Mutable API mock state.
 const mockUsersState = [
   { _id: 'user-1', name: 'Admin User', email: 'admin@example.com', role: 'admin', isActive: true },
-  { _id: 'user-2', name: 'Regular User', email: 'user@example.com', role: 'user', isActive: true },
+  { _id: 'user-2', name: 'Regular User', email: 'user@example.com', role: 'user', isActive: true }
 ]
 
 const mockSiteConfigState = { registrationEnabled: true }
 
 vi.mock('@/stores/useAuthStore', () => ({
-  useAuthStore: vi.fn(() => mockAuthStoreState),
+  useAuthStore: vi.fn(() => mockAuthStoreState)
 }))
 
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => mockI18nStoreState),
+  useI18nStore: vi.fn(() => mockI18nStoreState)
 }))
 
 vi.mock('@/api/index.js', () => ({
@@ -42,26 +39,18 @@ vi.mock('@/api/index.js', () => ({
     getAll: vi.fn().mockImplementation(async () => [...mockUsersState]),
     getById: vi.fn().mockResolvedValue(null),
     update: vi.fn().mockResolvedValue({}),
-    delete: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined)
   },
   siteConfigApi: {
-    getConfig: vi.fn().mockImplementation(async () => ({ registrationEnabled: mockSiteConfigState.registrationEnabled })),
+    getConfig: vi.fn().mockImplementation(async () => ({
+      registrationEnabled: mockSiteConfigState.registrationEnabled
+    })),
     updateConfig: vi.fn().mockResolvedValue({}),
-    getPublicConfig: vi.fn().mockResolvedValue({}),
-  },
+    getPublicConfig: vi.fn().mockResolvedValue({})
+  }
 }))
 
-function getWrapper() {
-  return mount(ManageUsersView, { attachTo: document.body })
-}
-
 describe('ManageUsersView', () => {
-  async function setup() {
-    const wrapper = await getWrapper()
-    await nextTick() // wait for onMounted to complete
-    return wrapper
-  }
-
   it('shows loading state while fetching', async () => {
     mockAuthStoreState.loading = true
   })

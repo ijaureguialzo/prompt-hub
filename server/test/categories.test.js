@@ -282,8 +282,7 @@ describe('Categories (CRUD + Cascade Delete)', () => {
     });
 
     it('returns 401 without token', async () => {
-      const res = await request(app)
-        .delete('/api/categories/' + category1Id);
+      const res = await request(app).delete('/api/categories/' + category1Id);
 
       expect(res.status).toBe(401);
     });
@@ -327,12 +326,20 @@ describe('Categories (CRUD + Cascade Delete)', () => {
       const ownRes = await request(app)
         .post('/api/prompts')
         .set('Authorization', `Bearer ${regularToken}`)
-        .send({ title: 'Mine in Cat2', content: 'Owned by the category owner', categoryId: category2Id });
+        .send({
+          title: 'Mine in Cat2',
+          content: 'Owned by the category owner',
+          categoryId: category2Id
+        });
 
       const otherRes = await request(app)
         .post('/api/prompts')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ title: 'Theirs in Cat2', content: 'Owned by someone else', categoryId: category2Id });
+        .send({
+          title: 'Theirs in Cat2',
+          content: 'Owned by someone else',
+          categoryId: category2Id
+        });
 
       const delRes = await request(app)
         .delete('/api/categories/' + category2Id)

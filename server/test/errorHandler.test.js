@@ -3,8 +3,14 @@ const { errorHandler } = require('../src/middleware/errorHandler');
 // Minimal fake req/res to unit-test the handler without an HTTP server.
 function fakeRes() {
   const res = { statusCode: null, body: null };
-  res.status = (code) => { res.statusCode = code; return res; };
-  res.json = (body) => { res.body = body; return res; };
+  res.status = (code) => {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = (body) => {
+    res.body = body;
+    return res;
+  };
   return res;
 }
 

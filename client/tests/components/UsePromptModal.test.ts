@@ -4,14 +4,19 @@ import UsePromptModal from '@/components/UsePromptModal.vue'
 
 const mockUIStoreState = { setSuccess: vi.fn(), setError: vi.fn() }
 vi.mock('@/stores/useUIStore', () => ({
-  useUIStore: vi.fn(() => mockUIStoreState),
+  useUIStore: vi.fn(() => mockUIStoreState)
 }))
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => ({ t: (key: string) => key })),
+  useI18nStore: vi.fn(() => ({ t: (key: string) => key }))
 }))
 
-const basePrompt = { _id: 'prompt-1', title: 'Test Prompt', content: 'This is the prompt body.', tags: ['tag1'] }
+const basePrompt = {
+  _id: 'prompt-1',
+  title: 'Test Prompt',
+  content: 'This is the prompt body.',
+  tags: ['tag1']
+}
 
 function getWrapper(prompt = basePrompt) {
   return mount(UsePromptModal, { props: { prompt } })

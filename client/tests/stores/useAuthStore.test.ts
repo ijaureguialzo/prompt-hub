@@ -5,11 +5,19 @@ import { useAuthStore } from '@/stores/useAuthStore'
 // Mock the API module — all calls resolve to empty objects by default.
 vi.mock('@/api/index.js', () => ({
   authApi: {
-    login: vi.fn().mockResolvedValue({ token: 'jwt-token', user: { _id: 'user-1', email: 'test@example.com', role: 'admin' } }),
-    register: vi.fn().mockResolvedValue({ token: 'jwt-token', user: { _id: 'user-1', email: 'test@example.com', role: 'admin' } }),
-    getCurrentUser: vi.fn().mockResolvedValue({ user: { _id: 'user-1', email: 'test@example.com', role: 'admin' } }),
+    login: vi.fn().mockResolvedValue({
+      token: 'jwt-token',
+      user: { _id: 'user-1', email: 'test@example.com', role: 'admin' }
+    }),
+    register: vi.fn().mockResolvedValue({
+      token: 'jwt-token',
+      user: { _id: 'user-1', email: 'test@example.com', role: 'admin' }
+    }),
+    getCurrentUser: vi
+      .fn()
+      .mockResolvedValue({ user: { _id: 'user-1', email: 'test@example.com', role: 'admin' } })
   },
-  usersApi: { getAll: vi.fn(), getById: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  usersApi: { getAll: vi.fn(), getById: vi.fn(), update: vi.fn(), delete: vi.fn() }
 }))
 
 function createStoresAndSetActive() {
@@ -46,8 +54,14 @@ describe('useAuthStore', () => {
     const store = useAuthStore()
     const mockToken = 'saved-token'
     const mockUser = { _id: 'u1', email: 'a@b.com', role: 'user' }
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('token', mockToken)
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('user', JSON.stringify(mockUser))
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'token',
+      mockToken
+    )
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'user',
+      JSON.stringify(mockUser)
+    )
     store.init()
     expect(store.token).toBe(mockToken)
     expect(store.user).toEqual(mockUser)
@@ -69,7 +83,10 @@ describe('useAuthStore', () => {
 
   it('isAuthenticated returns false when user is missing', () => {
     const store = useAuthStore()
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('token', 'some-token')
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'token',
+      'some-token'
+    )
     store.init()
     expect(store.isAuthenticated).toBe(false)
   })
@@ -83,7 +100,10 @@ describe('useAuthStore', () => {
   it('isAdmin returns false when user role is not admin', () => {
     const store = useAuthStore()
     ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('token', 't')
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('user', JSON.stringify({ _id: 'u1', email: 'a@b.com', role: 'user' }))
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'user',
+      JSON.stringify({ _id: 'u1', email: 'a@b.com', role: 'user' })
+    )
     store.init()
     expect(store.isAdmin).toBe(false)
   })
@@ -117,7 +137,10 @@ describe('useAuthStore', () => {
     expect(store.token).toBe('jwt-token')
     expect(store.user?._id).toBe('user-1')
     expect(window.localStorage.setItem).toHaveBeenCalledWith('token', 'jwt-token')
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('user', JSON.stringify({ _id: 'user-1', email: 'test@example.com', role: 'admin' }))
+    expect(window.localStorage.setItem).toHaveBeenCalledWith(
+      'user',
+      JSON.stringify({ _id: 'user-1', email: 'test@example.com', role: 'admin' })
+    )
   })
 
   it('login() calls authApi.login with correct arguments', async () => {
@@ -129,7 +152,9 @@ describe('useAuthStore', () => {
 
   it('login() throws on API error without modifying state', async () => {
     const { authApi } = await import('@/api/index.js')
-    ;(authApi.login as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Invalid credentials'))
+    ;(authApi.login as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('Invalid credentials')
+    )
     const store = useAuthStore()
     await expect(store.login('bad', 'pass')).rejects.toThrow('Invalid credentials')
   })
@@ -167,7 +192,9 @@ describe('useAuthStore', () => {
 
   it('fetchCurrentUser() calls logout on API error (401)', async () => {
     const { authApi } = await import('@/api/index.js')
-    ;(authApi.getCurrentUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Unauthorized'))
+    ;(authApi.getCurrentUser as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('Unauthorized')
+    )
     const store = useAuthStore()
     await store.fetchCurrentUser()
     expect(store.token).toBeNull()
@@ -188,7 +215,10 @@ describe('useAuthStore', () => {
   it('logout() clears state and localStorage', () => {
     const store = useAuthStore()
     ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('token', 't')
-    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem('user', JSON.stringify({}))
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'user',
+      JSON.stringify({})
+    )
     store.logout()
     expect(store.token).toBeNull()
     expect(store.user).toBeNull()

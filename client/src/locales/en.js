@@ -4,7 +4,7 @@ export default {
     promptsLink: 'Prompts',
     settingsLink: 'Settings',
     adminLink: 'Admin',
-    logout: 'Logout',
+    logout: 'Logout'
   },
   categoryList: {
     heading: 'Categories',
@@ -13,16 +13,16 @@ export default {
     uncategorized: 'Uncategorized',
     edit: 'Edit',
     delete: 'Delete',
-    noCategories: 'No categories yet.',
+    noCategories: 'No categories yet.'
   },
   searchBar: {
-    placeholder: 'Search prompts by title, content, or tags...',
+    placeholder: 'Search prompts by title, content, or tags...'
   },
   promptCard: {
     copyTitle: 'Copy prompt',
     editTitle: 'Edit',
     copiedToast: 'Prompt copied to clipboard!',
-    failedCopyToast: 'Failed to copy prompt',
+    failedCopyToast: 'Failed to copy prompt'
   },
   createPromptModal: {
     newTitle: 'New Prompt',
@@ -39,7 +39,7 @@ export default {
     cancel: 'Cancel',
     creating: 'Creating...',
     create: 'Create Prompt',
-    update: 'Update',
+    update: 'Update'
   },
   createCategoryModal: {
     newTitle: 'New Category',
@@ -51,7 +51,7 @@ export default {
     cancel: 'Cancel',
     saving: 'Saving...',
     create: 'Create Category',
-    update: 'Update',
+    update: 'Update'
   },
   promptList: {
     heading: 'Prompts',
@@ -60,7 +60,7 @@ export default {
     loading: 'Loading prompts...',
     noPrompts: 'No prompts found.',
     filteredByTags: 'Filtered by tags',
-    clearAllTags: 'Clear all tags',
+    clearAllTags: 'Clear all tags'
   },
   promptDetail: {
     backLink: 'Back to Prompts',
@@ -71,14 +71,14 @@ export default {
     useTitle: 'Use Prompt',
     createdLabel: 'Created:',
     updatedLabel: 'Updated:',
-    notFound: 'Prompt not found.',
+    notFound: 'Prompt not found.'
   },
   categoryView: {
     backLink: 'Back to Prompts',
     editCategoryBtn: 'Edit Category',
     deleteBtn: 'Delete',
     sectionHeading: 'Prompts in this category',
-    noPromptsInCat: 'No prompts in this category yet.',
+    noPromptsInCat: 'No prompts in this category yet.'
   },
   settings: {
     heading: 'Settings',
@@ -88,7 +88,8 @@ export default {
     refreshBtn: 'Refresh All Data',
     refreshingBtn: 'Refreshing...',
     aboutTitle: 'About',
-    aboutText: 'PromptHub v1.0.0 - A modern prompt management system built with Vue 3, Express, and MongoDB.',
+    aboutText:
+      'PromptHub v1.0.0 - A modern prompt management system built with Vue 3, Express, and MongoDB.'
   },
   common: {
     loading: 'Loading...',
@@ -102,11 +103,11 @@ export default {
     promptCreated: 'Prompt created successfully!',
     categoryUpdated: 'Category updated successfully!',
     categoryCreated: 'Category created successfully!',
-    dataRefreshed: 'Data refreshed successfully!',
+    dataRefreshed: 'Data refreshed successfully!'
   },
   date: {
     created: 'Created:',
-    updated: 'Updated:',
+    updated: 'Updated:'
   },
   auth: {
     loginTitle: 'Sign In',
@@ -123,7 +124,7 @@ export default {
     hasAccount: 'Already have an account?',
     registerLink: 'Register',
     loginLink: 'Sign in',
-    passwordMismatch: "Passwords don't match",
+    passwordMismatch: "Passwords don't match"
   },
   admin: {
     usersHeading: 'User Management',
@@ -136,11 +137,11 @@ export default {
     noUsers: 'No users found.',
     roleUpdated: 'Role updated successfully!',
     activated: 'User activated.',
-    deactivated: 'User deactivated.',
+    deactivatedMsg: 'User deactivated.',
     registrationTitle: 'Registration',
     registrationDesc: 'Allow or prevent new users from creating accounts.',
     registrationEnabled: 'Registration enabled.',
-    registrationDisabled: 'Registration disabled.',
+    registrationDisabled: 'Registration disabled.'
   },
   profile: {
     heading: 'My Profile',
@@ -160,11 +161,11 @@ export default {
     passwordChanged: 'Password changed successfully!',
     passwordMismatch: 'Passwords do not match',
     passwordTooShort: 'New password must be at least 8 characters',
-    passwordFillAll: 'Please fill in all password fields',
+    passwordFillAll: 'Please fill in all password fields'
   },
   theme: {
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
-    autoMode: 'Automatic',
-  },
+    autoMode: 'Automatic'
+  }
 }

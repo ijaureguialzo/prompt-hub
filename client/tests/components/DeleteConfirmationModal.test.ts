@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal.vue'
 
 vi.mock('@/stores/useI18nStore.js', () => ({
-  useI18nStore: vi.fn(() => ({ t: (key: string) => key })),
+  useI18nStore: vi.fn(() => ({ t: (key: string) => key }))
 }))
 
 describe('DeleteConfirmationModal', () => {
@@ -20,7 +20,9 @@ describe('DeleteConfirmationModal', () => {
   })
 
   it('shows the correct message for entityType=category', () => {
-    const wrapper = mount(DeleteConfirmationModal, { props: { ...baseProps, entityType: 'category' } })
+    const wrapper = mount(DeleteConfirmationModal, {
+      props: { ...baseProps, entityType: 'category' }
+    })
     expect(wrapper.text()).toContain('common.confirmDeleteCategory')
   })
 
