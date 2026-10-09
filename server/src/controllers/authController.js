@@ -1,13 +1,26 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const SiteConfig = require('../models/SiteConfig');
+const { getJwtSecret, ConfigError } = require('../config');
 
 function generateToken(user) {
+  // Never sign with a default/weak secret: the server refuses to start
+  // without a valid JWT_SECRET (see src/config.js and server.js).
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role },
-    process.env.JWT_SECRET || 'default-secret',
+    getJwtSecret(),
     { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
   );
+}
+
+// Shared error handling for register/login: 400 for bad input, 500
+// (generic, no details) for anything else.
+function handleAuthError(res, error) {
+  if (error instanceof ConfigError) {
+    // Unreachable in practice (startup validation), but never leak config.
+    return res.status(500).json({ message: 'Server misconfiguration' });
+  }
+  return res.status(400).json({ message: error.message });
 }
 
 // POST /api/auth/register - Self-registration (first user becomes admin)
@@ -45,7 +58,7 @@ exports.register = async (req, res) => {
     await user.save();
     res.status(201).json({ token: generateToken(user), user: user.toJSON() });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    handleAuthError(res, error);
   }
 };
 
@@ -69,7 +82,7 @@ exports.login = async (req, res) => {
 
     res.json({ token: generateToken(user), user: user.toJSON() });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    handleAuthError(res, error);
   }
 };
 

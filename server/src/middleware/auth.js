@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getJwtSecret } = require('../config');
 
 // Verify JWT and attach user to req.user
 async function authenticate(req, res, next) {
@@ -10,7 +11,9 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
+    // getJwtSecret() never throws in a running app (validated at startup);
+    // if it did, the catch below fails closed with 401.
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user || !user.isActive) {

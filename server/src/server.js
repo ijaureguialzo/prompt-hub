@@ -9,6 +9,20 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const siteConfigRoutes = require('./routes/siteConfigRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
+const { assertConfig } = require('./config');
+
+// Fail fast: refuse to run without a valid JWT secret. As a process, exit
+// with a clear message; when imported (e.g. by tests), throw so a
+// half-configured app is never served.
+try {
+  assertConfig();
+} catch (err) {
+  if (require.main === module) {
+    console.error(`[config] FATAL: ${err.message}`);
+    process.exit(1);
+  }
+  throw err;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
