@@ -48,9 +48,16 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 ### 2.5 Site Config API
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/site-config/public` | `GET` | Get registration status (no auth) | — | `{ config }` | 200, 500 |
-| `/api/site-config` | `GET` | Get full config (authenticated) | — | `{ config }` | 200, 401, 500 |
-| `/api/site-config` | `PUT` | Update config (admin-only) | `{ registrationEnabled }` | `{ config }` | 200, 401, 403, 500 |
+| `/api/site-config/public` | `GET` | Get registration status (no auth; atomic upsert seeds the singleton on first read) | — | `{ registrationEnabled }` | 200, 500 |
+| `/api/site-config` | `GET` | Get full config (authenticated; same atomic upsert) | — | `{ _id, registrationEnabled, updatedAt }` | 200, 401, 500 |
+| `/api/site-config` | `PUT` | Update config (admin-only; audited) | `{ registrationEnabled }` | `{ _id, registrationEnabled, updatedAt }` | 200, 400, 401, 403, 500 |
+
+### 2.6 Operational
+| Endpoint | Method | Description | Status Codes |
+| :--- | :--- | :--- | :--- |
+| `/api/health` | `GET` | Liveness probe (no auth) | 200 `{ status: 'OK', timestamp }` |
+
+**Rate limiting** (per IP; disabled in the test environment): login 10/15min, register 5/15min, all other API requests 300/15min. Exceeded → `429`.
 
 ---
 
@@ -58,22 +65,37 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 
 ### User
 ```javascript
-{ name: String(required), email: String(unique), password: String(hash), role: String(user/admin, default:'user'), isActive: Boolean(default:true) }
+{ name: String(required, ≤100), email: String(unique), password: String(hash),
+  role: String(user/admin, default:'user'), isActive: Boolean(default:true),
+  adminSlot: String(unique, sparse) // "first user = admin" claimant; stripped from all API output
+}
 ```
 
 ### Prompt
 ```javascript
-{ title: String(required), content: String(required), categoryId: ObjectId(ref:'Category', nullable), ownerId: ObjectId(required), tags: [String], createdAt: Date, updatedAt: Date }
+{ title: String(required, ≤100), content: String(required, ≤50000),
+  categoryId: ObjectId(ref:'Category', nullable, indexed),
+  ownerId: ObjectId(ref:'User', indexed),
+  tags: [String(≤50)] (max 20),
+  createdAt: Date(indexed, default sort), updatedAt: Date }
 ```
 
 ### Category
 ```javascript
-{ name: String(required, unique), description: String, ownerId: ObjectId(required), createdAt: Date, updatedAt: Date }
+{ name: String(required, unique), description: String(≤255),
+  ownerId: ObjectId(ref:'User', indexed), createdAt: Date, updatedAt: Date }
 ```
 
 ### SiteConfig (singleton _id='site')
 ```javascript
-{ registrationEnabled: Boolean(default:true) }
+{ registrationEnabled: Boolean(default:true), updatedAt: Date }
+```
+
+### Audit (append-only, admin actions)
+```javascript
+{ actorId: ObjectId(ref:'User'), actorEmail: String, action: String(indexed),
+  targetId: String, targetEmail: String, details: Mixed, createdAt: Date(indexed) }
+// Actions: user.role_change / user.activate / user.deactivate / siteconfig.update / category.delete
 ```
 
 ---
@@ -88,16 +110,17 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 
 ### Routes (8): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/profile/:id` → ProfileView, `/admin/users` (admin guard)
 
-### Guards: `beforeEach` redirects unauthenticated to login. `/profile/:id` and `/admin/users` check `role === 'admin'`.
+### Guards: `beforeEach` (`router/guards.js`) redirects unauthenticated users to login (with `?redirect=`). `/profile/:id` allows the owner for any authenticated user, other profiles are admin-only. `/admin/users` checks `role === 'admin'`. A 401 from the API client triggers a soft logout + router navigation (no full page reload).
 
 ---
 
 ## 5. Testing
 
-Both client and server use **Vitest**. Server test suite: 8 files in `server/test/` (auth, categories, health, integration, prompts, siteConfig, smoke, users).
+Both client and server use **Vitest**. Server: 15 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, config from `.env.test`). Client: 26 test files (Vitest + Vue Test Utils, jsdom). Linting: ESLint (flat config) + Prettier on both packages.
 
 ```bash
 make test           # Run both suites
+make lint           # Run both lint suites
 cd server && npm test   # Server only (Vitest)
 cd client && npm test   # Client only (Vitest + Vue Test Utils)
 ```
@@ -106,9 +129,31 @@ cd client && npm test   # Client only (Vitest + Vue Test Utils)
 
 ## 6. Deployment Architecture
 
-Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `healthy`. Frontend depends on api `healthy`.
+Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `healthy`; frontend depends on api `healthy`; Traefik depends on frontend `healthy`. All Node containers run as the unprivileged `node` user.
 
-- **Traefik**: HTTP 80 → HTTPS redirect, TLS 443 (dynamic certs), routes for api + frontend.
-- **Backend Dockerfile**: Multi-stage build, `node:18-slim`, exposes port 3000.
-- **Frontend Dockerfile**: Multi-stage build, `node:18-slim`, serves `dist/` on port 5173.
+- **Traefik**: HTTP 80 → HTTPS redirect, TLS 443 (dynamic certs), routes for api + frontend + internal dashboard (`traefik.prompthub.test/dashboard`, see `traefik/traefik.yml`).
+- **Backend Dockerfile**: Multi-stage build, `npm ci` + dev-prune, `node:26-slim` (pinnable via `NODE_VERSION`), exposes port 3000.
+- **Frontend Dockerfile**: Multi-stage build, `node:26-slim`, serves `dist/` via `serve` on port 5173.
 - **DB**: MongoDB 8, named volumes (`mongo_data`, `mongo_config`).
+
+## 7. Security Notes
+
+- **JWT fail-fast**: the server refuses to start without a `JWT_SECRET` of 32+ chars (no default-secret fallback).
+- **Rate limiting** on auth endpoints + global API limiter (see 2.6) and `helmet` security headers.
+- **Ownership**: `middleware/ownership.js` (`requireOwnership`) runs BEFORE any mutating write on prompts/categories; admins bypass.
+- **Safe cascades**: a non-admin owner deleting a category only destroys their own prompts; others' are unlinked.
+- **Admin lockout guards**: an admin cannot demote or deactivate themselves.
+- **Race-free first admin**: registration claims a unique sparse `adminSlot` — exactly one admin no matter how registrations interleave.
+- **Audit trail**: privileged operations are logged to the `Audit` collection (fire-and-forget; never blocks the request).
+- **Error handling**: raw error messages are logged server-side and only returned outside production; validation/duplicate-key errors map to friendly 400/409 responses.
+- **Input validation**: all writable fields are length-capped (see §3); `categoryId` must reference an existing category.
+- **HTTP**: JSON bodies only (no urlencoded parser), CORS with an explicit origin list and no credentials.
+
+## 8. Operational Scripts
+
+```bash
+cd server
+SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name] npm run seed:admin  # idempotent admin bootstrap
+SEED_USER_EMAIL=x@y.com npm run seed:data   # idempotent demo content (marked [demo])
+node src/scripts/migrateAddName.js          # one-off migration (name field backfill)
+```

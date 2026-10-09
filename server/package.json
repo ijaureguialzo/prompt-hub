@@ -10,7 +10,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "check": "eslint . && prettier --check ."
+    "check": "eslint . && prettier --check .",
+    "seed:admin": "node src/scripts/seedAdmin.js",
+    "seed:data": "node src/scripts/seedData.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
