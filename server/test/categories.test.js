@@ -318,5 +318,44 @@ describe('Categories (CRUD + Cascade Delete)', () => {
 
       expect(verifyRes.status).toBe(404);
     });
+
+    it('unlinks (never destroys) other users prompts when a non-admin owner deletes the category', async () => {
+      const Prompt = require('../src/models/Prompt');
+
+      // The regular user owns category2 ('Creative Category').
+      // Both users create prompts inside it.
+      const ownRes = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ title: 'Mine in Cat2', content: 'Owned by the category owner', categoryId: category2Id });
+
+      const otherRes = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Theirs in Cat2', content: 'Owned by someone else', categoryId: category2Id });
+
+      const delRes = await request(app)
+        .delete('/api/categories/' + category2Id)
+        .set('Authorization', `Bearer ${regularToken}`);
+
+      expect(delRes.status).toBe(200);
+
+      // Owner's own prompt in the category: destroyed
+      const ownCheck = await request(app)
+        .get('/api/prompts/' + ownRes.body._id)
+        .set('Authorization', `Bearer ${regularToken}`);
+
+      expect(ownCheck.status).toBe(404);
+
+      // Someone else's prompt: still exists, and its categoryId pointer
+      // is nulled out (checked in the DB, not just via populate)
+      const otherCheck = await request(app)
+        .get('/api/prompts/' + otherRes.body._id)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(otherCheck.status).toBe(200);
+      const raw = await Prompt.findById(otherRes.body._id);
+      expect(raw.categoryId).toBeNull();
+    });
   });
 });

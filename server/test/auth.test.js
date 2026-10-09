@@ -50,6 +50,25 @@ describe('Auth', () => {
       expect(res.body.user.role).toBe('user');
     });
 
+    it('promotes exactly one admin when first registrations are concurrent', async () => {
+      // Regression (TOCTOU): two registrations racing on an empty database
+      // must NOT both become admin. Whoever holds the lowest _id is "first".
+      const [resA, resB] = await Promise.all([
+        request(app)
+          .post('/api/auth/register')
+          .send({ name: 'First A', email: 'a@test.com', password: 'password123' }),
+        request(app)
+          .post('/api/auth/register')
+          .send({ name: 'First B', email: 'b@test.com', password: 'password123' }),
+      ]);
+
+      expect(resA.status).toBe(201);
+      expect(resB.status).toBe(201);
+
+      const roles = [resA.body.user.role, resB.body.user.role].sort();
+      expect(roles).toEqual(['admin', 'user']);
+    });
+
     it('lowercases and trims email on register', async () => {
       const res = await request(app)
         .post('/api/auth/register')
@@ -208,24 +227,26 @@ describe('Auth', () => {
     });
 
     it('blocks login for deactivated (inactive) users', async () => {
-      // Create user first
+      // Two users: first is admin, second is the deactivation target
       await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'Admin', email: 'admin@test.com', password: 'password123' });
+
+      const targetRes = await request(app)
         .post('/api/auth/register')
         .send({ name: 'Deactivated', email: 'inactive@test.com', password: 'password123' });
 
-      // Deactivate via admin API
-      const loginRes = await request(app)
+      // Admin (not the target — self-deactivation is now refused) deactivates the user
+      const adminLogin = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'inactive@test.com', password: 'password123' });
+        .send({ email: 'admin@test.com', password: 'password123' });
 
-      const adminToken = loginRes.body.token;
-      const userId = loginRes.body.user._id;
-
-      // Deactivate the user (set isActive: false)
-      await request(app)
-        .put('/api/users/' + userId)
-        .set('Authorization', `Bearer ${adminToken}`)
+      const deactivateRes = await request(app)
+        .put('/api/users/' + targetRes.body.user._id)
+        .set('Authorization', `Bearer ${adminLogin.body.token}`)
         .send({ isActive: false });
+
+      expect(deactivateRes.status).toBe(200);
 
       // Try to login — should be blocked
       const res = await request(app)
@@ -287,7 +308,11 @@ describe('Auth', () => {
     });
 
     it('returns 401 for deactivated user with valid token', async () => {
-      // Create and deactivate a user
+      // Two users: first (admin) deactivates the second
+      await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'Admin', email: 'admin@test.com', password: 'password123' });
+
       const registerRes = await request(app)
         .post('/api/auth/register')
         .send({ name: 'Deactivated', email: 'deact@test.com', password: 'password123' });
@@ -295,15 +320,14 @@ describe('Auth', () => {
       const token = registerRes.body.token;
       const userId = registerRes.body.user._id;
 
-      // Deactivate via admin API
-      const loginRes = await request(app)
+      // Deactivate via admin API (admin, not the target)
+      const adminLogin = await request(app)
         .post('/api/auth/login')
-        .send({ email: 'deact@test.com', password: 'password123' });
+        .send({ email: 'admin@test.com', password: 'password123' });
 
-      const adminToken = loginRes.body.token;
       await request(app)
         .put('/api/users/' + userId)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${adminLogin.body.token}`)
         .send({ isActive: false });
 
       // Try to access /me with the old (now invalid) token

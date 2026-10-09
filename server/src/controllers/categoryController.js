@@ -85,8 +85,19 @@ exports.deleteCategory = async (req, res) => {
     return res.status(404).json({ message: 'Category not found' });
   }
 
-  // Cascade delete all prompts belonging to this category
-  await Prompt.deleteMany({ categoryId: req.params.id });
+  // Cascade: admins may destroy every prompt in the category. A non-admin
+  // owner only destroys prompts THEY own; prompts belonging to other users
+  // are unlinked (categoryId -> null), never destroyed — otherwise a
+  // category owner could delete other people's content.
+  if (req.user.role === 'admin') {
+    await Prompt.deleteMany({ categoryId: req.params.id });
+  } else {
+    await Prompt.deleteMany({ categoryId: req.params.id, ownerId: req.user._id });
+    await Prompt.updateMany(
+      { categoryId: req.params.id, ownerId: { $ne: req.user._id } },
+      { $set: { categoryId: null } }
+    );
+  }
 
   res.status(200).json({ message: 'Category and associated prompts deleted successfully' });
 };

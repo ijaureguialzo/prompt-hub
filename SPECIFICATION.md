@@ -15,8 +15,8 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 ### 2.1 Auth API
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/auth/register` | `POST` | Register (first user → admin) | `{ name, email, password }` | `{ token, user }` | 201, 400, 500 |
-| `/api/auth/login` | `POST` | Login (checks isActive) | `{ email, password }` | `{ token, user }` | 200, 401, 500 |
+| `/api/auth/register` | `POST` | Register (first user → admin; rate limited) | `{ name, email, password }` | `{ token, user }` | 201, 400, 403, 409, 429, 500 |
+| `/api/auth/login` | `POST` | Login (checks isActive; rate limited) | `{ email, password }` | `{ token, user }` | 200, 401, 403, 429, 500 |
 | `/api/auth/me` | `GET` | Get current user | — | `{ user }` | 200, 401, 500 |
 
 ### 2.2 Prompts API (authenticated)
@@ -35,14 +35,14 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 | `/api/categories` | `POST` | Create category (ownership check) | `{ name, description? }` | `Category` | 201, 400, 500 |
 | `/api/categories/:id` | `GET` | Get single category (populate ownerId) | — | `Category` | 200, 404, 500 |
 | `/api/categories/:id` | `PUT` | Update category (ownership check) | `{ name?, description? }` | `Category` | 200, 400, 404, 500 |
-| `/api/categories/:id` | `DELETE` | Delete category (cascade delete prompts) | — | `{ message }` | 200, 404, 500 |
+| `/api/categories/:id` | `DELETE` | Delete category (admin: cascade-delete its prompts; non-admin owner: deletes only own prompts, others are unlinked) | — | `{ message }` | 200, 403, 404, 500 |
 
 ### 2.4 Users API (admin-only)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `/api/users` | `GET` | List all users (including inactive) | — | `Array<User>` | 200, 500 |
-| `/api/users/:id` | `PUT` | Update user (role, isActive toggle) | `{ name?, role?, isActive? }` | `User` | 200, 400, 404, 500 |
-| `/api/users/:id` | `DELETE` | Soft-delete user (set isActive=false) | — | `{ message }` | 200, 404, 500 |
+| `/api/users/:id` | `PUT` | Update user (role, isActive toggle; admin cannot modify their own role/isActive) | `{ name?, role?, isActive? }` | `User` | 200, 400, 404, 500 |
+| `/api/users/:id` | `DELETE` | Soft-delete user (set isActive=false; admin cannot deactivate themselves) | — | `{ message }` | 200, 400, 404, 500 |
 
 ### 2.5 Site Config API
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |

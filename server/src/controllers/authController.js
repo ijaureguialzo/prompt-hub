@@ -45,17 +45,34 @@ exports.register = async (req, res) => {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
-    // First user becomes admin, all others are regular users
-    const role = (await User.countDocuments()) === 0 ? 'admin' : 'user';
-
+    // First-registered user becomes admin.
+    //
+    // The previous implementation (countDocuments() === 0 ? 'admin' : 'user')
+    // had a TOCTOU race: two concurrent registrations on an empty database
+    // would both see 0 users and BOTH become admin.
+    //
+    // Race-free approach: always insert as a regular user, then promote
+    // only if this user is the FIRST user ever registered (lowest _id).
+    // The lowest-_id document is a unique, stably ordered choice, so all
+    // concurrent registrants always agree on who "first" is — exactly one
+    // of them gets promoted, no matter how the writes interleave.
     const user = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password,
-      role
+      password
     });
 
     await user.save();
+
+    const firstUser = await User.findOne().sort({ _id: 1 });
+    if (firstUser && firstUser._id.equals(user._id)) {
+      await User.updateOne(
+        { _id: user._id, role: 'user' },
+        { $set: { role: 'admin' } }
+      );
+      user.role = 'admin';
+    }
+
     res.status(201).json({ token: generateToken(user), user: user.toJSON() });
   } catch (error) {
     handleAuthError(res, error);

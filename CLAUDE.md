@@ -54,7 +54,8 @@ prompt-hub/
 - **Stores**: `useAuthStore`, `usePromptStore`, `useCategoryStore`, `useI18nStore`, `useUIStore`, `useThemeStore`. All persist to localStorage.
 - **API client**: Centralized in `client/src/api/index.js` — all backend calls through here with Bearer token.
 - **Auth**: JWT (hs256) in localStorage. Server `middleware/auth.js` verifies tokens. Vue Router `beforeEach` guards routes.
-- **Ownership**: Resources (Prompt, Category) have `ownerId`. `middleware/ownership.js` provides reusable `requireOwnership()` middleware; admins bypass.
+- **Ownership**: Resources (Prompt, Category) have `ownerId`. `middleware/ownership.js` provides reusable `requireOwnership()` route middleware (runs BEFORE any write; admins bypass).
+- **Security hardening**: helmet + per-IP rate limiting (`middleware/rateLimit.js`: strict on /api/auth, loose on /api; disabled in tests); JWT secret validated fail-fast in `src/config.js` (32+ chars, no default).
 - **i18n**: Three locales (en/es/eu). `useI18nStore` provides `t()` function. Locale persists in localStorage + reads `navigator.language`.
 - **Role system**: `user` (default) and `admin`. First registered user auto-promoted to admin. Admin routes: `/api/users/*`, `/api/site-config`, ManageUsersView, SettingsView.
 - **Theme**: `useThemeStore` supports light/dark/auto with system preference listener (Tailwind CSS 4).

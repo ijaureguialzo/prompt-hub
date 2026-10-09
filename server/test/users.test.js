@@ -129,14 +129,52 @@ describe('Users (Admin CRUD)', () => {
       expect(verifyRes.body.role).toBe('admin');
     });
 
-    it('admin can change a user role from admin to user', async () => {
+    it('admin can demote another admin (two admins remain safe)', async () => {
+      // Promote the regular user first, so demoting them still leaves
+      // the requesting admin in place (at least one admin always survives)
+      await request(app)
+        .put('/api/users/' + regularUserId)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'admin' });
+
       const res = await request(app)
-        .put('/api/users/' + adminUserId)
+        .put('/api/users/' + regularUserId)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ role: 'user' });
 
       expect(res.status).toBe(200);
       expect(res.body.role).toBe('user');
+    });
+
+    it('rejects an admin demoting or deactivating themselves (lockout guard)', async () => {
+      const demoteRes = await request(app)
+        .put('/api/users/' + adminUserId)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'user' });
+
+      expect(demoteRes.status).toBe(400);
+      expect(demoteRes.body.message).toContain('your own');
+
+      const deactivateRes = await request(app)
+        .put('/api/users/' + adminUserId)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ isActive: false });
+
+      expect(deactivateRes.status).toBe(400);
+
+      const deleteRes = await request(app)
+        .delete('/api/users/' + adminUserId)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(deleteRes.status).toBe(400);
+
+      // Nothing changed: still admin and active
+      const verifyRes = await request(app)
+        .get('/api/users/' + adminUserId)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(verifyRes.body.role).toBe('admin');
+      expect(verifyRes.body.isActive).toBe(true);
     });
 
     it('admin can update partial fields (name, email)', async () => {

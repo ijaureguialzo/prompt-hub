@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const { apiLimiter } = require('./middleware/rateLimit');
 
 const promptRoutes = require('./routes/promptRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
@@ -30,12 +32,23 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 const allowedOrigins = (process.env.CORS_ORIGIN || 'https://prompthub.test').split(',').map(o => o.trim()).filter(Boolean);
 
+// Security headers (CSP, nosniff, frame denial, ...)
+app.use(helmet());
+
+// We run behind exactly one reverse proxy (Traefik): trust the first
+// X-Forwarded-For hop so rate limiting sees the real client IP.
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Loose per-IP limiter for the whole API (DoS protection).
+// Strict per-endpoint limiters live on /api/auth (see routes/authRoutes.js).
+app.use('/api', apiLimiter);
 
 // API Routes
 app.use('/api/auth', authRoutes);
