@@ -45,12 +45,29 @@ describe('Site Config (Public + Admin)', () => {
       expect(res.body).toHaveProperty('registrationEnabled', true);
     });
 
-    it('creates site config on first access (upsert-on-miss)', async () => {
-      // Fresh DB — no site config exists yet. The public route should create it.
+    it('creates the config document on first access (GET still seeds it)', async () => {
+      const SiteConfig = require('../src/models/SiteConfig');
+
       const res = await request(app).get('/api/site-config/public');
 
       expect(res.status).toBe(200);
-      // The response should have registrationEnabled: true (default)
+      expect(res.body.registrationEnabled).toBe(true);
+      // The document now exists for subsequent reads
+      expect(await SiteConfig.findById('site')).toBeTruthy();
+    });
+
+    it('survives concurrent cold reads (atomic upsert — no duplicate-insert 500)', async () => {
+      // The old findById + conditional save raced: two simultaneous
+      // first-reads both tried to insert and one failed on the unique _id
+      const [a, b] = await Promise.all([
+        request(app).get('/api/site-config/public'),
+        request(app).get('/api/site-config/public'),
+      ]);
+
+      expect(a.status).toBe(200);
+      expect(b.status).toBe(200);
+      expect(a.body.registrationEnabled).toBe(true);
+      expect(b.body.registrationEnabled).toBe(true);
     });
 
     it('returns 401 for authenticated routes without token', async () => {

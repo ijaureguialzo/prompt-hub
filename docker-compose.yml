@@ -24,7 +24,8 @@ services:
       - ./traefik/tls.yml:/etc/traefik/dynamic/tls.yml:ro
       - ./traefik/certs:/certs:ro
     depends_on:
-      - frontend
+      frontend:
+        condition: service_healthy
 
   api:
     build:
@@ -63,6 +64,11 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:5173', (r) => { process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1));" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`)"

@@ -1,13 +1,22 @@
 const SiteConfig = require('../models/SiteConfig');
 
+// Atomic read-or-create of the singleton config document. The previous
+// `findById` + conditional `save()` turned every cold GET into a write
+// with a race: two concurrent first-reads both saw `null`, both tried to
+// insert, and one failed on the unique _id (500). `findByIdAndUpdate`
+// with upsert is a single atomic operation.
+exports.getOrCreateSiteConfig = async function getOrCreateSiteConfig() {
+  return SiteConfig.findByIdAndUpdate(
+    'site',
+    {},
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
+  );
+};
+
 // GET /api/site-config - Get site-wide settings (admin only)
 exports.getConfig = async (req, res) => {
   try {
-    let config = await SiteConfig.findById('site');
-    if (!config) {
-      // Create default document on first access (upsert pattern)
-      config = await SiteConfig({ _id: 'site', registrationEnabled: true }).save();
-    }
+    const config = await exports.getOrCreateSiteConfig();
     res.status(200).json(config);
   } catch (error) {
     console.error('[site-config] error fetching config:', error);
@@ -26,7 +35,7 @@ exports.updateConfig = async (req, res) => {
     const config = await SiteConfig.findByIdAndUpdate(
       'site',
       { ...updateData, updatedAt: new Date() },
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
     res.status(200).json(config);

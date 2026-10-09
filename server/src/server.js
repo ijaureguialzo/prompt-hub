@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const { apiLimiter } = require('./middleware/rateLimit');
 
 const promptRoutes = require('./routes/promptRoutes');
@@ -39,12 +40,15 @@ app.use(helmet());
 // X-Forwarded-For hop so rate limiting sees the real client IP.
 app.set('trust proxy', 1);
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+app.use(cors({ origin: allowedOrigins }));
+// No credentials: auth is a Bearer header, not cookies
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// JSON-only API: no form/urlencoded body parsing (avoids the `qs`
+// dependency and its historical DoS surface)
+app.use(compression({
+  // API payloads are small; compress everything rather than a 1kb threshold
+  threshold: 0,
+}));
 
 // Loose per-IP limiter for the whole API (DoS protection).
 // Strict per-endpoint limiters live on /api/auth (see routes/authRoutes.js).

@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const SiteConfig = require('../models/SiteConfig');
 const { authenticate, authorize } = require('../middleware/auth');
+const { getOrCreateSiteConfig, getConfig, updateConfig } = require('../controllers/siteConfigController');
 
-// Public route: return registration status (no auth required)
+// Public route: return registration status (no auth required).
+// Atomic upsert — a plain GET must never fail on the cold-start race
+// (findById + conditional save let two concurrent first-reads collide on
+// the unique _id and 500'd).
 router.get('/public', async (_req, res) => {
   try {
-    let config = await SiteConfig.findById('site');
-    if (!config) {
-      config = await SiteConfig({ _id: 'site', registrationEnabled: true }).save();
-    }
+    const config = await getOrCreateSiteConfig();
     res.status(200).json({ registrationEnabled: config.registrationEnabled });
   } catch (error) {
     console.error('[site-config] error fetching public config:', error);
@@ -21,7 +21,6 @@ router.get('/public', async (_req, res) => {
 router.use(authenticate);
 
 // Admin-only routes
-const { getConfig, updateConfig } = require('../controllers/siteConfigController');
 router.get('/', authorize('admin'), getConfig);
 router.put('/', authorize('admin'), updateConfig);
 
