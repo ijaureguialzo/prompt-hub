@@ -1,5 +1,6 @@
 const Category = require('../models/Category');
 const Prompt = require('../models/Prompt');
+const { logAudit } = require('../utils/audit');
 
 // GET /api/categories - Retrieve all categories (authenticated)
 exports.getAllCategories = async (req, res) => {
@@ -89,15 +90,25 @@ exports.deleteCategory = async (req, res) => {
   // owner only destroys prompts THEY own; prompts belonging to other users
   // are unlinked (categoryId -> null), never destroyed — otherwise a
   // category owner could delete other people's content.
+  let destroyed = 0;
+  let unlinked = 0;
   if (req.user.role === 'admin') {
-    await Prompt.deleteMany({ categoryId: req.params.id });
+    const result = await Prompt.deleteMany({ categoryId: req.params.id });
+    destroyed = result.deletedCount;
   } else {
-    await Prompt.deleteMany({ categoryId: req.params.id, ownerId: req.user._id });
-    await Prompt.updateMany(
+    const result = await Prompt.deleteMany({ categoryId: req.params.id, ownerId: req.user._id });
+    destroyed = result.deletedCount;
+    const unlinkedResult = await Prompt.updateMany(
       { categoryId: req.params.id, ownerId: { $ne: req.user._id } },
       { $set: { categoryId: null } }
     );
+    unlinked = unlinkedResult.modifiedCount;
   }
+
+  logAudit(req, 'category.delete', {
+    targetId: category._id,
+    details: { name: category.name, destroyedPrompts: destroyed, unlinkedPrompts: unlinked },
+  });
 
   res.status(200).json({ message: 'Category and associated prompts deleted successfully' });
 };

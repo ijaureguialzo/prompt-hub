@@ -1,4 +1,5 @@
 const SiteConfig = require('../models/SiteConfig');
+const { logAudit } = require('../utils/audit');
 
 // Atomic read-or-create of the singleton config document. The previous
 // `findById` + conditional `save()` turned every cold GET into a write
@@ -32,11 +33,23 @@ exports.updateConfig = async (req, res) => {
     const updateData = {};
     if (registrationEnabled !== undefined) updateData.registrationEnabled = registrationEnabled;
 
+    const existing = await SiteConfig.findById('site');
     const config = await SiteConfig.findByIdAndUpdate(
       'site',
       { ...updateData, updatedAt: new Date() },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
+
+    // Site-wide switches affect every user — audit them. The previous
+    // effective value defaults to the schema default (true) when the
+    // document didn't exist yet.
+    if (registrationEnabled !== undefined && registrationEnabled !== (existing ? existing.registrationEnabled : true)) {
+      logAudit(req, 'siteconfig.update', {
+        details: {
+          registrationEnabled: { from: existing ? existing.registrationEnabled : true, to: registrationEnabled },
+        },
+      });
+    }
 
     res.status(200).json(config);
   } catch (error) {

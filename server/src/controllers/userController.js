@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { logAudit } = require('../utils/audit');
 
 // GET /api/users - List all users (admin only)
 exports.getUsers = async (req, res) => {
@@ -27,6 +28,13 @@ exports.updateUser = async (req, res) => {
     return res.status(400).json({ message: 'You cannot change your own role or status' });
   }
 
+  // Fetch the current state BEFORE updating: needed both for 404 handling
+  // and for auditing the previous -> new transition.
+  const existing = await User.findById(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
   const updateData = {};
   if (name) updateData.name = name.trim();
   if (email) updateData.email = email.toLowerCase().trim();
@@ -36,11 +44,24 @@ exports.updateUser = async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.params.id,
     { ...updateData, updatedAt: new Date() },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   ).select('-password');
 
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+  // Audit the privileged transitions (role grant/revoke, activation
+  // toggles) — not cosmetic edits like name changes.
+  if (role !== undefined && role !== existing.role) {
+    logAudit(req, 'user.role_change', {
+      targetId: user._id,
+      targetEmail: user.email,
+      details: { from: existing.role, to: role },
+    });
+  }
+  if (isActive !== undefined && isActive !== existing.isActive) {
+    logAudit(req, isActive ? 'user.activate' : 'user.deactivate', {
+      targetId: user._id,
+      targetEmail: user.email,
+      details: { from: existing.isActive, to: isActive },
+    });
   }
 
   res.status(200).json(user);
@@ -63,6 +84,8 @@ exports.deleteUser = async (req, res) => {
   target.isActive = false;
   target.updatedAt = new Date();
   await target.save();
+
+  logAudit(req, 'user.deactivate', { targetId: target._id, targetEmail: target.email });
 
   res.status(200).json({ message: 'User deactivated', user: { _id: target._id, email: target.email } });
 };
