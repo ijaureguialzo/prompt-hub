@@ -52,7 +52,8 @@ describe('Auth', () => {
 
     it('promotes exactly one admin when first registrations are concurrent', async () => {
       // Regression (TOCTOU): two registrations racing on an empty database
-      // must NOT both become admin. Whoever holds the lowest _id is "first".
+      // must NOT both become admin. The unique sparse adminSlot index
+      // arbitrates the claim atomically, regardless of interleaving.
       const [resA, resB] = await Promise.all([
         request(app)
           .post('/api/auth/register')
@@ -62,11 +63,17 @@ describe('Auth', () => {
           .send({ name: 'First B', email: 'b@test.com', password: 'password123' }),
       ]);
 
-      expect(resA.status).toBe(201);
-      expect(resB.status).toBe(201);
+      expect({ a: { status: resA.status, role: resA.body?.user?.role },
+             b: { status: resB.status, role: resB.body?.user?.role } })
+        .toEqual({ a: expect.objectContaining({ status: 201 }),
+                   b: expect.objectContaining({ status: 201 }) });
 
       const roles = [resA.body.user.role, resB.body.user.role].sort();
       expect(roles).toEqual(['admin', 'user']);
+
+      // The internal claim token is never exposed
+      expect(resA.body.user).not.toHaveProperty('adminSlot');
+      expect(resB.body.user).not.toHaveProperty('adminSlot');
     });
 
     it('lowercases and trims email on register', async () => {

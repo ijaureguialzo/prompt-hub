@@ -1,6 +1,10 @@
-// Global error handler middleware
+// Global error handler middleware.
+//
+// Security: developer-written messages (Mongoose validators, mapped
+// duplicate-key/cast errors) are safe to return. Raw error messages from
+// drivers/OS are logged server-side and NOT exposed in production.
 exports.errorHandler = (err, req, res, next) => {
-  // Mongoose validation error
+  // Mongoose validation error (developer-defined messages — safe to expose)
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map(e => e.message);
     return res.status(400).json({ message: messages.join(', ') });
@@ -17,8 +21,10 @@ exports.errorHandler = (err, req, res, next) => {
     return res.status(404).json({ message: 'Resource not found' });
   }
 
-  // Default error
+  // Anything else: log details server-side, generic client message.
+  console.error(`[error] ${req.method} ${req.originalUrl}:`, err);
+  const isProduction = process.env.NODE_ENV === 'production';
   res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error'
+    message: isProduction ? 'Internal Server Error' : err.message || 'Internal Server Error'
   });
 };

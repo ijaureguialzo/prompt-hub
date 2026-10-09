@@ -455,4 +455,118 @@ describe('Prompts (CRUD + Ownership)', () => {
       expect(res.status).toBe(401);
     });
   });
+
+  // --- Input validation (content length, tags, category refs) ---
+
+  describe('input validation', () => {
+    it('returns 400 when content exceeds 50000 chars', async () => {
+      const res = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Big', content: 'x'.repeat(50001) });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when there are more than 20 tags', async () => {
+      const res = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Taggy', content: 'c', tags: Array.from({ length: 21 }, (_, i) => `t${i}`) });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when a tag exceeds 50 chars', async () => {
+      const res = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'LongTag', content: 'c', tags: ['y'.repeat(51)] });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when creating with a non-existent categoryId', async () => {
+      const res = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Dangling', content: 'c', categoryId: '507f1f77bcf86cd799439011' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when updating to a non-existent categoryId', async () => {
+      const createRes = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'T', content: 'c' });
+
+      const res = await request(app)
+        .put('/api/prompts/' + createRes.body._id)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ categoryId: '507f1f77bcf86cd799439011' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('accepts a valid categoryId', async () => {
+      const res = await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'OK', content: 'c', categoryId: category1Id });
+
+      expect(res.status).toBe(201);
+    });
+  });
+
+  // --- Pagination ---
+
+  describe('GET /api/prompts pagination', () => {
+    it('supports limit and page, defaults return all (under cap)', async () => {
+      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P1', content: 'c' });
+      await new Promise(r => setTimeout(r, 50));
+      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P2', content: 'c' });
+      await new Promise(r => setTimeout(r, 50));
+      await request(app).post('/api/prompts').set('Authorization', `Bearer ${adminToken}`).send({ title: 'P3', content: 'c' });
+
+      const page1 = await request(app)
+        .get('/api/prompts?limit=2&page=1')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(page1.status).toBe(200);
+      expect(page1.body.length).toBe(2);
+
+      const page2 = await request(app)
+        .get('/api/prompts?limit=2&page=2')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(page2.body.length).toBe(1);
+
+      // Default (no params) returns everything under the 500 cap
+      const all = await request(app)
+        .get('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(all.body.length).toBe(3);
+
+      // Garbage params fall back to defaults without error
+      const garbage = await request(app)
+        .get('/api/prompts?limit=abc&page=xyz')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(garbage.status).toBe(200);
+      expect(garbage.body.length).toBe(3);
+    });
+  });
+
+  // --- Schema indexes ---
+
+  describe('Prompt schema indexes', () => {
+    it('declares indexes on createdAt, categoryId and ownerId', () => {
+      const Prompt = require('../src/models/Prompt');
+      const indexedFields = Prompt.schema.indexes()
+        .map(([spec]) => spec)
+        .flatMap(Object.keys);
+
+      expect(indexedFields).toContain('createdAt');
+      expect(indexedFields).toContain('categoryId');
+      expect(indexedFields).toContain('ownerId');
+    });
+  });
 });

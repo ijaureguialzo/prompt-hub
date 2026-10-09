@@ -10,7 +10,8 @@ exports.getConfig = async (req, res) => {
     }
     res.status(200).json(config);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching site config', error: error.message });
+    console.error('[site-config] error fetching config:', error);
+    res.status(500).json({ message: 'Error fetching site config' });
   }
 };
 
@@ -30,6 +31,11 @@ exports.updateConfig = async (req, res) => {
 
     res.status(200).json(config);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: messages.join(' ') });
+    }
+    console.error('[site-config] error updating config:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

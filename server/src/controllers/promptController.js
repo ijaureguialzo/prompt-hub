@@ -1,10 +1,20 @@
 const Prompt = require('../models/Prompt');
+const Category = require('../models/Category');
 
-// GET /api/prompts - Retrieve all prompts (authenticated)
+// Pagination bounds for GET /api/prompts (payload protection).
+const MAX_PAGE_SIZE = 500;
+const DEFAULT_PAGE_SIZE = 500;
+
+// GET /api/prompts - Retrieve prompts (authenticated), newest first
 exports.getAllPrompts = async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE));
+
   const prompts = await Prompt.find()
     .populate('categoryId', 'name')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
   res.status(200).json(prompts);
 };
 
@@ -26,6 +36,14 @@ exports.createPrompt = async (req, res) => {
   }
   if (!content) {
     return res.status(400).json({ message: 'Prompt content is required' });
+  }
+
+  // Reject dangling category references (valid ObjectId, no such category)
+  if (categoryId) {
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(400).json({ message: 'Category not found' });
+    }
   }
 
   const prompt = new Prompt({
@@ -57,6 +75,14 @@ exports.updatePrompt = async (req, res) => {
   if (content !== undefined) updateData.content = content;
   if (categoryId !== undefined) updateData.categoryId = categoryId;
   if (tags !== undefined) updateData.tags = tags || [];
+
+  // Reject dangling category references (valid ObjectId, no such category)
+  if (categoryId !== undefined && categoryId) {
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(400).json({ message: 'Category not found' });
+    }
+  }
 
   const prompt = await Prompt.findByIdAndUpdate(
     req.params.id,

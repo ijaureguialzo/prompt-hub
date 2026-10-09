@@ -18,11 +18,12 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 | `/api/auth/register` | `POST` | Register (first user → admin; rate limited) | `{ name, email, password }` | `{ token, user }` | 201, 400, 403, 409, 429, 500 |
 | `/api/auth/login` | `POST` | Login (checks isActive; rate limited) | `{ email, password }` | `{ token, user }` | 200, 401, 403, 429, 500 |
 | `/api/auth/me` | `GET` | Get current user | — | `{ user }` | 200, 401, 500 |
+| `/api/auth/me` | `PATCH` | Update own profile / change password (`{ name?, email?, currentPassword?, newPassword? }`) | see left | `{ user }` | 200, 400, 401, 409, 500 |
 
 ### 2.2 Prompts API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/prompts` | `GET` | List all prompts (populate categoryId.name) | — | `Array<Prompt>` | 200, 500 |
+| `/api/prompts` | `GET` | List prompts (newest first; `?limit=` max 500, `?page=`; populated categoryId.name) | — | `Array<Prompt>` | 200, 500 |
 | `/api/prompts` | `POST` | Create prompt (ownership check) | `{ title, content, categoryId?, tags[] }` | `Prompt` | 201, 400, 500 |
 | `/api/prompts/:id` | `GET` | Get single prompt (populate categoryId.name) | — | `Prompt` | 200, 404, 500 |
 | `/api/prompts/:id` | `PUT` | Update prompt (ownership check) | `{ title?, content?, categoryId? }` | `Prompt` | 200, 400, 404, 500 |

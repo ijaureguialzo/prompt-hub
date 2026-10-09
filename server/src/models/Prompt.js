@@ -9,23 +9,34 @@ const promptSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true
+    required: true,
+    // Hard cap: prevents unbounded documents/payloads
+    maxlength: 50000
   },
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
     required: false,
-    default: null
+    default: null,
+    index: true // category filtering + cascade deletes
   },
   ownerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    index: true // ownership checks + per-user queries
   },
-  tags: [String],
+  tags: {
+    type: [{ type: String, trim: true, maxlength: 50 }],
+    validate: {
+      validator: (tags) => Array.isArray(tags) && tags.length <= 20,
+      message: 'At most 20 tags are allowed'
+    }
+  },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    index: true // default list sort
   },
   updatedAt: {
     type: Date,

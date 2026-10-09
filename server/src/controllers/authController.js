@@ -13,14 +13,24 @@ function generateToken(user) {
   );
 }
 
-// Shared error handling for register/login: 400 for bad input, 500
-// (generic, no details) for anything else.
+// Shared error handling for register/login: developer-defined and mapped
+// messages only — raw driver/OS errors are logged, never returned.
 function handleAuthError(res, error) {
   if (error instanceof ConfigError) {
     // Unreachable in practice (startup validation), but never leak config.
     return res.status(500).json({ message: 'Server misconfiguration' });
   }
-  return res.status(400).json({ message: error.message });
+  // Duplicate email (lost an insert race against the pre-check)
+  if (error.code === 11000) {
+    return res.status(409).json({ message: 'Email already registered' });
+  }
+  // Developer-defined schema messages (e.g. email format) — safe to return
+  if (error.name === 'ValidationError') {
+    const messages = Object.values(error.errors).map(e => e.message);
+    return res.status(400).json({ message: messages.join(' ') });
+  }
+  console.error('[auth] unexpected error:', error);
+  return res.status(500).json({ message: 'Internal Server Error' });
 }
 
 // POST /api/auth/register - Self-registration (first user becomes admin)
@@ -45,32 +55,38 @@ exports.register = async (req, res) => {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
-    // First-registered user becomes admin.
+    // First-registered user becomes admin — claimed atomically.
     //
-    // The previous implementation (countDocuments() === 0 ? 'admin' : 'user')
-    // had a TOCTOU race: two concurrent registrations on an empty database
-    // would both see 0 users and BOTH become admin.
-    //
-    // Race-free approach: always insert as a regular user, then promote
-    // only if this user is the FIRST user ever registered (lowest _id).
-    // The lowest-_id document is a unique, stably ordered choice, so all
-    // concurrent registrants always agree on who "first" is — exactly one
-    // of them gets promoted, no matter how the writes interleave.
+    // A pure application check (countDocuments() === 0, or "lowest _id")
+    // is NOT race-safe: two concurrent first registrations each see a
+    // different point in time of the collection and both conclude they
+    // are "first". Instead we use the user's adminSlot field with a
+    // unique sparse index (see models/User.js): the winner claims the
+    // token in the same insert; a concurrent loser gets E11000 on the
+    // token and retries as a regular user. Exactly one winner, for any
+    // interleaving — the index is the source of truth.
+    const isFirst = (await User.countDocuments()) === 0; // fast path hint
+
     const user = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password
+      password,
+      role: isFirst ? 'admin' : 'user',
+      ...(isFirst ? { adminSlot: 'first-admin' } : {})
     });
 
-    await user.save();
-
-    const firstUser = await User.findOne().sort({ _id: 1 });
-    if (firstUser && firstUser._id.equals(user._id)) {
-      await User.updateOne(
-        { _id: user._id, role: 'user' },
-        { $set: { role: 'admin' } }
-      );
-      user.role = 'admin';
+    try {
+      await user.save();
+    } catch (err) {
+      if (err.code === 11000 && err.keyValue && err.keyValue.adminSlot !== undefined) {
+        // Lost the first-admin race: another document holds the token.
+        // Retry the insert as a regular user without the token.
+        user.role = 'user';
+        user.adminSlot = undefined;
+        await user.save();
+      } else {
+        throw err;
+      }
     }
 
     res.status(201).json({ token: generateToken(user), user: user.toJSON() });
@@ -109,6 +125,64 @@ exports.getCurrentUser = async (req, res) => {
     // req.user already set by authenticate middleware
     res.json({ user: req.user.toJSON() });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user info', error: error.message });
+    console.error('[auth] error fetching current user:', error);
+    res.status(500).json({ message: 'Error fetching user info' });
+  }
+};
+
+// PATCH /api/auth/me - Update own profile (name/email) or change password
+exports.updateCurrentUser = async (req, res) => {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+
+    // authenticate() selects -password; reload the full document so we can
+    // verify the current password and re-hash via the pre-save hook.
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(401).json({ message: 'User not found or inactive' });
+    }
+
+    if (name !== undefined) {
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: 'Name cannot be empty' });
+      }
+      user.name = name.trim();
+    }
+
+    if (email !== undefined) {
+      if (!email || !email.trim()) {
+        return res.status(400).json({ message: 'Email cannot be empty' });
+      }
+      const normalized = email.toLowerCase().trim();
+      if (normalized !== user.email) {
+        const clash = await User.findOne({ email: normalized });
+        if (clash) {
+          return res.status(409).json({ message: 'Email already registered' });
+        }
+        user.email = normalized;
+      }
+    }
+
+    if (newPassword !== undefined || currentPassword !== undefined) {
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Both current and new passwords are required' });
+      }
+      if (!(await user.comparePassword(currentPassword))) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'New password must be at least 8 characters' });
+      }
+      user.password = newPassword; // hashed by the pre-save hook
+    }
+
+    if (user.isModified()) {
+      await user.save();
+    }
+
+    res.status(200).json({ user: user.toJSON() });
+  } catch (error) {
+    console.error('[auth] error updating current user:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

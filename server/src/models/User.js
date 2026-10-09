@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // Internal claim token (never exposed via toJSON, never settable via
+  // the API): see the index below and authController.register.
+  adminSlot: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -48,15 +53,23 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, 12);
 });
 
+// Claim token for the "first registered user becomes admin" rule.
+// The UNIQUE SPARSE index guarantees at most ONE document can hold the
+// token: concurrent first registrations race, and the index (not the
+// application) arbitrates atomically — exactly one winner.
+// (Sparse: documents without the field do not index; nulls are ignored.)
+userSchema.index({ adminSlot: 1 }, { unique: true, sparse: true });
+
 // Compare password method
 userSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-// Exclude password from JSON output
+// Exclude password (and the internal claim token) from JSON output
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.adminSlot;
   return obj;
 };
 
