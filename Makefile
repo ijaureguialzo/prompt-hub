@@ -7,7 +7,10 @@ help: _header
 	@echo build / certs
 	@echo start / stop / restart
 	@echo ----------------------
-	@echo test
+	@echo test / lint
+	@echo ----------------------
+	@echo seed-admin / seed-data
+	@echo ----------------------
 	@echo clean
 	@echo ----------------------
 
@@ -43,6 +46,24 @@ lint:
 
 certs:
 	@traefik/crear_certs.sh prompthub.test
+
+# Bootstrap an admin user directly in the database (idempotent).
+# Usage: make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]
+seed-admin:
+	@if [ -z "$(SEED_EMAIL)" ] || [ -z "$(SEED_PASSWORD)" ]; then \
+		echo "Usage: make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]"; \
+		exit 1; \
+	fi
+	@cd server && SEED_EMAIL="$(SEED_EMAIL)" SEED_PASSWORD="$(SEED_PASSWORD)" SEED_NAME="$(SEED_NAME)" npm run seed:admin
+
+# Seed demo content for one user (idempotent, [demo]-marked).
+# Usage: make seed-data SEED_USER_EMAIL=x@y.com
+seed-data:
+	@if [ -z "$(SEED_USER_EMAIL)" ]; then \
+		echo "Usage: make seed-data SEED_USER_EMAIL=x@y.com"; \
+		exit 1; \
+	fi
+	@cd server && SEED_USER_EMAIL="$(SEED_USER_EMAIL)" npm run seed:data
 
 _start-command:
 	@docker-compose up -d --remove-orphans

@@ -152,8 +152,7 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 ## 8. Operational Scripts
 
 ```bash
-cd server
-SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name] npm run seed:admin  # idempotent admin bootstrap
-SEED_USER_EMAIL=x@y.com npm run seed:data   # idempotent demo content (marked [demo])
-node src/scripts/migrateAddName.js          # one-off migration (name field backfill)
+make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]  # idempotent admin bootstrap
+make seed-data SEED_USER_EMAIL=x@y.com   # idempotent demo content (marked [demo])
+cd server && node src/scripts/migrateAddName.js          # one-off migration (name field backfill)
 ```
