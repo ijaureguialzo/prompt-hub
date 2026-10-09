@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { canNavigate } from './guards.js'
 
 const routes = [
   {
@@ -49,49 +50,8 @@ const router = createRouter({
   routes,
 })
 
-function isAuthenticated() {
-  const token = localStorage.getItem('token')
-  if (!token) return false
-  // A valid session requires both token and user data
-  try {
-    const user = JSON.parse(localStorage.getItem('user'))
-    return !!user && !!user.email
-  } catch {
-    return false
-  }
-}
-
-function isAdmin() {
-  try {
-    const user = JSON.parse(localStorage.getItem('user'))
-    return user?.role === 'admin'
-  } catch {
-    return false
-  }
-}
-
-// Auth guard: redirect unauthenticated users to login
-router.beforeEach((to) => {
-  // Public routes (login, register) — no guard needed
-  if (to.name === 'Login' || to.name === 'Register') {
-    // If already logged in, redirect to home
-    if (isAuthenticated()) {
-      return { name: 'PromptList' }
-    }
-    return
-  }
-
-  // Protected routes: require full authentication (token + valid user)
-  if (!isAuthenticated()) {
-    return { name: 'Login', query: { redirect: to.fullPath } }
-  }
-
-  // Admin routes: require admin role
-  if (to.meta.requiresAdmin && !isAdmin()) {
-    return { name: 'PromptList' }
-  }
-
-  return true
-})
+// Auth guard: public routes for everyone, protected routes require a full
+// session, /profile/:id of another user requires admin (see guards.js).
+router.beforeEach(canNavigate)
 
 export default router

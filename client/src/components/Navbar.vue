@@ -23,7 +23,7 @@
         <!-- Right side: user info + theme selector + language -->
         <div class="flex items-center space-x-4">
           <!-- User profile dropdown (authenticated) -->
-          <div v-if="authStore.isAuthenticated" class="relative">
+          <div v-if="authStore.isAuthenticated" ref="dropdownRef" class="relative">
             <button @click="isDropdownOpen = !isDropdownOpen"
               class="flex items-center space-x-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium px-2 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,8 +38,7 @@
 
             <!-- Dropdown menu -->
             <div v-show="isDropdownOpen"
-              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-50"
-              @click.outside="isDropdownOpen = false">
+              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-50">
               <router-link :to="{ name: 'Profile', params: { id: authStore.user._id } }"
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400">
                 {{ t('profile.viewProfile') }}
@@ -108,6 +107,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { onClickOutside } from '@vueuse/core'
 import { useI18nStore } from '../stores/useI18nStore'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useThemeStore } from '../stores/useThemeStore'
@@ -119,6 +119,13 @@ const t = i18nStore.t
 const router = useRouter()
 
 const isDropdownOpen = ref(false)
+const dropdownRef = ref(null)
+
+// Close the profile dropdown on any click outside of it. (Vue has no
+// built-in click.outside directive — @vueuse/core provides this.)
+onClickOutside(dropdownRef, () => {
+  isDropdownOpen.value = false
+})
 
 function handleLogout() {
   authStore.logout()

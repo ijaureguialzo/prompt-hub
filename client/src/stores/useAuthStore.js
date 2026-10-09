@@ -90,6 +90,14 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async updateMe(data) {
+      // Self-service profile update (name/email/password) via PATCH /auth/me
+      const updated = await authApi.updateMe(data)
+      this.user = updated.user
+      saveUser(updated.user)
+      return updated.user
+    },
+
     async updateUser(updatedUser) {
       // Refresh user data from server (e.g. after admin changes role)
       await this.fetchCurrentUser()

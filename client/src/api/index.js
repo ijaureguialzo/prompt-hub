@@ -9,7 +9,16 @@ function clearAuth() {
   try { localStorage.removeItem('user') } catch {}
 }
 
-async function apiRequest(endpoint, options = {}) {
+// Registered by main.js (avoids a circular import between the API client
+// and the stores/router). Called with the current path on every 401; the
+// handler decides when to redirect (e.g. skipping login/register pages).
+let onUnauthorized = null
+
+export function registerUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+
+export async function apiRequest(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`
   const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...options.headers }
@@ -17,21 +26,32 @@ async function apiRequest(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  const response = await fetch(url, {
-    headers,
-    ...options,
-  })
+  let response
+  try {
+    response = await fetch(url, {
+      headers,
+      ...options,
+    })
+  } catch {
+    throw new Error('Network error. Is the API reachable?')
+  }
 
-  const data = await response.json()
+  // Safe body parsing: a reverse proxy may return non-JSON error pages.
+  const text = await response.text()
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    data = {}
+  }
 
   if (!response.ok) {
-    // Clear stale token on 401 (auth error from backend)
+    // Expired/invalid session: clear stale auth and delegate the redirect
+    // (soft navigation via the router, no full page reload) to the handler.
     if (response.status === 401) {
       clearAuth()
-      // Redirect to login if not already there
-      const currentPath = window.location.pathname
-      if (currentPath !== '/login' && currentPath !== '/register') {
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+      if (onUnauthorized) {
+        onUnauthorized(window.location.pathname)
       }
     }
     throw new Error(data.message || 'Request failed')
@@ -65,6 +85,7 @@ export const authApi = {
   register: (name, email, password) => apiRequest('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
   login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getCurrentUser: () => apiRequest('/auth/me'),
+  updateMe: (data) => apiRequest('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
 }
 
 export const usersApi = {

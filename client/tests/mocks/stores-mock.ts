@@ -13,6 +13,7 @@ export function createMockAuthStore(overrides: Record<string, unknown> = {}) {
     register: vi.fn().mockResolvedValue({ token: 'fake-jwt-token', user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const } }),
     fetchCurrentUser: vi.fn().mockResolvedValue({ user: { _id: 'user-1', email: 'test@example.com', role: 'admin' as const } }),
     updateUser: vi.fn().mockResolvedValue(undefined),
+    updateMe: vi.fn().mockResolvedValue({ _id: 'user-1', email: 'test@example.com', role: 'admin' as const }),
     logout: vi.fn(),
     init: vi.fn(),
     ...overrides,
