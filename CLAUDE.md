@@ -63,7 +63,7 @@ prompt-hub/
 
 - Vue SFCs: `<script setup>` with Composition API (`ref`, `computed`, `onMounted`).
 - Pinia: `defineStore` with reactive state + actions.
-- Controllers: query → ownership check (if not admin) → response.
+- Controllers: query → response. Ownership is enforced by `requireOwnership` route middleware (runs BEFORE any write; admins bypass) — never move writes before that check.
 - API client functions match backend route prefixes (`/api/prompts`, `/api/categories`, etc.).
 - Locale files parallel: en.js, es.js, eu.js must always have matching keys.
 

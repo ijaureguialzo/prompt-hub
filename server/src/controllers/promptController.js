@@ -68,24 +68,19 @@ exports.updatePrompt = async (req, res) => {
     return res.status(404).json({ message: 'Prompt not found' });
   }
 
-  // Ownership check (admins bypass)
-  if (req.user.role !== 'admin' && prompt.ownerId.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: 'You can only modify your own prompts' });
-  }
+  // Ownership is enforced by the requireOwnership route middleware, which
+  // runs BEFORE this handler writes. Never reorder: check first, write second.
 
   res.status(200).json(prompt);
 };
 
 // DELETE /api/prompts/:id - Remove a prompt (owner or admin only)
 exports.deletePrompt = async (req, res) => {
+  // Ownership is enforced by the requireOwnership route middleware, which
+  // runs BEFORE this handler deletes. Only the owner or an admin reaches here.
   const prompt = await Prompt.findByIdAndDelete(req.params.id);
   if (!prompt) {
     return res.status(404).json({ message: 'Prompt not found' });
-  }
-
-  // Ownership check (admins bypass)
-  if (req.user.role !== 'admin' && prompt.ownerId.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: 'You can only delete your own prompts' });
   }
 
   res.status(200).json({ message: 'Prompt deleted successfully' });

@@ -70,24 +70,19 @@ exports.updateCategory = async (req, res) => {
     return res.status(404).json({ message: 'Category not found' });
   }
 
-  // Ownership check (admins bypass)
-  if (req.user.role !== 'admin' && category.ownerId.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: 'You can only modify your own categories' });
-  }
+  // Ownership is enforced by the requireOwnership route middleware, which
+  // runs BEFORE this handler writes. Never reorder: check first, write second.
 
   res.status(200).json(category);
 };
 
 // DELETE /api/categories/:id - Remove a category (owner or admin only)
 exports.deleteCategory = async (req, res) => {
+  // Ownership is enforced by the requireOwnership route middleware, which
+  // runs BEFORE this handler deletes. Only the owner or an admin reaches here.
   const category = await Category.findByIdAndDelete(req.params.id);
   if (!category) {
     return res.status(404).json({ message: 'Category not found' });
-  }
-
-  // Ownership check (admins bypass)
-  if (req.user.role !== 'admin' && category.ownerId.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: 'You can only delete your own categories' });
   }
 
   // Cascade delete all prompts belonging to this category

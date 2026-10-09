@@ -295,6 +295,16 @@ describe('Prompts (CRUD + Ownership)', () => {
         .send({ title: 'Hacked Title', content: 'Stolen content' });
 
       expect(res.status).toBe(403);
+
+      // Regression (IDOR): the rejected update must NOT have been applied.
+      // Ownership must be verified BEFORE the write, not after.
+      const verifyRes = await request(app)
+        .get('/api/prompts/' + promptId)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.title).toBe('Others Prompt');
+      expect(verifyRes.body.content).toBe('Not yours');
     });
 
     it('admin can update any prompt (bypasses ownership)', async () => {
@@ -403,6 +413,14 @@ describe('Prompts (CRUD + Ownership)', () => {
         .set('Authorization', `Bearer ${regularToken}`);
 
       expect(res.status).toBe(403);
+
+      // Regression (IDOR): the rejected delete must NOT have removed the prompt.
+      const verifyRes = await request(app)
+        .get('/api/prompts/' + promptId)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.content).toBe('Not yours');
     });
 
     it('admin can delete any prompt (bypasses ownership)', async () => {

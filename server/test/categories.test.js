@@ -189,6 +189,15 @@ describe('Categories (CRUD + Cascade Delete)', () => {
         .send({ name: 'Hacked Category' });
 
       expect(res.status).toBe(403);
+
+      // Regression (IDOR): the rejected update must NOT have been applied.
+      // Ownership must be verified BEFORE the write, not after.
+      const verifyRes = await request(app)
+        .get('/api/categories/' + category1Id)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.name).toBe('Tech Category');
     });
 
     it('admin can update any category (bypasses ownership)', async () => {
@@ -246,6 +255,14 @@ describe('Categories (CRUD + Cascade Delete)', () => {
         .set('Authorization', `Bearer ${regularToken}`);
 
       expect(res.status).toBe(403);
+
+      // Regression (IDOR): the rejected delete must NOT have removed the category.
+      const verifyRes = await request(app)
+        .get('/api/categories/' + category1Id)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.name).toBe('Tech Category');
     });
 
     it('admin can delete any category (bypasses ownership)', async () => {
