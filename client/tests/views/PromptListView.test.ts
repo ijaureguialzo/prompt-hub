@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick, defineComponent } from 'vue'
 import PromptListView from '@/views/PromptListView.vue'
 
 const mockAuthStoreState = {
@@ -55,8 +56,10 @@ const mockUIStoreState = {
   setError: vi.fn(),
   setShowCreatePromptModal: vi.fn(),
   setShowCreateCategoryModal: vi.fn(),
+  setEditingCategory: vi.fn(),
   showCreatePromptModal: false,
-  showCreateCategoryModal: false
+  showCreateCategoryModal: false,
+  editingCategory: null
 }
 const mockI18nStoreState = { t: (key: string) => key, language: 'en' }
 
@@ -83,6 +86,16 @@ vi.mock('@/stores/useI18nStore.js', () => ({
 // Stub router-link and child components.
 const routerLinkStub = { template: '<a><slot /></a>' }
 
+// Functional stub: exposes the `editing` prop and emits close on click,
+// so tests can assert the store -> modal data flow.
+const createCategoryModalStub = defineComponent({
+  name: 'CreateCategoryModal',
+  props: { editing: { type: Object, default: null } },
+  emits: ['close'],
+  template:
+    '<div class="cat-modal" @click="$emit(\'close\')">{{ editing ? editing.name : \'new\' }}</div>'
+})
+
 function getWrapper() {
   return mount(PromptListView, {
     global: {
@@ -91,7 +104,7 @@ function getWrapper() {
         CategoryList: '<div><h2>Categories</h2></div>',
         PromptCard: '<div class="prompt-card"><slot /></div>',
         CreatePromptModal: '<div />',
-        CreateCategoryModal: '<div />'
+        CreateCategoryModal: createCategoryModalStub
       }
     },
     attachTo: document.body
@@ -160,5 +173,57 @@ describe('PromptListView', () => {
 
   it('shows error toast when fetch fails', async () => {
     mockPromptStoreState.loading = false
+  })
+})
+
+describe('PromptListView — category edit flow (UI store contract)', () => {
+  // The shared mock is module-scoped: reset the modal state so these
+  // tests don't leak the stub into the other (placeholder) tests.
+  function resetModalState() {
+    mockUIStoreState.showCreateCategoryModal = false
+    mockUIStoreState.editingCategory = null
+    vi.mocked(mockUIStoreState.setShowCreateCategoryModal).mockClear()
+    vi.mocked(mockUIStoreState.setEditingCategory).mockClear()
+    vi.mocked(mockCategoryStoreState.fetchCategories).mockClear()
+  }
+
+  beforeEach(() => {
+    resetModalState()
+    mockPromptStoreState.loading = false
+  })
+
+  it('passes the category from uiStore.editingCategory into the modal', async () => {
+    const cat = { _id: 'cat-1', name: 'Category One' }
+    mockUIStoreState.editingCategory = cat
+    mockUIStoreState.showCreateCategoryModal = true
+
+    const wrapper = getWrapper()
+    await nextTick()
+
+    const modal = wrapper.findComponent(createCategoryModalStub)
+    expect(modal.exists()).toBe(true)
+    expect(modal.props('editing')).toEqual(cat)
+
+    resetModalState()
+    wrapper.unmount()
+  })
+
+  it('closing the modal clears the editing state and refetches categories', async () => {
+    mockUIStoreState.editingCategory = { _id: 'cat-1', name: 'Category One' }
+    mockUIStoreState.showCreateCategoryModal = true
+
+    const wrapper = getWrapper()
+    await nextTick()
+
+    const modal = wrapper.findComponent(createCategoryModalStub)
+    expect(modal.exists()).toBe(true)
+    await modal.trigger('click') // the stub emits close
+
+    expect(mockUIStoreState.setShowCreateCategoryModal).toHaveBeenCalledWith(false)
+    expect(mockUIStoreState.setEditingCategory).toHaveBeenCalledWith(null)
+    expect(mockCategoryStoreState.fetchCategories).toHaveBeenCalled()
+
+    resetModalState()
+    wrapper.unmount()
   })
 })
