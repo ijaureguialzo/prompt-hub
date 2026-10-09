@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Search (debounced, applied server-side) -->
     <SearchBar v-model="searchQuery" />
 
     <!-- Tag filter bar -->
@@ -44,30 +44,43 @@
         <CategoryList />
       </div>
 
-      <!-- Prompts list -->
+      <!-- Prompts list (filtered + paginated server-side) -->
       <div class="flex-1">
         <div v-if="promptStore.loading" class="text-center py-8">
           <p class="text-gray-500 dark:text-gray-400">{{ t('promptList.loading') }}</p>
         </div>
 
-        <div v-else-if="filteredPrompts.length === 0" class="text-center py-8">
+        <div v-else-if="promptStore.prompts.length === 0" class="text-center py-8">
           <p class="text-gray-500 dark:text-gray-400">{{ t('promptList.noPrompts') }}</p>
         </div>
 
-        <div v-else class="space-y-4">
-          <PromptCard
-            v-for="prompt in filteredPrompts"
-            :key="prompt._id"
-            :prompt="prompt"
-            @filterByCategory="onFilterByCategory"
-            @filterByTag="onFilterByTag"
-          />
+        <div v-else>
+          <div class="space-y-4">
+            <PromptCard
+              v-for="prompt in promptStore.prompts"
+              :key="prompt._id"
+              :prompt="prompt"
+              @filterByCategory="onFilterByCategory"
+              @filterByTag="onFilterByTag"
+            />
+          </div>
+
+          <!-- Load more (server-side pagination) -->
+          <div v-if="promptStore.hasMore" class="mt-4 text-center">
+            <button
+              @click="promptStore.loadMore()"
+              :disabled="promptStore.loadingMore"
+              class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+            >
+              {{ promptStore.loadingMore ? t('common.loading') : t('promptList.loadMore') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Create Prompt Modal -->
-    <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" @saved="() => { uiStore.setShowCreatePromptModal(false); promptStore.fetchPrompts(); }" />
+    <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" @saved="() => { uiStore.setShowCreatePromptModal(false); promptStore.setFilters(currentFilters()) }" />
 
     <!-- Create Category Modal -->
     <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" :editing="uiStore.editingCategory" @close="onCategoryModalClose" />
@@ -75,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
@@ -97,16 +110,50 @@ const t = i18nStore.t
 const searchQuery = ref('')
 const selectedTags = ref([])
 
+const UNCAT_ID = '__uncategorized__'
+const SEARCH_DEBOUNCE_MS = 300
+
 function onCategoryModalClose() {
   uiStore.setEditingCategory(null)
   uiStore.setShowCreateCategoryModal(false)
   categoryStore.fetchCategories()
 }
 
+// The prompt store's filters, driven by this view's UI state.
+function currentFilters() {
+  const cat = categoryStore.selectedCategoryId
+  return {
+    q: searchQuery.value,
+    // The virtual uncategorized selection maps to the server's 'none'
+    categoryId: cat === UNCAT_ID ? 'none' : cat || '',
+    tags: selectedTags.value
+  }
+}
+
+// Re-apply the filters (debounced for typing, immediate for clicks).
+let searchTimer = null
+function applyFilters() {
+  promptStore.setFilters(currentFilters()).catch((err) => {
+    uiStore.setError(err.message)
+  })
+}
+
+function scheduleFilterChange() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(applyFilters, SEARCH_DEBOUNCE_MS)
+}
+
+watch(searchQuery, scheduleFilterChange)
+watch(
+  () => categoryStore.selectedCategoryId,
+  applyFilters
+)
+watch(selectedTags, applyFilters, { deep: true })
+
 function onFilterByCategory(catName) {
   const uncategorizedLabel = t('createPromptModal.uncategorized')
   if (catName === uncategorizedLabel) {
-    categoryStore.selectCategory('__uncategorized__')
+    categoryStore.selectCategory(UNCAT_ID)
     selectedTags.value = []
   } else {
     const cat = categoryStore.categories.find(c => c.name === catName)
@@ -137,47 +184,18 @@ function removeTag(tag) {
   }
 }
 
-const filteredPrompts = computed(() => {
-  let result = promptStore.prompts
-
-  // Filter by search query
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    result = result.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      p.content.toLowerCase().includes(q) ||
-      (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))
-    )
-  }
-
-  // Filter by selected category (including virtual __uncategorized__)
-  if (categoryStore.selectedCategoryId) {
-    const isUncat = categoryStore.selectedCategoryId === '__uncategorized__'
-    if (isUncat) {
-      result = result.filter(p => !p.categoryId || p.categoryId === '')
-    } else {
-      result = result.filter(p => p.categoryId?._id === categoryStore.selectedCategoryId)
-    }
-  }
-
-  // AND-filter by selected tags
-  if (selectedTags.value.length > 0) {
-    result = result.filter(p =>
-      selectedTags.value.every(tag => p.tags && p.tags.includes(tag))
-    )
-  }
-
-  return result
-})
-
 onMounted(async () => {
   try {
     await Promise.all([
-      promptStore.fetchPrompts(),
+      promptStore.setFilters(currentFilters()),
       categoryStore.fetchCategories()
     ])
   } catch (error) {
     uiStore.setError(error.message)
   }
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
 })
 </script>

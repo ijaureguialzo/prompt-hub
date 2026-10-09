@@ -2,7 +2,7 @@
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
       <div class="p-6">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ t('common.confirmDeleteTitle') }}</h2>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ modalTitle }}</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">{{ confirmationMessage }}</p>
         <div class="flex justify-end space-x-3">
           <button type="button" @click="$emit('close')"
@@ -26,6 +26,8 @@ import { useI18nStore } from '../stores/useI18nStore.js'
 const props = defineProps({
   entityType: { type: String, required: true },
   entityId: { type: String, required: true },
+  // Optional human-readable label shown in the message (e.g. the user's email)
+  entityLabel: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'confirm'])
@@ -33,9 +35,20 @@ const emit = defineEmits(['close', 'confirm'])
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
+// Deactivating a user is a soft delete (their data survives), so the
+// wording differs from a hard prompt/category deletion.
+const modalTitle = computed(() =>
+  props.entityType === 'user' ? t('common.confirmDeactivateTitle') : t('common.confirmDeleteTitle')
+)
+
 const confirmationMessage = computed(() => {
   if (props.entityType === 'prompt') {
     return t('common.confirmDeletePrompt')
+  }
+  if (props.entityType === 'user') {
+    return props.entityLabel
+      ? t('common.confirmDeactivateUserLabeled').replace('{label}', props.entityLabel)
+      : t('common.confirmDeactivateUser')
   }
   return t('common.confirmDeleteCategory')
 })

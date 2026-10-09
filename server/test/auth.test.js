@@ -208,6 +208,29 @@ describe('Auth', () => {
       expect(res.status).toBe(401);
     });
 
+    it('uses the same generic message for unknown email and wrong password (no enumeration)', async () => {
+      // An attacker must not be able to tell which emails are registered:
+      // both failure paths return the identical message (and, since the
+      // unknown-email path compares against a dummy bcrypt hash, similar
+      // response times).
+      await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'User', email: 'known@test.com', password: 'password123' });
+
+      const unknown = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'ghost@test.com', password: 'password123' });
+
+      const wrong = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'known@test.com', password: 'definitely-wrong' });
+
+      expect(unknown.status).toBe(401);
+      expect(wrong.status).toBe(401);
+      expect(unknown.body.message).toBe(wrong.body.message);
+      expect(unknown.body.message).toBe('Invalid credentials');
+    });
+
     it('returns 401 when password is wrong', async () => {
       await request(app)
         .post('/api/auth/register')

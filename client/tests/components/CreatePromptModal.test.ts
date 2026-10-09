@@ -7,6 +7,8 @@ const mockCategoryStoreState = {
   currentCategory: null,
   selectedCategoryId: '',
   loading: false,
+  uncategorizedCount: 0,
+  totalPrompts: 0,
   fetchCategories: vi.fn().mockResolvedValue([{ _id: 'cat-1', name: 'Cat One' }]),
   fetchCategory: vi.fn().mockResolvedValue(null),
   createCategory: vi.fn().mockResolvedValue({}),

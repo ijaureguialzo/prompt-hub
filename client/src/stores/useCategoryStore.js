@@ -6,7 +6,11 @@ export const useCategoryStore = defineStore('categories', {
     categories: [],
     currentCategory: null,
     selectedCategoryId: null,
-    loading: false
+    loading: false,
+    // Server-side counts (from GET /api/categories): the sidebar must show
+    // accurate numbers even though the prompt list is paginated.
+    uncategorizedCount: 0,
+    totalPrompts: 0
   }),
 
   getters: {
@@ -20,7 +24,18 @@ export const useCategoryStore = defineStore('categories', {
     async fetchCategories() {
       this.loading = true
       try {
-        this.categories = await categoriesApi.getAll()
+        // The server returns { categories, uncategorizedCount, totalPrompts }.
+        // Each category carries a denormalized promptCount.
+        const data = await categoriesApi.getAll()
+        // An array (legacy shape) is tolerated for tests/mocks.
+        if (Array.isArray(data)) {
+          this.categories = data
+        } else {
+          this.categories = data.categories ?? []
+          this.uncategorizedCount = data.uncategorizedCount ?? 0
+          this.totalPrompts = data.totalPrompts ?? 0
+        }
+        return this.categories
       } catch (error) {
         throw new Error(error.message, { cause: error })
       } finally {
@@ -61,6 +76,8 @@ export const useCategoryStore = defineStore('categories', {
       if (this.selectedCategoryId === id) {
         this.selectedCategoryId = null
       }
+      // The server-side counts (promptCount / totalPrompts) are stale now —
+      // callers refresh via fetchCategories().
     },
 
     selectCategory(id) {

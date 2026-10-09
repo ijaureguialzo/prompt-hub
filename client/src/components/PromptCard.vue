@@ -6,7 +6,9 @@
     <div class="flex items-start justify-between gap-4">
       <div class="flex-1 min-w-0">
         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{{ prompt.title }}</p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ prompt.content }}</p>
+        <!-- List rows carry a server-computed excerpt (content is not
+             shipped in the list payload); detail rows carry the content. -->
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ prompt.excerpt || prompt.content }}</p>
         <div class="mt-3 flex flex-wrap gap-2">
           <span v-if="prompt.categoryId" @click.stop="$emit('filterByCategory', prompt.categoryId.name)"
             class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full cursor-pointer border"

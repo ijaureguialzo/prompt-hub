@@ -71,11 +71,31 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 export const promptsApi = {
-  getAll: () => apiRequest('/prompts'),
+  getAll: (params = {}) => apiRequest(buildUrl('/prompts', params)),
   getById: (id) => apiRequest(`/prompts/${id}`),
   create: (data) => apiRequest('/prompts', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' })
+}
+
+/**
+ * Append query params, skipping empty values. Array params repeat the key
+ * (e.g. { tag: ['a', 'b'] } -> ?tag=a&tag=b) for the server's AND filter.
+ */
+function buildUrl(endpoint, params) {
+  const parts = []
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item === undefined || item === null || item === '') continue
+        parts.push(`${key}=${encodeURIComponent(item)}`)
+      }
+    } else {
+      parts.push(`${key}=${encodeURIComponent(value)}`)
+    }
+  }
+  return parts.length ? `${endpoint}?${parts.join('&')}` : endpoint
 }
 
 export const categoriesApi = {

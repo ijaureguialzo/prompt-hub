@@ -18,6 +18,8 @@ const mockCategoryStoreState = {
   currentCategory: null,
   selectedCategoryId: null,
   loading: false,
+  uncategorizedCount: 1,
+  totalPrompts: 2,
   fetchCategories: vi.fn().mockResolvedValue(mockCategories),
   fetchCategory: vi.fn().mockResolvedValue(null),
   createCategory: vi.fn().mockResolvedValue({}),

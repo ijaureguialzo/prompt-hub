@@ -7,6 +7,8 @@ const {
   updateConfig
 } = require('../controllers/siteConfigController');
 
+const { logger, errToMeta } = require('../utils/logger');
+
 // Public route: return registration status (no auth required).
 // Atomic upsert — a plain GET must never fail on the cold-start race
 // (findById + conditional save let two concurrent first-reads collide on
@@ -16,7 +18,7 @@ router.get('/public', async (_req, res) => {
     const config = await getOrCreateSiteConfig();
     res.status(200).json({ registrationEnabled: config.registrationEnabled });
   } catch (error) {
-    console.error('[site-config] error fetching public config:', error);
+    logger.error('site-config: error fetching public config', { err: errToMeta(error) });
     res.status(500).json({ message: 'Error fetching site config' });
   }
 });

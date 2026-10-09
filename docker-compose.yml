@@ -38,6 +38,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=1h
       - CORS_ORIGIN=${CORS_ORIGIN}
+      - MAX_PROMPTS_PER_USER=${MAX_PROMPTS_PER_USER:-200}
+      - MAX_CATEGORIES_PER_USER=${MAX_CATEGORIES_PER_USER:-50}
     healthcheck:
       test: [ "CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));" ]
       interval: 10s

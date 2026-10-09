@@ -7,7 +7,9 @@ async function seedAdmin() {
   const password = process.env.SEED_PASSWORD;
 
   if (!email || !password) {
-    console.error('Usage: SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name] node src/scripts/seedAdmin.js');
+    console.error(
+      'Usage: SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name] node src/scripts/seedAdmin.js'
+    );
     process.exit(1);
   }
 
@@ -23,9 +25,9 @@ async function seedAdmin() {
     }
 
     console.warn(
-      'WARNING: this writes a user directly to the database. If the app is '
-        + 'already in use, prefer creating the first account via /api/auth/register '
-        + '(first registrant becomes admin) instead.'
+      'WARNING: this writes a user directly to the database. If the app is ' +
+        'already in use, prefer creating the first account via /api/auth/register ' +
+        '(first registrant becomes admin) instead.'
     );
 
     // Check if user with this email exists

@@ -4,7 +4,7 @@ import { useCategoryStore } from '@/stores/useCategoryStore'
 
 vi.mock('@/api/index.js', () => ({
   categoriesApi: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi.fn().mockResolvedValue({ categories: [], uncategorizedCount: 0, totalPrompts: 0 }),
     getById: vi
       .fn()
       .mockResolvedValue({ _id: 'cat-1', name: 'Test Category', description: 'A test category' }),
@@ -42,6 +42,21 @@ describe('useCategoryStore', () => {
     ;(categoriesApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockCategories)
     await store.fetchCategories()
     expect(store.categories).toEqual(mockCategories)
+  })
+
+  it('fetchCategories() unwraps the object shape into categories + counts', async () => {
+    const store = getCategoryStore()
+    const { categoriesApi } = await import('@/api/index.js')
+    ;(categoriesApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      categories: [{ _id: 'c1', name: 'Cat 1', promptCount: 3 }],
+      uncategorizedCount: 7,
+      totalPrompts: 10
+    })
+    await store.fetchCategories()
+    expect(store.categories).toHaveLength(1)
+    expect(store.categories[0].promptCount).toBe(3)
+    expect(store.uncategorizedCount).toBe(7)
+    expect(store.totalPrompts).toBe(10)
   })
 
   it('fetchCategories() calls categoriesApi.getAll', async () => {

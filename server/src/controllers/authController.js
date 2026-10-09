@@ -1,7 +1,15 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const SiteConfig = require('../models/SiteConfig');
 const { getJwtSecret, ConfigError } = require('../config');
+const { logger, errToMeta } = require('../utils/logger');
+
+// Precomputed bcrypt hash of a random string (cost 12, matching the User
+// schema's hashing cost). Compared against when the email is unknown so the
+// request burns the same CPU as a real check — response timing must not
+// leak which emails are registered (user enumeration).
+const DUMMY_HASH = '$2b$12$K6RUJBkv7BIDIKow.dy4c.MEXxou1M20hM756sBLQtgLdPosK75CW';
 
 function generateToken(user) {
   // Never sign with a default/weak secret: the server refuses to start
@@ -27,7 +35,7 @@ function handleAuthError(res, error) {
     const messages = Object.values(error.errors).map((e) => e.message);
     return res.status(400).json({ message: messages.join(' ') });
   }
-  console.error('[auth] unexpected error:', error);
+  logger.error('auth: unexpected error', { err: errToMeta(error) });
   return res.status(500).json({ message: 'Internal Server Error' });
 }
 
@@ -105,7 +113,11 @@ exports.login = async (req, res) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user || !(await user.comparePassword(password))) {
+    // Always run a bcrypt comparison (dummy hash when the user is missing)
+    // so unknown emails cost the same as wrong passwords — no enumeration
+    // via response timing.
+    const passwordMatches = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
+    if (!user || !passwordMatches) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -125,7 +137,7 @@ exports.getCurrentUser = async (req, res) => {
     // req.user already set by authenticate middleware
     res.json({ user: req.user.toJSON() });
   } catch (error) {
-    console.error('[auth] error fetching current user:', error);
+    logger.error('auth: error fetching current user', { err: errToMeta(error) });
     res.status(500).json({ message: 'Error fetching user info' });
   }
 };
@@ -182,7 +194,7 @@ exports.updateCurrentUser = async (req, res) => {
 
     res.status(200).json({ user: user.toJSON() });
   } catch (error) {
-    console.error('[auth] error updating current user:', error);
+    logger.error('auth: error updating current user', { err: errToMeta(error) });
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };

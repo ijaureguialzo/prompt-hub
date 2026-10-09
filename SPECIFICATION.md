@@ -23,8 +23,8 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 ### 2.2 Prompts API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/prompts` | `GET` | List prompts (newest first; `?limit=` max 500, `?page=`; populated categoryId.name) | — | `Array<Prompt>` | 200, 500 |
-| `/api/prompts` | `POST` | Create prompt (ownership check) | `{ title, content, categoryId?, tags[] }` | `Prompt` | 201, 400, 500 |
+| `/api/prompts` | `GET` | List prompts, newest first, paginated (`?limit=` default 50, max 500; `?page=`; `?q=` substring on title/content/tags; `?categoryId=` id or `none` for uncategorized; `?tag=` repeatable, AND). Rows are lightweight: metadata + `excerpt` (first 200 chars of content) — full content only on `GET /:id` | — | `{ prompts: Prompt[], total, page, limit, hasMore }` | 200, 400, 500 |
+| `/api/prompts` | `POST` | Create prompt (ownership check; per-user quota → 409; per-IP write rate limit → 429) | `{ title, content, categoryId?, tags[] }` | `Prompt` | 201, 400, 409, 429, 500 |
 | `/api/prompts/:id` | `GET` | Get single prompt (populate categoryId.name) | — | `Prompt` | 200, 404, 500 |
 | `/api/prompts/:id` | `PUT` | Update prompt (ownership check) | `{ title?, content?, categoryId? }` | `Prompt` | 200, 400, 404, 500 |
 | `/api/prompts/:id` | `DELETE` | Delete prompt (ownership check) | — | `{ message }` | 200, 404, 500 |
@@ -32,8 +32,8 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 ### 2.3 Categories API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/categories` | `GET` | List all categories (populate ownerId) | — | `Array<Category>` | 200, 500 |
-| `/api/categories` | `POST` | Create category (ownership check) | `{ name, description? }` | `Category` | 201, 400, 500 |
+| `/api/categories` | `GET` | List all categories with denormalized `promptCount`, plus `{ uncategorizedCount, totalPrompts }` for the sidebar | — | `{ categories: Category[], uncategorizedCount, totalPrompts }` | 200, 500 |
+| `/api/categories` | `POST` | Create category (ownership check; per-user quota → 409; per-IP write rate limit → 429) | `{ name, description? }` | `Category` | 201, 400, 409, 429, 500 |
 | `/api/categories/:id` | `GET` | Get single category (populate ownerId) | — | `Category` | 200, 404, 500 |
 | `/api/categories/:id` | `PUT` | Update category (ownership check) | `{ name?, description? }` | `Category` | 200, 400, 404, 500 |
 | `/api/categories/:id` | `DELETE` | Delete category (admin: cascade-delete its prompts; non-admin owner: deletes only own prompts, others are unlinked) | — | `{ message }` | 200, 403, 404, 500 |
@@ -57,7 +57,11 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 | :--- | :--- | :--- | :--- |
 | `/api/health` | `GET` | Liveness probe (no auth) | 200 `{ status: 'OK', timestamp }` |
 
-**Rate limiting** (per IP; disabled in the test environment): login 10/15min, register 5/15min, all other API requests 300/15min. Exceeded → `429`.
+**Rate limiting** (per IP; disabled in the test environment): login 10/15min, register 5/15min, content creation (`POST /api/prompts`, `POST /api/categories`) 20/15min, all other API requests 300/15min. Exceeded → `429`. Quotas are tunable via `RATE_LIMIT_AUTH`, `RATE_LIMIT_REGISTER`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_API`.
+
+**Abuse protection**: per-user quotas bound what one account can create (`MAX_PROMPTS_PER_USER` default 200, `MAX_CATEGORIES_PER_USER` default 50; enforced with a count before the insert, best-effort under concurrency). Combined with the creation rate limit, this prevents a single account from flooding the shared prompt list or the categories sidebar.
+
+**Login**: unknown emails are compared against a dummy bcrypt hash so response timing does not reveal which emails are registered.
 
 ---
 
@@ -74,6 +78,7 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 ### Prompt
 ```javascript
 { title: String(required, ≤100), content: String(required, ≤50000),
+  excerpt: String (computed on read via $substrCP projection in list views; never written),
   categoryId: ObjectId(ref:'Category', nullable, indexed),
   ownerId: ObjectId(ref:'User', indexed),
   tags: [String(≤50)] (max 20),
@@ -106,7 +111,7 @@ All protected routes require a Bearer Token (`Authorization` header). Admin rout
 
 ### Components (9): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal
 
-### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt), useCategoryStore (CRUD + selection), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
+### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt + server-side filters `q`/`categoryId`/`tags` + `loadMore` pagination), useCategoryStore (CRUD + selection + server counts), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
 
 ### Routes (8): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/profile/:id` → ProfileView, `/admin/users` (admin guard)
 

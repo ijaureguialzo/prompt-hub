@@ -88,7 +88,13 @@ const t = i18nStore.t
 
 const categories = computed(() => categoryStore.categories)
 
+// The uncategorized option is driven by the server-side count (accurate
+// regardless of list pagination); fall back to the local window if the
+// API predates that field.
 const uncategorizedCount = computed(() => {
+  if (typeof categoryStore.uncategorizedCount === 'number') {
+    return categoryStore.uncategorizedCount
+  }
   return promptStore.prompts.filter(p => !p.categoryId).length
 })
 

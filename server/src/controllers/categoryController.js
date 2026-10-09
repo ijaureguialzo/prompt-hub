@@ -1,11 +1,31 @@
 const Category = require('../models/Category');
 const Prompt = require('../models/Prompt');
+const { getLimits } = require('../config');
 const { logAudit } = require('../utils/audit');
 
-// GET /api/categories - Retrieve all categories (authenticated)
+// GET /api/categories - List all categories (authenticated).
+// Returns { categories, uncategorizedCount, totalPrompts } so the client
+// sidebar can show accurate counts without loading every prompt: each
+// category gets a denormalized promptCount from a single aggregation.
 exports.getAllCategories = async (req, res) => {
-  const categories = await Category.find().sort({ createdAt: -1 });
-  res.status(200).json(categories);
+  const [categories, groups, uncategorizedCount, totalPrompts] = await Promise.all([
+    Category.find().sort({ createdAt: -1 }),
+    Prompt.aggregate([
+      { $match: { categoryId: { $ne: null } } },
+      { $group: { _id: '$categoryId', count: { $sum: 1 } } }
+    ]),
+    Prompt.countDocuments({ categoryId: null }),
+    Prompt.countDocuments()
+  ]);
+
+  const counts = new Map(groups.map((g) => [g._id.toString(), g.count]));
+  const withCounts = categories.map((c) => {
+    const obj = c.toObject();
+    obj.promptCount = counts.get(c._id.toString()) || 0;
+    return obj;
+  });
+
+  res.status(200).json({ categories: withCounts, uncategorizedCount, totalPrompts });
 };
 
 // GET /api/categories/:id - Retrieve a specific category (authenticated)
@@ -32,6 +52,16 @@ exports.createCategory = async (req, res) => {
   });
   if (existing) {
     return res.status(400).json({ message: 'Category name must be unique' });
+  }
+
+  // Per-user quota: bounds category creation (any authenticated user can
+  // otherwise create unbounded categories, which bloat every user's sidebar).
+  const { maxCategoriesPerUser } = getLimits();
+  const existingCount = await Category.countDocuments({ ownerId: req.user._id });
+  if (existingCount >= maxCategoriesPerUser) {
+    return res
+      .status(409)
+      .json({ message: `Category limit reached (${maxCategoriesPerUser} per user)` });
   }
 
   const category = new Category({
@@ -68,7 +98,7 @@ exports.updateCategory = async (req, res) => {
       description: description ? description.trim() : '',
       updatedAt: new Date()
     },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!category) {

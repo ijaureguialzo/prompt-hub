@@ -3,6 +3,7 @@ const router = express.Router();
 const promptController = require('../controllers/promptController');
 const { authenticate } = require('../middleware/auth');
 const { requireOwnership } = require('../middleware/ownership');
+const { writeLimiter } = require('../middleware/rateLimit');
 
 // All routes require authentication
 router.use(authenticate);
@@ -10,7 +11,8 @@ router.use(authenticate);
 router.get('/', promptController.getAllPrompts);
 router.get('/:id', promptController.getPromptById);
 
-router.post('/', promptController.createPrompt);
+// Creation is rate limited per IP on top of the per-user quota.
+router.post('/', writeLimiter, promptController.createPrompt);
 
 // Write routes require ownership (owner or admin), enforced BEFORE the
 // controller writes anything.

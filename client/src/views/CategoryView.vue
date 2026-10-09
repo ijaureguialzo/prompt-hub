@@ -33,12 +33,22 @@
 
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{{ t('categoryView.sectionHeading') }}</h2>
 
-        <div v-if="categoryPrompts.length === 0" class="text-gray-500 italic">
+        <div v-if="promptStore.loading" class="text-gray-500 dark:text-gray-400 py-4">
+          <span>{{ t('common.loading') }}</span>
+        </div>
+
+        <div v-else-if="promptStore.prompts.length === 0" class="text-gray-500 italic">
           <span class="text-gray-500 dark:text-gray-400">{{ t('categoryView.noPromptsInCat') }}</span>
         </div>
 
         <div v-else class="space-y-4">
-          <PromptCard v-for="prompt in categoryPrompts" :key="prompt._id" :prompt="prompt" />
+          <PromptCard v-for="prompt in promptStore.prompts" :key="prompt._id" :prompt="prompt" />
+          <div v-if="promptStore.hasMore" class="text-center">
+            <button @click="promptStore.loadMore()" :disabled="promptStore.loadingMore"
+              class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
+              {{ promptStore.loadingMore ? t('common.loading') : t('promptList.loadMore') }}
+            </button>
+          </div>
         </div>
 
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">
@@ -64,8 +74,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useUIStore } from '../stores/useUIStore'
@@ -76,6 +86,7 @@ import CreateCategoryModal from '../components/CreateCategoryModal.vue'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
 
 const route = useRoute()
+const router = useRouter()
 const categoryStore = useCategoryStore()
 const promptStore = usePromptStore()
 const uiStore = useUIStore()
@@ -87,10 +98,6 @@ const editModalOpen = ref(false)
 const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)
 
-const categoryPrompts = computed(() =>
-  promptStore.prompts.filter(p => p.categoryId?._id === route.params.id)
-)
-
 function isOwnCategory() {
   if (!authStore.isAuthenticated || !categoryStore.currentCategory) return false
   return authStore.isOwner(categoryStore.currentCategory.ownerId)
@@ -98,9 +105,12 @@ function isOwnCategory() {
 
 onMounted(async () => {
   try {
+    // The prompt store is shared with the list view: scope it to this
+    // category so the server (not a local window of the global list)
+    // decides which prompts are shown.
     await Promise.all([
       categoryStore.fetchCategory(route.params.id),
-      promptStore.fetchPrompts()
+      promptStore.setFilters({ q: '', categoryId: route.params.id, tags: [] })
     ])
   } catch (error) {
     uiStore.setError(error.message)
@@ -114,7 +124,9 @@ function openDeleteDialog() {
 
 function handleDeleteConfirm(id) {
   categoryStore.deleteCategory(id).then(() => {
-    window.location.href = '/'
+    // Soft navigation: a full page reload (the old window.location.href)
+    // would re-fetch everything for no reason.
+    router.push('/')
   }).catch(err => {
     uiStore.setError(err.message)
   })

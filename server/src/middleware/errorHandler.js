@@ -3,6 +3,8 @@
 // Security: developer-written messages (Mongoose validators, mapped
 // duplicate-key/cast errors) are safe to return. Raw error messages from
 // drivers/OS are logged server-side and NOT exposed in production.
+const { logger, errToMeta } = require('../utils/logger');
+
 exports.errorHandler = (err, req, res, _next) => {
   // Mongoose validation error (developer-defined messages — safe to expose)
   if (err.name === 'ValidationError') {
@@ -22,7 +24,11 @@ exports.errorHandler = (err, req, res, _next) => {
   }
 
   // Anything else: log details server-side, generic client message.
-  console.error(`[error] ${req.method} ${req.originalUrl}:`, err);
+  logger.error(`request failed: ${req.method} ${req.originalUrl}`, {
+    requestId: req.id,
+    status: err.status || 500,
+    err: errToMeta(err)
+  });
   const isProduction = process.env.NODE_ENV === 'production';
   res.status(err.status || 500).json({
     message: isProduction ? 'Internal Server Error' : err.message || 'Internal Server Error'

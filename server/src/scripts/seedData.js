@@ -15,6 +15,11 @@ const Prompt = require('../models/Prompt');
 const DEMO_MARKER = '[demo]';
 
 // Content is deliberately language-neutral; the UI handles i18n.
+// Idempotency check. The marker is escaped for regex use: in a $regex
+// string, '[demo]' would be a CHARACTER CLASS matching any single one of
+// the letters d/e/m/o (e.g. "Coding") — far broader than intended.
+const DEMO_MARKER_REGEX = '^' + DEMO_MARKER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const DEMO_CATEGORIES = [
   { name: `${DEMO_MARKER} Coding`, description: 'Prompts for development tasks' },
   { name: `${DEMO_MARKER} Marketing`, description: 'Copy, campaigns and SEO' },
@@ -106,11 +111,13 @@ async function seedData() {
 
   // Idempotency check
   const existing = await Category.findOne({
-    name: { $regex: `${DEMO_MARKER}` },
+    name: { $regex: DEMO_MARKER_REGEX },
     ownerId: owner._id
   });
   if (existing) {
-    console.log(`Demo content already exists for ${owner.email} (found "${existing.name}") — nothing to do.`);
+    console.log(
+      `Demo content already exists for ${owner.email} (found "${existing.name}") — nothing to do.`
+    );
     process.exit(0);
   }
 
@@ -119,7 +126,7 @@ async function seedData() {
   const categories = [];
   for (const def of DEMO_CATEGORIES) {
     categories.push(
-      await Category.create({ ...def, name: def.name, ownerId: owner._id })
+      await Category.create({ name: def.name, description: def.description, ownerId: owner._id })
     );
   }
 
@@ -137,7 +144,9 @@ async function seedData() {
   }
 
   console.log(`Done: ${categories.length} categories, ${prompts.length} prompts.`);
-  console.log('Note: demo items are marked with a [demo] prefix so you can find (and delete) them.');
+  console.log(
+    'Note: demo items are marked with a [demo] prefix so you can find (and delete) them.'
+  );
 
   process.exit(0);
 }

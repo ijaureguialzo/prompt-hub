@@ -1,5 +1,6 @@
 const SiteConfig = require('../models/SiteConfig');
 const { logAudit } = require('../utils/audit');
+const { logger, errToMeta } = require('../utils/logger');
 
 // Atomic read-or-create of the singleton config document. The previous
 // `findById` + conditional `save()` turned every cold GET into a write
@@ -20,7 +21,7 @@ exports.getConfig = async (req, res) => {
     const config = await exports.getOrCreateSiteConfig();
     res.status(200).json(config);
   } catch (error) {
-    console.error('[site-config] error fetching config:', error);
+    logger.error('site-config: error fetching config', { err: errToMeta(error) });
     res.status(500).json({ message: 'Error fetching site config' });
   }
 };
@@ -63,7 +64,7 @@ exports.updateConfig = async (req, res) => {
       const messages = Object.values(error.errors).map((e) => e.message);
       return res.status(400).json({ message: messages.join(' ') });
     }
-    console.error('[site-config] error updating config:', error);
+    logger.error('site-config: error updating config', { err: errToMeta(error) });
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };

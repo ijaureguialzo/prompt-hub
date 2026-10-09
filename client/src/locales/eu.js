@@ -60,7 +60,8 @@ export default {
     loading: 'Promptak kargatzen...',
     noPrompts: 'Ez da prompterik aurkitu.',
     filteredByTags: 'Etiketen arabera iragazitakoak',
-    clearAllTags: 'Garbi etiketa guztiak'
+    clearAllTags: 'Garbi etiketa guztiak',
+    loadMore: 'Kargatu gehiago'
   },
   promptDetail: {
     backLink: 'Itzuli promptetara',
@@ -99,6 +100,10 @@ export default {
     confirmDeleteTitle: 'Berretsi ezabaketa',
     confirmDeletePrompt: 'Ziur prompta ezabatu nahi duzu?',
     confirmDeleteCategory: 'Kategoria hau ezabatu?',
+    confirmDeactivateTitle: 'Berretsi desaktibazioa',
+    confirmDeactivateUser:
+      'Ziur zenuen erabiltzailea hau desgaitu nahi duzun? Bere datuak gorde egingo dira.',
+    confirmDeactivateUserLabeled: '{label} desgaitu? Bere datuak gorde egingo dira.',
     promptUpdated: 'Prompta arrakastaz eguneratuta!',
     promptCreated: 'Prompta arrakastaz sortuta!',
     categoryUpdated: 'Kategoria arrakastaz eguneratuta!',

@@ -13,17 +13,17 @@
               ? 'bg-indigo-600 text-white font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
           ]">
-          {{ t('categoryList.allCategories') }} <span class="text-gray-500 dark:text-gray-400">({{ promptStore.prompts.length }})</span>
+          {{ t('categoryList.allCategories') }} <span class="text-gray-500 dark:text-gray-400">({{ categoryStore.totalPrompts }})</span>
         </button>
       </li>
 
-      <li v-if="getUncategorizedCount() > 0">
+      <li v-if="categoryStore.uncategorizedCount > 0">
         <button @click="handleSelectCategory(UNCATEGORIZED_ID)"
           :class="[
             'w-full text-left px-3 py-2 rounded-md text-sm transition-colors truncate',
             isUncategorizedHighlighted()
           ]">
-          {{ t('createPromptModal.uncategorized') }} <span class="text-gray-500 dark:text-gray-400">({{ getUncategorizedCount() }})</span>
+          {{ t('createPromptModal.uncategorized') }} <span class="text-gray-500 dark:text-gray-400">({{ categoryStore.uncategorizedCount }})</span>
         </button>
       </li>
 
@@ -36,7 +36,7 @@
                 ? 'bg-indigo-600 text-white font-medium'
                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
             ]">
-            {{ cat.name }} <span class="text-gray-500 dark:text-gray-400">({{ promptCounts[cat._id] }})</span>
+            {{ cat.name }} <span class="text-gray-500 dark:text-gray-400">({{ cat.promptCount ?? localCounts[cat._id] ?? 0 }})</span>
           </button>
           <div class="flex opacity-0 group-hover:opacity-100 transition-opacity">
             <button @click="openEditCategory(cat)" class="p-1 text-gray-400 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400" :title="t('categoryList.edit')">
@@ -85,11 +85,10 @@ const uiStore = useUIStore()
 const i18nStore = useI18nStore()
 const t = i18nStore.t
 
-const uncategorizedCount = computed(() => {
-  return promptStore.prompts.filter(p => !p.categoryId || p.categoryId === '').length
-})
-
-const promptCounts = computed(() => {
+// Per-category counts: the canonical source is the server-provided
+// promptCount (accurate even though the prompt list is paginated); the
+// local window is only a fallback for older API responses.
+const localCounts = computed(() => {
   const counts = {}
   for (const cat of categoryStore.categories) {
     counts[cat._id] = promptStore.prompts.filter(p => p.categoryId?._id === cat._id).length
@@ -118,10 +117,6 @@ function isUncategorizedHighlighted() {
   return isUncategorizedSelected() ? 'bg-indigo-600 text-white font-medium' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
 }
 
-function getUncategorizedCount() {
-  return uncategorizedCount.value
-}
-
 const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)
 
@@ -136,8 +131,14 @@ function confirmDeleteCategory(id) {
 }
 
 function handleDeleteConfirm(id) {
-  categoryStore.deleteCategory(id).catch(err => {
-    uiStore.setError(err.message)
-  })
+  categoryStore
+    .deleteCategory(id)
+    .then(() => {
+      // Refresh the list AND the server-side counts (promptCount, etc.)
+      return categoryStore.fetchCategories()
+    })
+    .catch(err => {
+      uiStore.setError(err.message)
+    })
 }
 </script>

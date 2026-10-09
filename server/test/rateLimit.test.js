@@ -47,4 +47,33 @@ describe('Rate limiting', () => {
       process.env.NODE_ENV = originalEnv;
     }
   });
+
+  it('returns 429 after exceeding the per-IP write limit on content creation (production mode)', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+
+    try {
+      // Quota defaults (200 prompts / 50 categories) are above the write
+      // limit (20/15min), so the limiter — not the quota — must trip first.
+      const register = await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'Writer', email: 'writer@test.com', password: 'password123' });
+      const token = register.body.token;
+
+      let lastStatus;
+      for (let i = 0; i < 21; i++) {
+        const res = await request(app)
+          .post('/api/prompts')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ title: `Post ${i}`, content: 'c' });
+        lastStatus = res.status;
+        if (res.status === 429) break;
+      }
+
+      // The 21st creation attempt must be rejected by the write limiter
+      expect(lastStatus).toBe(429);
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
 });

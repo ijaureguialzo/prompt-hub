@@ -4,7 +4,9 @@ import { usePromptStore } from '@/stores/usePromptStore'
 
 vi.mock('@/api/index.js', () => ({
   promptsApi: {
-    getAll: vi.fn().mockResolvedValue([]),
+    getAll: vi
+      .fn()
+      .mockResolvedValue({ prompts: [], total: 0, page: 1, limit: 50, hasMore: false }),
     getById: vi
       .fn()
       .mockResolvedValue({ _id: 'prompt-1', title: 'Test Prompt', content: 'Content here' }),
@@ -39,9 +41,85 @@ describe('usePromptStore', () => {
       { _id: 'p2', title: 'P2' }
     ]
     const { promptsApi } = await import('@/api/index.js')
-    ;(promptsApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockPrompts)
+    ;(promptsApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      prompts: mockPrompts,
+      total: 2,
+      page: 1,
+      limit: 50,
+      hasMore: false
+    })
     await store.fetchPrompts()
     expect(store.prompts).toEqual(mockPrompts)
+    expect(store.total).toBe(2)
+    expect(store.hasMore).toBe(false)
+  })
+
+  it('fetchPrompts() forwards the current filters to the API', async () => {
+    const store = getPromptStore()
+    store.filters = { q: 'needle', categoryId: 'cat-9', tags: ['a', 'b'] }
+    await store.fetchPrompts()
+    const { promptsApi } = await import('@/api/index.js')
+    expect(promptsApi.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ q: 'needle', categoryId: 'cat-9', tag: ['a', 'b'] })
+    )
+  })
+
+  it('setFilters() replaces the filters and refetches from page 1', async () => {
+    const store = getPromptStore()
+    store.page = 3
+    store.prompts = [{ _id: 'old' }]
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      prompts: [{ _id: 'fresh' }],
+      total: 1,
+      page: 1,
+      limit: 50,
+      hasMore: false
+    })
+
+    await store.setFilters({ q: 'x' })
+
+    expect(store.filters.q).toBe('x')
+    expect(store.filters.categoryId).toBe('')
+    expect(store.page).toBe(1)
+    expect(store.prompts.map((p) => p._id)).toEqual(['fresh'])
+    expect(promptsApi.getAll).toHaveBeenCalledWith(expect.objectContaining({ page: 1, q: 'x' }))
+  })
+
+  it('loadMore() appends the next page and advances the page counter', async () => {
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.getAll as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        prompts: [{ _id: 'p1' }],
+        total: 3,
+        page: 1,
+        limit: 50,
+        hasMore: true
+      })
+      .mockResolvedValueOnce({
+        prompts: [{ _id: 'p2' }, { _id: 'p3' }],
+        total: 3,
+        page: 2,
+        limit: 50,
+        hasMore: false
+      })
+
+    await store.fetchPrompts()
+    expect(store.hasMore).toBe(true)
+    await store.loadMore()
+    expect(store.prompts.map((p) => p._id)).toEqual(['p1', 'p2', 'p3'])
+    expect(store.hasMore).toBe(false)
+  })
+
+  it('loadMore() is a no-op when there is no more data', async () => {
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.getAll as ReturnType<typeof vi.fn>).mockClear()
+    await store.fetchPrompts()
+    await store.loadMore()
+    // Only the initial fetch should have hit the API
+    expect(promptsApi.getAll).toHaveBeenCalledTimes(1)
   })
 
   it('fetchPrompts() calls promptsApi.getAll', async () => {

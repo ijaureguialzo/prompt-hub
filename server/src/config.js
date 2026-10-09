@@ -24,6 +24,26 @@ function getJwtSecret() {
   return secret;
 }
 
+function positiveInt(value, fallback) {
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+
+/**
+ * Per-user content quotas (spam/DoS protection). Read dynamically so tests
+ * and ops can tune them via MAX_PROMPTS_PER_USER / MAX_CATEGORIES_PER_USER.
+ *
+ * Enforcement is best-effort (countDocuments before insert): a burst of
+ * concurrent creates can exceed the cap by a handful, but the per-account
+ * volume is bounded either way.
+ */
+function getLimits() {
+  return {
+    maxPromptsPerUser: positiveInt(process.env.MAX_PROMPTS_PER_USER, 200),
+    maxCategoriesPerUser: positiveInt(process.env.MAX_CATEGORIES_PER_USER, 50)
+  };
+}
+
 /**
  * Validate all required configuration. Throws ConfigError on the first
  * problem. Call at startup (server.js) before serving any request.
@@ -32,4 +52,4 @@ function assertConfig() {
   getJwtSecret(); // throws if invalid
 }
 
-module.exports = { ConfigError, getJwtSecret, assertConfig };
+module.exports = { ConfigError, getJwtSecret, assertConfig, getLimits };

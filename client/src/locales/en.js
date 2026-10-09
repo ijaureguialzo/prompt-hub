@@ -60,7 +60,8 @@ export default {
     loading: 'Loading prompts...',
     noPrompts: 'No prompts found.',
     filteredByTags: 'Filtered by tags',
-    clearAllTags: 'Clear all tags'
+    clearAllTags: 'Clear all tags',
+    loadMore: 'Load more'
   },
   promptDetail: {
     backLink: 'Back to Prompts',
@@ -99,6 +100,10 @@ export default {
     confirmDeleteTitle: 'Confirm Delete',
     confirmDeletePrompt: 'Are you sure you want to delete this prompt?',
     confirmDeleteCategory: 'Delete this category?',
+    confirmDeactivateTitle: 'Confirm Deactivation',
+    confirmDeactivateUser:
+      'Are you sure you want to deactivate this user? Their data will be preserved.',
+    confirmDeactivateUserLabeled: 'Deactivate {label}? Their data will be preserved.',
     promptUpdated: 'Prompt updated successfully!',
     promptCreated: 'Prompt created successfully!',
     categoryUpdated: 'Category updated successfully!',

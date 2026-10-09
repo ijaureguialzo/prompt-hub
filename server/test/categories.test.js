@@ -52,21 +52,53 @@ describe('Categories (CRUD + Cascade Delete)', () => {
     category2Id = cat2Res.body._id;
   });
 
-  // --- GET /api/categories (list all) ---
+  // --- GET /api/categories (list + counts) ---
 
   describe('GET /api/categories', () => {
-    it('returns all categories sorted by createdAt descending', async () => {
+    it('returns categories sorted by createdAt descending with counts', async () => {
       const res = await request(app)
         .get('/api/categories')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(2);
+      expect(res.body).toHaveProperty('categories');
+      expect(res.body.categories).toHaveLength(2);
 
       // Most recent should be first (createdAt desc)
-      expect(res.body[0].name).toBe('Creative Category');
-      expect(res.body[1].name).toBe('Tech Category');
+      expect(res.body.categories[0].name).toBe('Creative Category');
+      expect(res.body.categories[1].name).toBe('Tech Category');
+
+      // Denormalized counts (no prompts yet)
+      expect(res.body.categories[0]).toHaveProperty('promptCount', 0);
+      expect(res.body.uncategorizedCount).toBe(0);
+      expect(res.body.totalPrompts).toBe(0);
+    });
+
+    it('reports per-category prompt counts and uncategorized/total counts', async () => {
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'A1', content: 'c', categoryId: category1Id });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'A2', content: 'c', categoryId: category1Id });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'U1', content: 'c' });
+
+      const res = await request(app)
+        .get('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const tech = res.body.categories.find((c) => c.name === 'Tech Category');
+      const creative = res.body.categories.find((c) => c.name === 'Creative Category');
+
+      expect(tech.promptCount).toBe(2);
+      expect(creative.promptCount).toBe(0);
+      expect(res.body.uncategorizedCount).toBe(1);
+      expect(res.body.totalPrompts).toBe(3);
     });
 
     it('returns 401 without token', async () => {
@@ -159,6 +191,37 @@ describe('Categories (CRUD + Cascade Delete)', () => {
         .send({ name: 'Unauthorized', description: 'No token' });
 
       expect(res.status).toBe(401);
+    });
+
+    it('returns 409 once the per-user category quota is reached', async () => {
+      const original = process.env.MAX_CATEGORIES_PER_USER;
+      process.env.MAX_CATEGORIES_PER_USER = '1';
+      try {
+        // Admin already owns 'Tech Category' (created in beforeEach) — at quota
+        const res = await request(app)
+          .post('/api/categories')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ name: 'One Too Many' });
+
+        expect(res.status).toBe(409);
+        expect(res.body.message).toMatch(/limit reached/i);
+
+        // A fresh user (no categories yet) is unaffected by someone else's quota
+        const fresh = await request(app)
+          .post('/api/auth/register')
+          .send({ name: 'Fresh', email: 'fresh@quota.test', password: 'password123' });
+        const created = await request(app)
+          .post('/api/categories')
+          .set('Authorization', `Bearer ${fresh.body.token}`)
+          .send({ name: 'Fresh Category' });
+        expect(created.status).toBe(201);
+      } finally {
+        if (original === undefined) {
+          delete process.env.MAX_CATEGORIES_PER_USER;
+        } else {
+          process.env.MAX_CATEGORIES_PER_USER = original;
+        }
+      }
     });
   });
 

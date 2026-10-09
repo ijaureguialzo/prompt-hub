@@ -30,6 +30,15 @@ exports.registerLimiter = createLimiter({
   message: 'Too many signups. Please try again later.'
 });
 
+// Burst protection for content-creating endpoints (POST /api/prompts,
+// POST /api/categories), per client IP. Complements the per-user quotas:
+// quotas bound the TOTAL an account can accumulate, this bounds the RATE.
+exports.writeLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.RATE_LIMIT_WRITE) || 20,
+  message: 'Too many creations. Please slow down.'
+});
+
 // Loose global API limiter (general DoS protection, per client IP).
 exports.apiLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,

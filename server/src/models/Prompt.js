@@ -13,6 +13,11 @@ const promptSchema = new mongoose.Schema({
     // Hard cap: prevents unbounded documents/payloads
     maxlength: 50000
   },
+  // Computed-on-read excerpt for list views (populated from `content` via a
+  // $substrCP projection in GET /api/prompts; never written to the DB).
+  excerpt: {
+    type: String
+  },
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',

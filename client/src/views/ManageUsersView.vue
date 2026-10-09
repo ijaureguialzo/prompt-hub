@@ -48,27 +48,31 @@
         </div>
 
         <div class="flex items-center space-x-2">
-          <!-- Role dropdown (admin only) -->
-          <select v-model="user.role" @change="handleRoleChange(user)"
-            class="text-sm border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100">
+          <!-- Role dropdown: :value + change handler (NOT v-model) so a
+               failed request can roll the visible selection back.
+               The requesting admin's own row is locked (server refuses it). -->
+          <select :value="user.role" :disabled="user._id === authStore.user?._id"
+            @change="handleRoleChange(user, $event.target.value)"
+            class="text-sm border bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-gray-100 disabled:opacity-50">
             <option value="user">{{ t('admin.roleUser') }}</option>
             <option value="admin">{{ t('admin.roleAdmin') }}</option>
           </select>
 
           <!-- Toggle active status -->
-          <button @click="handleToggleActive(user)"
+          <button @click="handleToggleActive(user)" :disabled="user._id === authStore.user?._id"
             :class="[
               user.isActive
                 ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300'
                 : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300',
-              'text-sm font-medium'
+              'text-sm font-medium disabled:opacity-50'
             ]">
             {{ user.isActive ? t('admin.deactivate') : t('admin.activate') }}
           </button>
 
-          <!-- Delete user -->
-          <button @click="handleDeleteUser(user)"
-            class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium">
+          <!-- Delete user (confirmation modal, consistent with the rest) -->
+          <button @click="pendingDeleteUser = user"
+            :disabled="user._id === authStore.user?._id"
+            class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium disabled:opacity-50">
             {{ t('categoryList.delete') }}
           </button>
         </div>
@@ -79,6 +83,16 @@
         {{ t('admin.noUsers') }}
       </div>
     </div>
+
+    <!-- Deactivate-user confirmation (consistent with prompt/category deletes) -->
+    <DeleteConfirmationModal
+      v-if="pendingDeleteUser"
+      entity-type="user"
+      :entity-id="pendingDeleteUser._id"
+      :entity-label="pendingDeleteUser.email"
+      @close="pendingDeleteUser = null"
+      @confirm="handleDeactivateUser"
+    />
   </div>
 </template>
 
@@ -88,6 +102,7 @@ import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
 import { useUIStore } from '../stores/useUIStore'
 import { usersApi, siteConfigApi } from '../api/index.js'
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
 
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
@@ -100,8 +115,10 @@ const loading = ref(false)
 const configLoading = ref(false)
 const error = ref('')
 const editingUserId = ref(null)
+const pendingDeleteUser = ref(null)
 
 function startEdit(user) {
+  user._originalName = user.name
   editingUserId.value = user._id
 }
 
@@ -149,25 +166,41 @@ async function handleToggleRegistration() {
 }
 
 async function handleNameChange(user) {
+  // Enter fires the handler and then blurs the input — an in-flight guard
+  // plus a no-op check prevents duplicate PATCHes.
+  if (user._savingName) return
+  const name = user.name.trim()
+  if (!name || name === user._originalName) return
+  user._savingName = true
   try {
-    await usersApi.update(user._id, { name: user.name })
+    await usersApi.update(user._id, { name })
+    user._originalName = name
     uiStore.setSuccess(t('profile.nameUpdated'))
     if (user._id === authStore.user?._id) {
       await authStore.updateUser()
     }
   } catch (err) {
     uiStore.setError(err.message)
+  } finally {
+    delete user._savingName
   }
 }
 
-async function handleRoleChange(user) {
+async function handleRoleChange(user, newRole) {
+  if (newRole === user.role) return
+  // Optimistic set so the select shows the choice while the request is in
+  // flight; on failure the previous value is restored (the :value binding
+  // re-renders the select to match).
+  const previous = user.role
+  user.role = newRole
   try {
-    await usersApi.update(user._id, { role: user.role })
+    await usersApi.update(user._id, { role: newRole })
     uiStore.setSuccess(t('admin.roleUpdated'))
     if (user._id === authStore.user?._id) {
       await authStore.updateUser()
     }
   } catch (err) {
+    user.role = previous
     uiStore.setError(err.message)
   }
 }
@@ -186,19 +219,19 @@ async function handleToggleActive(user) {
   }
 }
 
-async function handleDeleteUser(user) {
-  const confirmed = window.confirm(`${t('admin.usersHeading')}: ${user.email}?`)
-  if (!confirmed) return
+async function handleDeactivateUser(id) {
   try {
-    await usersApi.delete(user._id)
+    await usersApi.delete(id)
     // Remove from local list without full refresh
-    const idx = users.value.findIndex(u => u._id === user._id)
+    const idx = users.value.findIndex(u => u._id === id)
     if (idx !== -1) {
       users.value.splice(idx, 1)
     }
     uiStore.setSuccess(t('admin.deactivatedMsg'))
   } catch (err) {
     uiStore.setError(err.message)
+  } finally {
+    pendingDeleteUser.value = null
   }
 }
 

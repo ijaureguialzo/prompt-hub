@@ -52,10 +52,10 @@ describe('Prompts (CRUD + Ownership)', () => {
     category2Id = cat2Res.body._id;
   });
 
-  // --- GET /api/prompts (list all) ---
+  // --- GET /api/prompts (list: search + filters + pagination) ---
 
   describe('GET /api/prompts', () => {
-    it('returns all prompts with populated categoryId', async () => {
+    it('returns prompts with populated categoryId, total and hasMore', async () => {
       // Create two prompts in different categories
       await request(app)
         .post('/api/prompts')
@@ -72,11 +72,14 @@ describe('Prompts (CRUD + Ownership)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(2);
+      expect(res.body).toHaveProperty('prompts');
+      expect(res.body).toHaveProperty('total', 2);
+      expect(res.body).toHaveProperty('page', 1);
+      expect(res.body.hasMore).toBe(false);
+      expect(res.body.prompts).toHaveLength(2);
 
       // Verify categoryId is populated (has a name field)
-      for (const prompt of res.body) {
+      for (const prompt of res.body.prompts) {
         expect(prompt).toHaveProperty('categoryId');
       }
     });
@@ -99,10 +102,10 @@ describe('Prompts (CRUD + Ownership)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBe(2);
+      expect(res.body.prompts).toHaveLength(2);
       // Most recent (Second) should be first
-      expect(res.body[0].title).toBe('Second');
-      expect(res.body[1].title).toBe('First');
+      expect(res.body.prompts[0].title).toBe('Second');
+      expect(res.body.prompts[1].title).toBe('First');
     });
 
     it('returns 401 without token', async () => {
@@ -122,7 +125,99 @@ describe('Prompts (CRUD + Ownership)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBe(1);
+      expect(res.body.prompts).toHaveLength(1);
+    });
+
+    it('returns a lightweight row: excerpt instead of the full content', async () => {
+      const longContent = 'x'.repeat(500);
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Heavy', content: longContent });
+
+      const res = await request(app)
+        .get('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      const row = res.body.prompts[0];
+      // The list row must NOT ship the full 500-char content...
+      expect(row.content).toBeUndefined();
+      // ...but a short excerpt for the card preview
+      expect(row.excerpt).toHaveLength(200);
+      expect(row.excerpt).toBe('x'.repeat(200));
+    });
+
+    it('searches ?q across title, content and tags (case-insensitive)', async () => {
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Alpha prompt', content: 'the quick brown fox' });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Beta prompt', content: 'nothing here' });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Gamma prompt', content: 'plain text', tags: ['QUICKstart'] });
+
+      const res = await request(app)
+        .get('/api/prompts?q=quick')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(2);
+      expect(res.body.prompts.map((p) => p.title).sort()).toEqual(['Alpha prompt', 'Gamma prompt']);
+    });
+
+    it('filters by ?categoryId and supports ?categoryId=none', async () => {
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'In Cat1', content: 'c', categoryId: category1Id });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Uncat', content: 'c' });
+
+      const inCat = await request(app)
+        .get(`/api/prompts?categoryId=${category1Id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(inCat.body.total).toBe(1);
+      expect(inCat.body.prompts[0].title).toBe('In Cat1');
+
+      const uncat = await request(app)
+        .get('/api/prompts?categoryId=none')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(uncat.body.total).toBe(1);
+      expect(uncat.body.prompts[0].title).toBe('Uncat');
+    });
+
+    it('filters by ?tag with AND semantics', async () => {
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'Both', content: 'c', tags: ['red', 'blue'] });
+      await request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ title: 'OnlyRed', content: 'c', tags: ['red'] });
+
+      const res = await request(app)
+        .get('/api/prompts?tag=red&tag=blue')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.body.total).toBe(1);
+      expect(res.body.prompts[0].title).toBe('Both');
+    });
+
+    it('returns 400 for an invalid categoryId', async () => {
+      const res = await request(app)
+        .get('/api/prompts?categoryId=not-an-id')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(400);
     });
 
     it('supports creating prompts with tags', async () => {
@@ -518,10 +613,50 @@ describe('Prompts (CRUD + Ownership)', () => {
     });
   });
 
+  // --- POST /api/prompts quota ---
+
+  describe('POST /api/prompts per-user quota', () => {
+    it('returns 409 once the per-user prompt quota is reached', async () => {
+      const original = process.env.MAX_PROMPTS_PER_USER;
+      process.env.MAX_PROMPTS_PER_USER = '2';
+      try {
+        await request(app)
+          .post('/api/prompts')
+          .set('Authorization', `Bearer ${regularToken}`)
+          .send({ title: 'Q1', content: 'c' });
+        await request(app)
+          .post('/api/prompts')
+          .set('Authorization', `Bearer ${regularToken}`)
+          .send({ title: 'Q2', content: 'c' });
+
+        const res = await request(app)
+          .post('/api/prompts')
+          .set('Authorization', `Bearer ${regularToken}`)
+          .send({ title: 'Q3', content: 'c' });
+
+        expect(res.status).toBe(409);
+        expect(res.body.message).toMatch(/limit reached/i);
+
+        // Other users are unaffected by this user's quota
+        const other = await request(app)
+          .post('/api/prompts')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ title: 'Other', content: 'c' });
+        expect(other.status).toBe(201);
+      } finally {
+        if (original === undefined) {
+          delete process.env.MAX_PROMPTS_PER_USER;
+        } else {
+          process.env.MAX_PROMPTS_PER_USER = original;
+        }
+      }
+    });
+  });
+
   // --- Pagination ---
 
   describe('GET /api/prompts pagination', () => {
-    it('supports limit and page, defaults return all (under cap)', async () => {
+    it('supports limit and page with total/hasMore, default is a bounded page', async () => {
       await request(app)
         .post('/api/prompts')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -541,25 +676,31 @@ describe('Prompts (CRUD + Ownership)', () => {
         .get('/api/prompts?limit=2&page=1')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(page1.status).toBe(200);
-      expect(page1.body.length).toBe(2);
+      expect(page1.body.prompts).toHaveLength(2);
+      expect(page1.body.total).toBe(3);
+      expect(page1.body.hasMore).toBe(true);
 
       const page2 = await request(app)
         .get('/api/prompts?limit=2&page=2')
         .set('Authorization', `Bearer ${adminToken}`);
-      expect(page2.body.length).toBe(1);
+      expect(page2.body.prompts).toHaveLength(1);
+      expect(page2.body.hasMore).toBe(false);
 
-      // Default (no params) returns everything under the 500 cap
+      // Default (no params) returns one bounded page (all 3 here, since
+      // below the 50 default), still reporting the total
       const all = await request(app)
         .get('/api/prompts')
         .set('Authorization', `Bearer ${adminToken}`);
-      expect(all.body.length).toBe(3);
+      expect(all.body.prompts).toHaveLength(3);
+      expect(all.body.total).toBe(3);
+      expect(all.body.hasMore).toBe(false);
 
       // Garbage params fall back to defaults without error
       const garbage = await request(app)
         .get('/api/prompts?limit=abc&page=xyz')
         .set('Authorization', `Bearer ${adminToken}`);
       expect(garbage.status).toBe(200);
-      expect(garbage.body.length).toBe(3);
+      expect(garbage.body.prompts).toHaveLength(3);
     });
   });
 
