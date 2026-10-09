@@ -15,8 +15,8 @@ make restart        # docker-compose down && up --build
 make build          # docker-compose pull && build --pull
 make test           # run both server and client test suites
 make lint           # lint both (ESLint) — CI runs lint + test
-make seed-admin SEED_EMAIL=… SEED_PASSWORD=…   # idempotent admin bootstrap (needs MONGO_URI)
-make seed-data SEED_USER_EMAIL=…               # idempotent demo content
+make seed-admin SEED_EMAIL=… SEED_PASSWORD=…   # idempotent admin bootstrap (runs inside the api container)
+make seed-data SEED_USER_EMAIL=…               # idempotent demo content (runs inside the api container)
 make clean          # docker-compose down -v (removes volumes)
 make certs          # Generate TLS certs via traefik/crear_certs.sh
 ```

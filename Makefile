@@ -47,6 +47,11 @@ lint:
 certs:
 	@traefik/crear_certs.sh prompthub.test
 
+# Seeds run INSIDE the api container (via docker compose run --rm): the local
+# host cannot reach the compose-network database (db:27017, auth, unpublished),
+# but the api container already has the correct MONGO_URI from the compose env.
+# This also starts db (api's dependency) if it is not running yet.
+
 # Bootstrap an admin user directly in the database (idempotent).
 # Usage: make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]
 seed-admin:
@@ -54,7 +59,11 @@ seed-admin:
 		echo "Usage: make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]"; \
 		exit 1; \
 	fi
-	@cd server && SEED_EMAIL="$(SEED_EMAIL)" SEED_PASSWORD="$(SEED_PASSWORD)" SEED_NAME="$(SEED_NAME)" npm run seed:admin
+	@docker-compose run --rm \
+		-e SEED_EMAIL="$(SEED_EMAIL)" \
+		-e SEED_PASSWORD="$(SEED_PASSWORD)" \
+		-e SEED_NAME="$(SEED_NAME)" \
+		api node src/scripts/seedAdmin.js
 
 # Seed demo content for one user (idempotent, [demo]-marked).
 # Usage: make seed-data SEED_USER_EMAIL=x@y.com
@@ -63,7 +72,9 @@ seed-data:
 		echo "Usage: make seed-data SEED_USER_EMAIL=x@y.com"; \
 		exit 1; \
 	fi
-	@cd server && SEED_USER_EMAIL="$(SEED_USER_EMAIL)" npm run seed:data
+	@docker-compose run --rm \
+		-e SEED_USER_EMAIL="$(SEED_USER_EMAIL)" \
+		api node src/scripts/seedData.js
 
 _start-command:
 	@docker-compose up -d --remove-orphans
