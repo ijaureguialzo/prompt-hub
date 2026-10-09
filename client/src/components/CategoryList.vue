@@ -126,7 +126,8 @@ const deleteDialogOpen = ref(false)
 const pendingDeleteId = ref(null)
 
 function openEditCategory(category) {
-  window.dispatchEvent(new CustomEvent('edit-category', { detail: category }))
+  uiStore.setEditingCategory(category)
+  uiStore.setShowCreateCategoryModal(true)
 }
 
 function confirmDeleteCategory(id) {

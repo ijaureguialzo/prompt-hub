@@ -60,11 +60,6 @@ export async function apiRequest(endpoint, options = {}) {
   return data
 }
 
-export function apiRequestWithToken(endpoint, options = {}) {
-  // Same as apiRequest but explicitly includes token from localStorage
-  return apiRequest(endpoint, options)
-}
-
 export const promptsApi = {
   getAll: () => apiRequest('/prompts'),
   getById: (id) => apiRequest(`/prompts/${id}`),

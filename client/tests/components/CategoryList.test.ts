@@ -39,7 +39,11 @@ const mockPromptStoreState = {
   clearCurrent: vi.fn(),
 }
 
-const mockUIStoreState = { setError: vi.fn() }
+const mockUIStoreState = {
+  setError: vi.fn(),
+  setShowCreateCategoryModal: vi.fn(),
+  setEditingCategory: vi.fn(),
+}
 
 vi.mock('@/stores/useCategoryStore', () => ({
   useCategoryStore: vi.fn(() => mockCategoryStoreState),
@@ -89,8 +93,17 @@ describe('CategoryList', () => {
     mockCategoryStoreState.loading = false
   })
 
-  it('dispatches edit-category event when edit button is clicked', async () => {
+  it('opens the category editor via the UI store when the edit button is clicked', async () => {
+    mockUIStoreState.setEditingCategory.mockClear()
+    mockUIStoreState.setShowCreateCategoryModal.mockClear()
     const wrapper = mount(CategoryList, { global: { stubs: { DeleteConfirmationModal: deleteModalStub } } })
+
+    const editButtons = wrapper.findAll('button[title="categoryList.edit"]')
+    expect(editButtons.length).toBe(2)
+
+    await editButtons[0].trigger('click')
+    expect(mockUIStoreState.setEditingCategory).toHaveBeenCalledWith(mockCategories[0])
+    expect(mockUIStoreState.setShowCreateCategoryModal).toHaveBeenCalledWith(true)
   })
 
   it('shows "No categories yet" when the list is empty', () => {

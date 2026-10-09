@@ -133,12 +133,4 @@ function openDeleteDialog() {
   pendingDeleteId.value = route.params.id
   deleteDialogOpen.value = true
 }
-
-function handleDeleteConfirm(id) {
-  promptStore.deletePrompt(id).then(() => {
-    router.push('/')
-  }).catch(err => {
-    uiStore.setError(err.message)
-  })
-}
 </script>

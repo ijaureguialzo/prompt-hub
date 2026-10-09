@@ -6,6 +6,7 @@ export const useUIStore = defineStore('ui', {
     successMessage: null,
     showCreatePromptModal: false,
     showCreateCategoryModal: false,
+    editingCategory: null,
   }),
 
   actions: {
@@ -29,6 +30,10 @@ export const useUIStore = defineStore('ui', {
 
     setShowCreateCategoryModal(show) {
       this.showCreateCategoryModal = show
+    },
+
+    setEditingCategory(category) {
+      this.editingCategory = category
     },
   },
 })

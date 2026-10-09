@@ -70,12 +70,12 @@
     <CreatePromptModal v-if="uiStore.showCreatePromptModal" @close="uiStore.setShowCreatePromptModal(false)" @saved="() => { uiStore.setShowCreatePromptModal(false); promptStore.fetchPrompts(); }" />
 
     <!-- Create Category Modal -->
-    <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" :editing="editingCategory" @close="onCategoryModalClose" />
+    <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" :editing="uiStore.editingCategory" @close="onCategoryModalClose" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { usePromptStore } from '../stores/usePromptStore'
 import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
@@ -95,21 +95,13 @@ const i18nStore = useI18nStore()
 const t = i18nStore.t
 
 const searchQuery = ref('')
-const editingCategory = ref(null)
 const selectedTags = ref([])
 
 function onCategoryModalClose() {
-  editingCategory.value = null
+  uiStore.setEditingCategory(null)
   uiStore.setShowCreateCategoryModal(false)
   categoryStore.fetchCategories()
 }
-
-const handleEditCategory = (event) => {
-  editingCategory.value = event.detail
-  uiStore.setShowCreateCategoryModal(true)
-}
-
-window.addEventListener('edit-category', handleEditCategory)
 
 function onFilterByCategory(catName) {
   const uncategorizedLabel = t('createPromptModal.uncategorized')
@@ -187,9 +179,5 @@ onMounted(async () => {
   } catch (error) {
     uiStore.setError(error.message)
   }
-})
-
-onUnmounted(() => {
-  window.removeEventListener('edit-category', handleEditCategory)
 })
 </script>

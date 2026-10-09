@@ -92,6 +92,23 @@ describe('useUIStore', () => {
     expect(store.showCreateCategoryModal).toBe(false)
   })
 
+  // --- setEditingCategory() ---
+
+  it('setEditingCategory() stores the category being edited', () => {
+    const store = getUIStore()
+    const cat = { _id: 'cat-9', name: 'To Edit' }
+    store.setEditingCategory(cat)
+    // Pinia wraps stored objects in a reactive proxy, so compare by value
+    expect(store.editingCategory).toEqual(cat)
+  })
+
+  it('setEditingCategory(null) clears the editing state', () => {
+    const store = getUIStore()
+    store.setEditingCategory({ _id: 'cat-9' })
+    store.setEditingCategory(null)
+    expect(store.editingCategory).toBeNull()
+  })
+
   // --- initial state ---
 
   it('initializes with all null/false values', () => {
@@ -100,5 +117,6 @@ describe('useUIStore', () => {
     expect(store.successMessage).toBeNull()
     expect(store.showCreatePromptModal).toBe(false)
     expect(store.showCreateCategoryModal).toBe(false)
+    expect(store.editingCategory).toBeNull()
   })
 })
