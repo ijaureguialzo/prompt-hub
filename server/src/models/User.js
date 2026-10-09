@@ -40,9 +40,11 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// Hash password before saving (Mongoose 9: promise-based middleware, no
+// callback — `next` was removed and would crash on every save of an
+// existing document whose password is unchanged).
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
 
