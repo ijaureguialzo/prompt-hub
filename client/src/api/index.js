@@ -1,4 +1,51 @@
+import { getActivePinia } from 'pinia'
+import { useI18nStore, translateFrom } from '../stores/useI18nStore.js'
+import en from '../locales/en.js'
+
 const API_URL = import.meta.env.VITE_API_URL || '/api'
+
+// Stable server error codes -> locale keys (see the `errors` section of the
+// locale files and the server's error responses). The server keeps the
+// English `message` as a fallback for clients that do not translate.
+const ERROR_CODE_KEYS = {
+  AUTH_REQUIRED: 'errors.authRequired',
+  INVALID_TOKEN: 'errors.invalidToken',
+  USER_INACTIVE: 'errors.userInactive',
+  FORBIDDEN: 'errors.forbidden',
+  NOT_OWNER: 'errors.notOwner',
+  INVALID_CREDENTIALS: 'errors.invalidCredentials',
+  ACCOUNT_DEACTIVATED: 'errors.accountDeactivated',
+  REGISTRATION_DISABLED: 'errors.registrationDisabled',
+  EMAIL_TAKEN: 'errors.emailTaken',
+  WRONG_PASSWORD: 'errors.wrongPassword',
+  PASSWORD_TOO_SHORT: 'errors.passwordTooShort',
+  VALIDATION_ERROR: 'errors.validationError',
+  TAGS_TOO_MANY: 'errors.tagsTooMany',
+  EMAIL_INVALID: 'errors.emailInvalid',
+  DUPLICATE: 'errors.duplicate',
+  NOT_FOUND: 'errors.notFound',
+  LIMIT_REACHED: 'errors.limitReached',
+  RATE_LIMITED: 'errors.rateLimited',
+  SELF_MODIFICATION: 'errors.selfModification',
+  INTERNAL_ERROR: 'errors.internalError'
+}
+
+// Resolves a message against the user's current locale. Outside an active
+// pinia (unit tests without one, non-Vue consumers) the English locale is
+// the fallback, so errors always have a sane English string.
+function tMessage(key, params = {}) {
+  const locale = getActivePinia() ? useI18nStore().currentLocale : en
+  return translateFrom(locale, key, params)
+}
+
+// Translates a server error body for the UI. Unknown/missing codes fall
+// back to the server's English message, then to a generic localized string.
+function toErrorMessage(data) {
+  const key = ERROR_CODE_KEYS[data?.code]
+  if (key) return tMessage(key, data)
+  if (data?.message) return data.message
+  return tMessage('errors.requestFailed')
+}
 
 function getToken() {
   return localStorage.getItem('token')
@@ -43,7 +90,7 @@ export async function apiRequest(endpoint, options = {}) {
       ...options
     })
   } catch {
-    throw new Error('Network error. Is the API reachable?')
+    throw new Error(tMessage('errors.networkError'))
   }
 
   // Safe body parsing: a reverse proxy may return non-JSON error pages.
@@ -64,7 +111,7 @@ export async function apiRequest(endpoint, options = {}) {
         onUnauthorized(window.location.pathname)
       }
     }
-    throw new Error(data.message || 'Request failed')
+    throw new Error(toErrorMessage(data))
   }
 
   return data

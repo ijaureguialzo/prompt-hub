@@ -205,6 +205,8 @@ describe('Categories (CRUD + Cascade Delete)', () => {
 
         expect(res.status).toBe(409);
         expect(res.body.message).toMatch(/limit reached/i);
+        expect(res.body.code).toBe('LIMIT_REACHED');
+        expect(res.body.limit).toBe(1);
 
         // A fresh user (no categories yet) is unaffected by someone else's quota
         const fresh = await request(app)

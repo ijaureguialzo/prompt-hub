@@ -14,6 +14,9 @@ const mongoose = require('mongoose');
  *
  * NOTE: the check-then-write sequence is safe here because `ownerId` is
  * set at creation and never changed by any API.
+ *
+ * The stable `NOT_OWNER` code lets the client localize the message; the
+ * English `message` remains as a fallback for non-localizing clients.
  */
 function requireOwnership(
   modelName,
@@ -29,7 +32,7 @@ function requireOwnership(
       if (req.user.role === 'admin') return next(); // Admins bypass ownership
 
       if (resource.ownerId.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: forbiddenMessage });
+        return res.status(403).json({ code: 'NOT_OWNER', message: forbiddenMessage });
       }
 
       next();

@@ -11,7 +11,7 @@ exports.getUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   const user = await User.findById(req.params.id).select('-password');
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'User not found' });
   }
   res.status(200).json(user);
 };
@@ -25,14 +25,17 @@ exports.updateUser = async (req, res) => {
   // left and no recovery path (new registrations always create 'user').
   const touchesStatus = role !== undefined || isActive !== undefined;
   if (touchesStatus && String(req.params.id) === String(req.user._id)) {
-    return res.status(400).json({ message: 'You cannot change your own role or status' });
+    return res.status(400).json({
+      code: 'SELF_MODIFICATION',
+      message: 'You cannot change your own role or status'
+    });
   }
 
   // Fetch the current state BEFORE updating: needed both for 404 handling
   // and for auditing the previous -> new transition.
   const existing = await User.findById(req.params.id);
   if (!existing) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'User not found' });
   }
 
   const updateData = {};
@@ -71,12 +74,15 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   const target = await User.findById(req.params.id);
   if (!target) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'User not found' });
   }
 
   // Lockout guard: see updateUser — an admin can never deactivate themselves.
   if (String(target._id) === String(req.user._id)) {
-    return res.status(400).json({ message: 'You cannot deactivate yourself' });
+    return res.status(400).json({
+      code: 'SELF_MODIFICATION',
+      message: 'You cannot deactivate yourself'
+    });
   }
 
   // Changing any other admin is safe: the requesting admin remains an

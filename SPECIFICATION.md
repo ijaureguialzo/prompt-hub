@@ -12,6 +12,19 @@ Full-stack AI prompt management system. Vue 3 frontend + Express/Mongoose backen
 
 All protected routes require a Bearer Token (`Authorization` header). Admin routes additionally require `role === 'admin'`.
 
+### Error response format
+
+All error responses share a stable, language-neutral shape:
+
+```json
+{ "code": "STABLE_CODE", "message": "English human-readable text", "...": "optional params" }
+```
+
+- `code` is a stable machine-readable identifier (`INVALID_TOKEN`, `AUTH_REQUIRED`, `USER_INACTIVE`, `FORBIDDEN`, `NOT_OWNER`, `INVALID_CREDENTIALS`, `ACCOUNT_DEACTIVATED`, `REGISTRATION_DISABLED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`, `PASSWORD_TOO_SHORT`, `VALIDATION_ERROR`, `TAGS_TOO_MANY`, `EMAIL_INVALID`, `DUPLICATE`, `NOT_FOUND`, `LIMIT_REACHED`, `RATE_LIMITED`, `SELF_MODIFICATION`, `INTERNAL_ERROR`).
+- `message` is the English fallback for clients that do not localize.
+- Some codes carry extra parameters for interpolation (`LIMIT_REACHED` includes `limit`).
+- The client maps `code` to a localized string (`errors.*` keys in `client/src/locales`); unknown codes fall back to `message`, then to a generic localized string. Never match on `message` content for behavior — use `code`.
+
 ### 2.1 Auth API
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |

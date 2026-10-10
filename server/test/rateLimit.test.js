@@ -22,15 +22,18 @@ describe('Rate limiting', () => {
     try {
       // Default login limit is 10 per 15 min per IP
       let lastStatus;
+      let lastBody;
       for (let i = 0; i < 11; i++) {
         const res = await request(app)
           .post('/api/auth/login')
           .send({ email: 'nobody@test.com', password: 'wrongpassword' });
         lastStatus = res.status;
+        lastBody = res.body;
       }
 
       // The 11th attempt must be rejected by the limiter
       expect(lastStatus).toBe(429);
+      expect(lastBody.code).toBe('RATE_LIMITED');
     } finally {
       process.env.NODE_ENV = originalEnv;
     }

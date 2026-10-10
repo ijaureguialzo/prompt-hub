@@ -22,7 +22,7 @@ exports.getConfig = async (req, res) => {
     res.status(200).json(config);
   } catch (error) {
     logger.error('site-config: error fetching config', { err: errToMeta(error) });
-    res.status(500).json({ message: 'Error fetching site config' });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Error fetching site config' });
   }
 };
 
@@ -62,9 +62,9 @@ exports.updateConfig = async (req, res) => {
   } catch (error) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((e) => e.message);
-      return res.status(400).json({ message: messages.join(' ') });
+      return res.status(400).json({ code: 'VALIDATION_ERROR', message: messages.join(' ') });
     }
     logger.error('site-config: error updating config', { err: errToMeta(error) });
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Internal Server Error' });
   }
 };

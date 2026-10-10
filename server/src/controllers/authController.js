@@ -4,6 +4,7 @@ const User = require('../models/User');
 const SiteConfig = require('../models/SiteConfig');
 const { getJwtSecret, ConfigError } = require('../config');
 const { logger, errToMeta } = require('../utils/logger');
+const KNOWN_VALIDATION_CODES = require('../utils/errorCodes');
 
 // Precomputed bcrypt hash of a random string (cost 12, matching the User
 // schema's hashing cost). Compared against when the email is unknown so the
@@ -24,19 +25,23 @@ function generateToken(user) {
 function handleAuthError(res, error) {
   if (error instanceof ConfigError) {
     // Unreachable in practice (startup validation), but never leak config.
-    return res.status(500).json({ message: 'Server misconfiguration' });
+    return res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Server misconfiguration' });
   }
   // Duplicate email (lost an insert race against the pre-check)
   if (error.code === 11000) {
-    return res.status(409).json({ message: 'Email already registered' });
+    return res.status(409).json({ code: 'EMAIL_TAKEN', message: 'Email already registered' });
   }
   // Developer-defined schema messages (e.g. email format) — safe to return
   if (error.name === 'ValidationError') {
     const messages = Object.values(error.errors).map((e) => e.message);
-    return res.status(400).json({ message: messages.join(' ') });
+    const specific = messages.map((m) => KNOWN_VALIDATION_CODES[m]).find(Boolean);
+    return res.status(400).json({
+      code: specific || 'VALIDATION_ERROR',
+      message: messages.join(' ')
+    });
   }
   logger.error('auth: unexpected error', { err: errToMeta(error) });
-  return res.status(500).json({ message: 'Internal Server Error' });
+  return res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Internal Server Error' });
 }
 
 // POST /api/auth/register - Self-registration (first user becomes admin)
@@ -45,7 +50,9 @@ exports.register = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email and password are required' });
+      return res
+        .status(400)
+        .json({ code: 'VALIDATION_ERROR', message: 'Name, email and password are required' });
     }
 
     // Check if registration is enabled site-wide
@@ -53,14 +60,15 @@ exports.register = async (req, res) => {
     const isEnabled = config ? config.registrationEnabled : true;
 
     if (!isEnabled) {
-      return res
-        .status(403)
-        .json({ message: 'Registration is currently disabled by the administrator.' });
+      return res.status(403).json({
+        code: 'REGISTRATION_DISABLED',
+        message: 'Registration is currently disabled by the administrator.'
+      });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
-      return res.status(409).json({ message: 'Email already registered' });
+      return res.status(409).json({ code: 'EMAIL_TAKEN', message: 'Email already registered' });
     }
 
     // First-registered user becomes admin — claimed atomically.
@@ -109,7 +117,9 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res
+        .status(400)
+        .json({ code: 'VALIDATION_ERROR', message: 'Email and password are required' });
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
@@ -118,11 +128,11 @@ exports.login = async (req, res) => {
     // via response timing.
     const passwordMatches = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
     if (!user || !passwordMatches) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' });
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ message: 'Account deactivated' });
+      return res.status(403).json({ code: 'ACCOUNT_DEACTIVATED', message: 'Account deactivated' });
     }
 
     res.json({ token: generateToken(user), user: user.toJSON() });
@@ -138,7 +148,7 @@ exports.getCurrentUser = async (req, res) => {
     res.json({ user: req.user.toJSON() });
   } catch (error) {
     logger.error('auth: error fetching current user', { err: errToMeta(error) });
-    res.status(500).json({ message: 'Error fetching user info' });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Error fetching user info' });
   }
 };
 
@@ -151,25 +161,25 @@ exports.updateCurrentUser = async (req, res) => {
     // verify the current password and re-hash via the pre-save hook.
     const user = await User.findById(req.user._id);
     if (!user) {
-      return res.status(401).json({ message: 'User not found or inactive' });
+      return res.status(401).json({ code: 'USER_INACTIVE', message: 'User not found or inactive' });
     }
 
     if (name !== undefined) {
       if (!name || !name.trim()) {
-        return res.status(400).json({ message: 'Name cannot be empty' });
+        return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Name cannot be empty' });
       }
       user.name = name.trim();
     }
 
     if (email !== undefined) {
       if (!email || !email.trim()) {
-        return res.status(400).json({ message: 'Email cannot be empty' });
+        return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Email cannot be empty' });
       }
       const normalized = email.toLowerCase().trim();
       if (normalized !== user.email) {
         const clash = await User.findOne({ email: normalized });
         if (clash) {
-          return res.status(409).json({ message: 'Email already registered' });
+          return res.status(409).json({ code: 'EMAIL_TAKEN', message: 'Email already registered' });
         }
         user.email = normalized;
       }
@@ -177,13 +187,21 @@ exports.updateCurrentUser = async (req, res) => {
 
     if (newPassword !== undefined || currentPassword !== undefined) {
       if (!currentPassword || !newPassword) {
-        return res.status(400).json({ message: 'Both current and new passwords are required' });
+        return res.status(400).json({
+          code: 'VALIDATION_ERROR',
+          message: 'Both current and new passwords are required'
+        });
       }
       if (!(await user.comparePassword(currentPassword))) {
-        return res.status(401).json({ message: 'Current password is incorrect' });
+        return res
+          .status(401)
+          .json({ code: 'WRONG_PASSWORD', message: 'Current password is incorrect' });
       }
       if (newPassword.length < 8) {
-        return res.status(400).json({ message: 'New password must be at least 8 characters' });
+        return res.status(400).json({
+          code: 'PASSWORD_TOO_SHORT',
+          message: 'New password must be at least 8 characters'
+        });
       }
       user.password = newPassword; // hashed by the pre-save hook
     }
@@ -195,6 +213,6 @@ exports.updateCurrentUser = async (req, res) => {
     res.status(200).json({ user: user.toJSON() });
   } catch (error) {
     logger.error('auth: error updating current user', { err: errToMeta(error) });
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Internal Server Error' });
   }
 };

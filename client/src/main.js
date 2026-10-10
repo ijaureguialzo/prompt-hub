@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router/index.js'
@@ -15,6 +15,15 @@ app.use(pinia)
 // Initialize i18n store (reads localStorage, detects browser language)
 const i18nStore = useI18nStore(pinia)
 i18nStore.init()
+
+// Keep <html lang> in sync for screen readers and spell checkers
+watch(
+  () => i18nStore.language,
+  (lang) => {
+    document.documentElement.lang = lang
+  },
+  { immediate: true }
+)
 
 // Initialize theme store (reads localStorage, sets up system preference listener)
 const themeStore = useThemeStore(pinia)

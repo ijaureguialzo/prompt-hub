@@ -133,6 +133,7 @@ describe('Auth', () => {
 
       expect(res.status).toBe(409);
       expect(res.body.message).toContain('Email already registered');
+      expect(res.body.code).toBe('EMAIL_TAKEN');
     });
 
     it('returns 403 when registration is disabled', async () => {
@@ -167,6 +168,7 @@ describe('Auth', () => {
 
       expect(res.status).toBe(403);
       expect(res.body.message).toContain('Registration is currently disabled');
+      expect(res.body.code).toBe('REGISTRATION_DISABLED');
     });
   });
 
@@ -229,6 +231,8 @@ describe('Auth', () => {
       expect(wrong.status).toBe(401);
       expect(unknown.body.message).toBe(wrong.body.message);
       expect(unknown.body.message).toBe('Invalid credentials');
+      expect(unknown.body.code).toBe('INVALID_CREDENTIALS');
+      expect(wrong.body.code).toBe('INVALID_CREDENTIALS');
     });
 
     it('returns 401 when password is wrong', async () => {
@@ -315,6 +319,7 @@ describe('Auth', () => {
         .set('Authorization', 'Bearer invalid-token-here');
 
       expect(res.status).toBe(401);
+      expect(res.body.code).toBe('INVALID_TOKEN');
     });
 
     it('returns 401 with expired token', async () => {

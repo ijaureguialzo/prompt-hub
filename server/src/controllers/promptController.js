@@ -82,7 +82,9 @@ exports.getAllPrompts = async (req, res) => {
   try {
     filter = buildListFilter(req.query);
   } catch (err) {
-    return res.status(err.status || 400).json({ message: 'Invalid categoryId' });
+    return res
+      .status(err.status || 400)
+      .json({ code: 'VALIDATION_ERROR', message: 'Invalid categoryId' });
   }
 
   // Run the (projected) find and the total in parallel — the count is
@@ -110,7 +112,7 @@ exports.getAllPrompts = async (req, res) => {
 exports.getPromptById = async (req, res) => {
   const prompt = await Prompt.findById(req.params.id).populate('categoryId', 'name');
   if (!prompt) {
-    return res.status(404).json({ message: 'Prompt not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'Prompt not found' });
   }
   res.status(200).json(prompt);
 };
@@ -120,10 +122,12 @@ exports.createPrompt = async (req, res) => {
   const { title, content, categoryId, tags } = req.body;
 
   if (!title || !title.trim()) {
-    return res.status(400).json({ message: 'Prompt title is required' });
+    return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Prompt title is required' });
   }
   if (!content) {
-    return res.status(400).json({ message: 'Prompt content is required' });
+    return res
+      .status(400)
+      .json({ code: 'VALIDATION_ERROR', message: 'Prompt content is required' });
   }
 
   // Per-user quota: bounds what a single account can accumulate (spam/DoS).
@@ -132,16 +136,18 @@ exports.createPrompt = async (req, res) => {
   const { maxPromptsPerUser } = getLimits();
   const existingCount = await Prompt.countDocuments({ ownerId: req.user._id });
   if (existingCount >= maxPromptsPerUser) {
-    return res
-      .status(409)
-      .json({ message: `Prompt limit reached (${maxPromptsPerUser} per user)` });
+    return res.status(409).json({
+      code: 'LIMIT_REACHED',
+      message: `Prompt limit reached (${maxPromptsPerUser} per user)`,
+      limit: maxPromptsPerUser
+    });
   }
 
   // Reject dangling category references (valid ObjectId, no such category)
   if (categoryId) {
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(400).json({ message: 'Category not found' });
+      return res.status(400).json({ code: 'NOT_FOUND', message: 'Category not found' });
     }
   }
 
@@ -163,10 +169,12 @@ exports.updatePrompt = async (req, res) => {
 
   // Only validate fields that are being sent (partial update support)
   if (title !== undefined && (!title || !title.trim())) {
-    return res.status(400).json({ message: 'Prompt title is required' });
+    return res.status(400).json({ code: 'VALIDATION_ERROR', message: 'Prompt title is required' });
   }
   if (content !== undefined && !content) {
-    return res.status(400).json({ message: 'Prompt content is required' });
+    return res
+      .status(400)
+      .json({ code: 'VALIDATION_ERROR', message: 'Prompt content is required' });
   }
 
   const updateData = { updatedAt: Date.now() };
@@ -179,7 +187,7 @@ exports.updatePrompt = async (req, res) => {
   if (categoryId !== undefined && categoryId) {
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(400).json({ message: 'Category not found' });
+      return res.status(400).json({ code: 'NOT_FOUND', message: 'Category not found' });
     }
   }
 
@@ -189,7 +197,7 @@ exports.updatePrompt = async (req, res) => {
   });
 
   if (!prompt) {
-    return res.status(404).json({ message: 'Prompt not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'Prompt not found' });
   }
 
   // Ownership is enforced by the requireOwnership route middleware, which
@@ -204,7 +212,7 @@ exports.deletePrompt = async (req, res) => {
   // runs BEFORE this handler deletes. Only the owner or an admin reaches here.
   const prompt = await Prompt.findByIdAndDelete(req.params.id);
   if (!prompt) {
-    return res.status(404).json({ message: 'Prompt not found' });
+    return res.status(404).json({ code: 'NOT_FOUND', message: 'Prompt not found' });
   }
 
   res.status(200).json({ message: 'Prompt deleted successfully' });

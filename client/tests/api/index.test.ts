@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { apiRequest, registerUnauthorizedHandler } from '@/api/index.js'
+import { useI18nStore } from '@/stores/useI18nStore.js'
 
 // Tests the REAL api client (not mocked) with a mocked global fetch.
 
@@ -77,9 +79,15 @@ describe('api client', () => {
 
     const handler = vi.fn()
     registerUnauthorizedHandler(handler)
-    mockFetch({ ok: false, status: 401, json: { message: 'Invalid or expired token' } })
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: { code: 'INVALID_TOKEN', message: 'Invalid or expired token' }
+    })
 
-    await expect(apiRequest('/prompts')).rejects.toThrow('Invalid or expired token')
+    await expect(apiRequest('/prompts')).rejects.toThrow(
+      'Your session has expired. Please sign in again.'
+    )
 
     expect(window.localStorage.getItem('token')).toBeNull()
     expect(window.localStorage.getItem('user')).toBeNull()
@@ -92,5 +100,96 @@ describe('api client', () => {
     mockFetch({ ok: false, status: 401, json: { message: 'Invalid' } })
     // No handler registered: must still throw, no crash
     await expect(apiRequest('/prompts')).rejects.toThrow('Invalid')
+  })
+
+  it('falls back to the server message for unknown error codes', async () => {
+    mockFetch({ ok: false, status: 418, json: { code: 'TEAPOT', message: 'I am a teapot' } })
+    await expect(apiRequest('/prompts')).rejects.toThrow('I am a teapot')
+  })
+})
+
+// The real user scenario behind the localization: with an active pinia and
+// a non-English UI language, server error codes are translated before the
+// toast sees them.
+describe('api client error localization', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    registerUnauthorizedHandler(null)
+    setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    registerUnauthorizedHandler(null)
+    setActivePinia(null)
+  })
+
+  it('translates an expired-session 401 into the selected language (es)', async () => {
+    useI18nStore().setLanguage('es')
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: { code: 'INVALID_TOKEN', message: 'Invalid or expired token' }
+    })
+
+    await expect(apiRequest('/prompts')).rejects.toThrow(
+      'Tu sesión ha caducado. Inicia sesión de nuevo.'
+    )
+  })
+
+  it('translates into the selected language (eu)', async () => {
+    useI18nStore().setLanguage('eu')
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: { code: 'INVALID_TOKEN', message: 'Invalid or expired token' }
+    })
+
+    await expect(apiRequest('/prompts')).rejects.toThrow(
+      'Zure saioa amaitu da. Hasieratu saioa berriro, mesedez.'
+    )
+  })
+
+  it('keeps English when the UI language is English', async () => {
+    useI18nStore().setLanguage('en')
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: { code: 'INVALID_TOKEN', message: 'Invalid or expired token' }
+    })
+
+    await expect(apiRequest('/prompts')).rejects.toThrow(
+      'Your session has expired. Please sign in again.'
+    )
+  })
+
+  it('interpolates parameters into the localized message', async () => {
+    useI18nStore().setLanguage('es')
+    mockFetch({
+      ok: false,
+      status: 409,
+      json: { code: 'LIMIT_REACHED', message: 'Prompt limit reached (200 per user)', limit: 200 }
+    })
+
+    await expect(apiRequest('/prompts')).rejects.toThrow(
+      'Has alcanzado el límite por usuario (200).'
+    )
+  })
+
+  it('translates validation and credential errors', async () => {
+    useI18nStore().setLanguage('es')
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' }
+    })
+    await expect(apiRequest('/auth/login')).rejects.toThrow('Correo o contraseña no válidos.')
+
+    mockFetch({
+      ok: false,
+      status: 409,
+      json: { code: 'EMAIL_TAKEN', message: 'Email already registered' }
+    })
+    await expect(apiRequest('/auth/register')).rejects.toThrow('Este correo ya está registrado.')
   })
 })

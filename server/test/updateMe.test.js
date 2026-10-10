@@ -80,6 +80,7 @@ describe('PATCH /api/auth/me (self-service profile updates)', () => {
 
     expect(clash.status).toBe(409);
     expect(clash.body.message).toContain('Email already registered');
+    expect(clash.body.code).toBe('EMAIL_TAKEN');
   });
 
   it('changes own password (old password stops working)', async () => {

@@ -37,6 +37,20 @@ describe('errorHandler', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('a is required, b is too long');
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('maps known validator messages to specific codes', () => {
+    const err = new Error('validation failed');
+    err.name = 'ValidationError';
+    err.errors = { tags: { message: 'At most 20 tags are allowed' } };
+
+    const res = fakeRes();
+    errorHandler(err, req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('TAGS_TOO_MANY');
+    expect(res.body.message).toBe('At most 20 tags are allowed');
   });
 
   it('maps duplicate key errors to 400 with the field name', () => {
@@ -49,6 +63,7 @@ describe('errorHandler', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe('email must be unique');
+    expect(res.body.code).toBe('DUPLICATE');
   });
 
   it('maps CastError to 404 (not found, no leak)', () => {
@@ -60,6 +75,7 @@ describe('errorHandler', () => {
 
     expect(res.statusCode).toBe(404);
     expect(res.body.message).toBe('Resource not found');
+    expect(res.body.code).toBe('NOT_FOUND');
   });
 
   it('returns a generic message in production (no internal details leaked)', () => {
@@ -72,6 +88,7 @@ describe('errorHandler', () => {
     expect(res.statusCode).toBe(500);
     expect(res.body.message).toBe('Internal Server Error');
     expect(res.body.message).not.toContain('MongoInternalError');
+    expect(res.body.code).toBe('INTERNAL_ERROR');
     expect(res.body).not.toHaveProperty('error');
   });
 
@@ -84,5 +101,6 @@ describe('errorHandler', () => {
 
     expect(res.statusCode).toBe(500);
     expect(res.body.message).toBe('something exploded');
+    expect(res.body.code).toBe('INTERNAL_ERROR');
   });
 });

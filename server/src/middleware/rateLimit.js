@@ -12,7 +12,8 @@ function createLimiter({ windowMs, limit, message }) {
     standardHeaders: 'draft-8', // RateLimit-* headers
     legacyHeaders: false, // disable the old X-RateLimit-* headers
     skip: skipInTests,
-    message: { message } // JSON response on 429
+    // A stable code so the client can localize; `message` is the fallback.
+    message: { code: 'RATE_LIMITED', message }
   });
 }
 

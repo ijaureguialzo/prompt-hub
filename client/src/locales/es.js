@@ -110,6 +110,33 @@ export default {
     categoryCreated: '¡Categoría creada correctamente!',
     dataRefreshed: '¡Datos actualizados correctamente!'
   },
+  // Textos localizados para los códigos de error del servidor
+  // (ver client/src/api/index.js). Las `{etiquetas}` se rellenan con los
+  // parámetros del cuerpo del error.
+  errors: {
+    requestFailed: 'Error en la solicitud',
+    networkError: 'Error de red. ¿La API es alcanzable?',
+    invalidToken: 'Tu sesión ha caducado. Inicia sesión de nuevo.',
+    authRequired: 'Se requiere autenticación. Inicia sesión, por favor.',
+    userInactive: 'Tu cuenta no está activa. Contacta con un administrador.',
+    forbidden: 'No tienes permiso para realizar esta acción.',
+    notOwner: 'Solo puedes modificar tus propios recursos.',
+    invalidCredentials: 'Correo o contraseña no válidos.',
+    accountDeactivated: 'Esta cuenta ha sido desactivada. Contacta con un administrador.',
+    registrationDisabled: 'El registro está desactivado por el administrador en este momento.',
+    emailTaken: 'Este correo ya está registrado.',
+    wrongPassword: 'La contraseña actual no es correcta.',
+    passwordTooShort: 'La nueva contraseña debe tener al menos 8 caracteres.',
+    validationError: 'Algunos datos no son válidos. Revisa los campos e inténtalo de nuevo.',
+    tagsTooMany: 'Se permiten un máximo de 20 etiquetas.',
+    emailInvalid: 'Introduce una dirección de correo válida.',
+    duplicate: 'Ese valor ya está en uso.',
+    notFound: 'No se encontró el recurso solicitado.',
+    limitReached: 'Has alcanzado el límite por usuario ({limit}).',
+    rateLimited: 'Demasiadas solicitudes desde tu conexión. Inténtalo de nuevo más tarde.',
+    selfModification: 'No puedes cambiar tu propio rol o estado.',
+    internalError: 'Algo ha salido mal en nuestro lado. Inténtalo de nuevo.'
+  },
   date: {
     created: 'Creado:',
     updated: 'Actualizado:'

@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minlength: 8
+    // Custom message (array form) so the error handler can map it to a
+    // stable, translatable code — the Mongoose default is not.
+    minlength: [8, 'Password must be at least 8 characters']
   },
   role: {
     type: String,

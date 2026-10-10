@@ -636,6 +636,8 @@ describe('Prompts (CRUD + Ownership)', () => {
 
         expect(res.status).toBe(409);
         expect(res.body.message).toMatch(/limit reached/i);
+        expect(res.body.code).toBe('LIMIT_REACHED');
+        expect(res.body.limit).toBe(2);
 
         // Other users are unaffected by this user's quota
         const other = await request(app)

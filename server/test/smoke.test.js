@@ -18,6 +18,7 @@ describe('Smoke Test - Infrastructure', () => {
 
     expect(res.status).toBe(401);
     expect(res.body).toHaveProperty('message', 'Authentication required');
+    expect(res.body).toHaveProperty('code', 'AUTH_REQUIRED');
   });
 
   it('returns 401 when accessing prompts without token', async () => {

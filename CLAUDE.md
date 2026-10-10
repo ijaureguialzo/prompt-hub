@@ -59,7 +59,8 @@ prompt-hub/
 - **Auth**: JWT (hs256) in localStorage. Server `middleware/auth.js` verifies tokens. Vue Router `beforeEach` guards routes.
 - **Ownership**: Resources (Prompt, Category) have `ownerId`. `middleware/ownership.js` provides reusable `requireOwnership()` route middleware (runs BEFORE any write; admins bypass).
 - **Security hardening**: helmet + per-IP rate limiting (`middleware/rateLimit.js`: strict on /api/auth, loose on /api; disabled in tests); JWT secret validated fail-fast in `src/config.js` (32+ chars, no default).
-- **i18n**: Three locales (en/es/eu). `useI18nStore` provides `t()` function. Locale persists in localStorage + reads `navigator.language`.
+- **i18n**: Three locales (en/es/eu). `useI18nStore` provides `t(key, params)` function (with `{param}` interpolation). Locale persists in localStorage + reads `navigator.language`. UI `<html lang>` follows the store.
+- **Error localization**: server errors carry a stable `code` + English `message` fallback (see SPECIFICATION.md §2). `client/src/api/index.js` maps `code` → `errors.*` locale keys before the toast renders; never display server `message` directly for known codes.
 - **Role system**: `user` (default) and `admin`. First registered user auto-promoted to admin. Admin routes: `/api/users/*`, `/api/site-config`, ManageUsersView, SettingsView.
 - **Theme**: `useThemeStore` supports light/dark/auto with system preference listener (Tailwind CSS 4).
 

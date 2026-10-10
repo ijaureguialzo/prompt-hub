@@ -19,7 +19,7 @@ router.get('/public', async (_req, res) => {
     res.status(200).json({ registrationEnabled: config.registrationEnabled });
   } catch (error) {
     logger.error('site-config: error fetching public config', { err: errToMeta(error) });
-    res.status(500).json({ message: 'Error fetching site config' });
+    res.status(500).json({ code: 'INTERNAL_ERROR', message: 'Error fetching site config' });
   }
 });
 

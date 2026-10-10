@@ -110,6 +110,33 @@ export default {
     categoryCreated: 'Category created successfully!',
     dataRefreshed: 'Data refreshed successfully!'
   },
+  // Localized text for server error codes (see client/src/api/index.js).
+  // Keys are camelCased error codes; `{token}` placeholders are filled from
+  // the error response body.
+  errors: {
+    requestFailed: 'Request failed',
+    networkError: 'Network error. Is the API reachable?',
+    invalidToken: 'Your session has expired. Please sign in again.',
+    authRequired: 'Authentication required. Please sign in.',
+    userInactive: 'Your account is not active. Please contact an administrator.',
+    forbidden: 'You do not have permission to perform this action.',
+    notOwner: 'You can only modify your own resources.',
+    invalidCredentials: 'Invalid email or password.',
+    accountDeactivated: 'This account has been deactivated. Please contact an administrator.',
+    registrationDisabled: 'Registration is currently disabled by the administrator.',
+    emailTaken: 'This email is already registered.',
+    wrongPassword: 'The current password is incorrect.',
+    passwordTooShort: 'The new password must be at least 8 characters.',
+    validationError: 'Some of your data is invalid. Please check the fields and try again.',
+    tagsTooMany: 'At most 20 tags are allowed.',
+    emailInvalid: 'Please enter a valid email address.',
+    duplicate: 'That value is already in use.',
+    notFound: 'The requested item was not found.',
+    limitReached: 'You have reached the per-user limit ({limit}).',
+    rateLimited: 'Too many requests from your connection. Please try again later.',
+    selfModification: 'You cannot modify your own role or status.',
+    internalError: 'Something went wrong on our side. Please try again.'
+  },
   date: {
     created: 'Created:',
     updated: 'Updated:'

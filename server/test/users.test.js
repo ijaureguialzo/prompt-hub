@@ -152,6 +152,7 @@ describe('Users (Admin CRUD)', () => {
 
       expect(demoteRes.status).toBe(400);
       expect(demoteRes.body.message).toContain('your own');
+      expect(demoteRes.body.code).toBe('SELF_MODIFICATION');
 
       const deactivateRes = await request(app)
         .put('/api/users/' + adminUserId)
@@ -214,6 +215,7 @@ describe('Users (Admin CRUD)', () => {
       expect(res.status).toBe(200);
       // The response should contain the deactivated user summary
       expect(res.body).toHaveProperty('message');
+      expect(res.body.code).toBeUndefined(); // success responses carry no code
 
       // Verify the user is now inactive in the database
       const verifyRes = await request(app)

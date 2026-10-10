@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useI18nStore } from '@/stores/useI18nStore'
+import { useI18nStore, translateFrom, interpolate } from '@/stores/useI18nStore'
+import en from '@/locales/en.js'
 
 function createStoresAndSetActive() {
   const pinia = createPinia()
@@ -100,5 +101,60 @@ describe('useI18nStore', () => {
   it("currentLocale returns the en locale when language is 'en'", () => {
     const store = getI18nStore()
     expect(store.currentLocale).toHaveProperty('nav.title', 'PromptHub')
+  })
+
+  // --- parameter interpolation ---
+
+  it('t() interpolates {param} tokens from the given params', () => {
+    const store = getI18nStore()
+    store.setLanguage('es')
+    expect(store.t('errors.limitReached', { limit: 42 })).toBe(
+      'Has alcanzado el límite por usuario (42).'
+    )
+  })
+
+  it('t() interpolates in the eu locale', () => {
+    const store = getI18nStore()
+    store.setLanguage('eu')
+    expect(store.t('errors.limitReached', { limit: 42 })).toBe(
+      'Erabiltzaileko muga gainditu duzu (42).'
+    )
+  })
+
+  it('t() leaves unmatched tokens as-is (visible hint, not silent)', () => {
+    const store = getI18nStore()
+    expect(store.t('errors.limitReached')).toBe('You have reached the per-user limit ({limit}).')
+  })
+
+  it('t() works for every error code in all three locales', () => {
+    const store = getI18nStore()
+    const errorCodes = Object.keys(en.errors)
+    expect(errorCodes.length).toBeGreaterThan(10)
+    for (const lang of ['en', 'es', 'eu']) {
+      store.setLanguage(lang)
+      for (const code of errorCodes) {
+        const key = `errors.${code}`
+        const value = store.t(key, { limit: 1 })
+        expect(value, `${lang} -> ${key}`).not.toBe(key)
+        expect(value, `${lang} -> ${key}`).not.toContain('undefined')
+      }
+    }
+  })
+
+  // --- translateFrom / interpolate (store-independent helpers) ---
+
+  it('translateFrom resolves against an explicit locale object', () => {
+    expect(translateFrom(en, 'errors.invalidToken')).toBe(
+      'Your session has expired. Please sign in again.'
+    )
+  })
+
+  it('translateFrom returns the key when missing', () => {
+    expect(translateFrom(en, 'no.such.key')).toBe('no.such.key')
+  })
+
+  it('interpolate substitutes tokens and keeps unknown ones', () => {
+    expect(interpolate('Hello {name}!', { name: 'world' })).toBe('Hello world!')
+    expect(interpolate('{a} {b}', { a: 1 })).toBe('1 {b}')
   })
 })

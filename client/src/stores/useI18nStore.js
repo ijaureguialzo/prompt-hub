@@ -11,7 +11,7 @@ function detectBrowserLanguage() {
   return localeMap[lang] || (lang.startsWith('eu') ? 'eu' : lang.startsWith('es') ? 'es' : 'en')
 }
 
-function resolve(obj, key) {
+export function resolve(obj, key) {
   const parts = key.split('.')
   let current = obj
   for (const part of parts) {
@@ -21,6 +21,21 @@ function resolve(obj, key) {
   return typeof current === 'string' ? current : key
 }
 
+// Replaces `{token}` placeholders in a template with values from `params`.
+// Tokens without a matching param are left as-is (a visible hint that the
+// locale/param pair is broken, rather than a silent empty string).
+export function interpolate(template, params = {}) {
+  return template.replace(/\{(\w+)\}/g, (match, name) =>
+    params[name] === undefined ? match : String(params[name])
+  )
+}
+
+// Plain (store-independent) translation used by the API client, which may
+// run outside an active pinia. Returns the key itself when not found.
+export function translateFrom(locale, key, params = {}) {
+  return interpolate(resolve(locale, key), params)
+}
+
 export const useI18nStore = defineStore('i18n', {
   state: () => ({
     language: detectBrowserLanguage(),
@@ -28,7 +43,7 @@ export const useI18nStore = defineStore('i18n', {
   }),
 
   getters: {
-    t: (state) => (key) => resolve(state.locales[state.language], key),
+    t: (state) => (key, params) => translateFrom(state.locales[state.language], key, params),
     currentLocale: (state) => state.locales[state.language] || en
   },
 

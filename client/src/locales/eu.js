@@ -110,6 +110,33 @@ export default {
     categoryCreated: 'Kategoria arrakastaz sortuta!',
     dataRefreshed: 'Datuak arrakastaz freskatu dira!'
   },
+  // Zerbitzariak itzultzen duen erroen kodeetarako lokalizatuak testuak
+  // (ikusi client/src/api/index.js). `{token}` leihauak erroaren
+  // gorputzeko parametrekin betetzen dira.
+  errors: {
+    requestFailed: 'Eskaerak huts egin du',
+    networkError: 'Sare-errorea. APIa iristen al da?',
+    invalidToken: 'Zure saioa amaitu da. Hasieratu saioa berriro, mesedez.',
+    authRequired: 'Autentifikazioa behar da. Hasieratu saioa, mesedez.',
+    userInactive: 'Zure kontua ez dago aktiboan. Jarri harreman administratzaile batekin.',
+    forbidden: 'Ez duzu baimenik ekintza hau egiteko.',
+    notOwner: 'Zure baliabide propioak soilik alda ditzakezu.',
+    invalidCredentials: 'Helbide elektroniko edo pasahitz baliogabea.',
+    accountDeactivated: 'Kontu hau desgaituta dago. Jarri harreman administratzaile batekin.',
+    registrationDisabled: 'Erregistroa desaktibatuta dago une honetan administratzaileak.',
+    emailTaken: 'Helbide elektroniko hori dagoeneko erregistratuta dago.',
+    wrongPassword: 'Uneko pasahitza ez da zuzena.',
+    passwordTooShort: 'Pasahitu berriak gutxienez 8 karaktere izan behar ditu.',
+    validationError: 'Zure datu batzuk baliogabeak dira. Egiaztatu eremuak eta saiatu berriro.',
+    tagsTooMany: 'Gehienez 20 etiketa onartzen dira.',
+    emailInvalid: 'Sartu baliozko helbide elektroniko bat.',
+    duplicate: 'Balio hori dagoeneko erabileran dago.',
+    notFound: 'Ez da eskatutako baliabidea aurkitu.',
+    limitReached: 'Erabiltzaileko muga gainditu duzu ({limit}).',
+    rateLimited: 'Eskaera gehiegi zure konexiotik. Saiatu berriro geroago.',
+    selfModification: 'Ezin duzu zure buruaren rola edo egoera aldatu.',
+    internalError: 'Zerbait gaizki jo da gure aldean. Saiatu berriro.'
+  },
   date: {
     created: 'Sortua:',
     updated: 'Eguneratua:'
