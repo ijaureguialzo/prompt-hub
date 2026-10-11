@@ -51,7 +51,7 @@ prompt-hub/
 ├── server/test/                   # 215 Vitest tests (unit + Supertest against
 │                                  #   mongodb-memory-server; incl. importExport + perf)
 ├── traefik/                       # Reverse proxy: TLS, routing, HSTS/CSP, HTTP→HTTPS redirect
-├── docker-compose.yml             # 4 services: traefik, api, frontend, db
+├── docker-compose.yml             # 5 services: traefik, api, frontend, db, backup
 └── .env / .env.example            # Configuration template
 ```
 

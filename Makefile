@@ -11,6 +11,8 @@ help: _header
 	@echo ----------------------
 	@echo seed-admin / seed-data
 	@echo ----------------------
+	@echo backup
+	@echo ----------------------
 	@echo clean
 	@echo ----------------------
 
@@ -74,6 +76,12 @@ seed-data:
 	@docker-compose run --rm \
 		-e SEED_USER_EMAIL="$(SEED_USER_EMAIL)" \
 		api node src/scripts/seedData.js
+
+# One logical dump right now (the `backup` service already loops in the
+# background; this is for on-demand copies). Dumps live in the named
+# `backups` volume; restore: README "Backups & restore".
+backup:
+	@docker-compose run --rm backup /usr/local/bin/mongo-backup.sh --once
 
 _start-command:
 	@docker-compose up -d --remove-orphans

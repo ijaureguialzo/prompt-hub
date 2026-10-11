@@ -110,6 +110,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # PLAN.md P5/31: logical backups — mongodump loop (no ports, no routes).
+  # Dumps land in the named `backups` volume (one dir per dump, retention
+  # via find -mtime). One-shot: `make backup`. Restore: README "Backups".
+  backup:
+    image: mongo:${MONGO_VERSION}
+    environment:
+      - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/${MONGO_DB:-promptdb}?authSource=admin
+      - BACKUP_INTERVAL_MINUTES=${BACKUP_INTERVAL_MINUTES:-60}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - backups:/backups
+      - ./ops/mongo-backup.sh:/usr/local/bin/mongo-backup.sh:ro
+    command: ["/usr/local/bin/mongo-backup.sh", "--loop"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mongo_data:
   mongo_config:
+  backups:

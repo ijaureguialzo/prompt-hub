@@ -77,3 +77,24 @@ make clean    # remove containers + volumes
 - **Security headers at the edge** (`traefik/headers.yml`): HSTS (1 year, `includeSubDomains`) on every HTTPS response, plus a strict CSP + `X-Frame-Options: DENY` on the SPA host. If you change `FQDN_API` or the base domain, update the API origin in the CSP there.
 - **Audit trail:** admin actions (role changes, deactivations, site-wide registration switch, category cascades) are logged to the `Audit` collection.
 - Known residual: `braces` (high, dev-only transitive dep, no upstream fix) — never ships in the production images.
+
+## Backups & restore
+
+The compose file runs a `backup` sidecar (same `mongo` image, no ports, no routes): it `mongodump`s the database into the named `backups` volume every `BACKUP_INTERVAL_MINUTES` (default 60) and deletes dumps older than `BACKUP_RETENTION_DAYS` (default 14). Each dump is one directory: `<db>-<UTC-timestamp>/`.
+
+```bash
+make backup   # one extra on-demand dump right now (same volume)
+
+# list dumps
+ls $(docker volume inspect -f '{{ .Mountpoints | first .Name }}' prompt-hub_backups 2>/dev/null) 2>/dev/null \
+  || docker compose run --rm --entrypoint sh backup -c 'ls -1t /backups | head'
+
+# restore a dump (replaces the current data — stop the API first so nothing
+# writes half-way through; --drop replaces every collection in the dump)
+docker compose stop api
+docker compose run --rm --entrypoint sh backup -c 'ls -1t /backups'   # pick a timestamp
+docker compose run --rm --entrypoint sh backup -c 'sh /usr/local/bin/mongo-backup.sh --restore /backups/promptdb-2025-01-01T000000Z'
+docker compose start api
+```
+
+The volume is local to the Docker host: copy it off-box for true disaster recovery (e.g. `docker run --rm -v prompt-hub_backups:/b -v \$(pwd):/out alpine tar czf promptbackups.tgz -C /b .`).
