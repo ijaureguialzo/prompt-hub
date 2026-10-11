@@ -72,7 +72,10 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:5173', (r) => { process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1));" ]
+      # nginx alpine ships busybox wget (no node in the runtime image
+      # anymore); 127.0.0.1 because alpine's `localhost` tries ::1 first
+      # and nginx only listens on IPv4.
+      test: [ "CMD", "wget", "-qO-", "http://127.0.0.1:5173/" ]
       interval: 15s
       timeout: 5s
       retries: 5
