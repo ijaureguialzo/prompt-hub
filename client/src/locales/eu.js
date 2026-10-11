@@ -169,6 +169,7 @@ export default {
     selfModification: 'Ezin duzu zure buruaren rola edo egoera aldatu.',
     importInvalid:
       'Ezin izan da fitxategi hori inportatu. Egiaztatu esportazio-fitxategia eta saiatu berriro.',
+    importFileTooLarge: 'Fitxategi hori handiegia da (gehienez {maxMb} MB).',
     internalError: 'Zerbait gaizki jo da gure aldean. Saiatu berriro.'
   },
   date: {

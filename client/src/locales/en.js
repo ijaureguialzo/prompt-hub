@@ -167,6 +167,7 @@ export default {
     rateLimited: 'Too many requests from your connection. Please try again later.',
     selfModification: 'You cannot modify your own role or status.',
     importInvalid: 'That file could not be imported. Please check the export file and try again.',
+    importFileTooLarge: 'That file is too large ({maxMb} MB maximum).',
     internalError: 'Something went wrong on our side. Please try again.'
   },
   date: {

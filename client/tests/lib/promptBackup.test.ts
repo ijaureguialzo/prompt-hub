@@ -10,7 +10,8 @@ import {
   toApiEntry,
   ImportFileError,
   PROMPTS_FILE_NAME,
-  PROMPT_LIMITS
+  PROMPT_LIMITS,
+  IMPORT_FILE_MAX_SIZE
 } from '@/lib/promptBackup.js'
 
 const samplePayload = {
@@ -98,6 +99,25 @@ describe('promptBackup (export/import file handling)', () => {
   })
 
   describe('readImportFile', () => {
+    function withSize(file: File, size: number) {
+      Object.defineProperty(file, 'size', { value: size, configurable: true })
+      return file
+    }
+
+    it('rejects files above the size cap before parsing', async () => {
+      const file = withSize(new File(['dummy'], 'backup.zip'), IMPORT_FILE_MAX_SIZE + 1)
+      await expect(readImportFile(file)).rejects.toThrow(ImportFileError)
+      await expect(readImportFile(file)).rejects.toMatchObject({ code: 'TOO_LARGE' })
+    })
+
+    it('accepts a file exactly at the size cap', async () => {
+      const file = withSize(
+        new File([JSON.stringify(samplePayload)], 'backup.json'),
+        IMPORT_FILE_MAX_SIZE
+      )
+      await expect(readImportFile(file)).resolves.toEqual(samplePayload)
+    })
+
     it('reads a ZIP containing prompts.json', async () => {
       const file = await makeZipFile('backup.zip', {
         [PROMPTS_FILE_NAME]: JSON.stringify(samplePayload)

@@ -121,6 +121,7 @@ import { useCategoryStore } from '../stores/useCategoryStore'
 import { useUIStore } from '../stores/useUIStore'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useI18nStore } from '../stores/useI18nStore.js'
+import { IMPORT_FILE_MAX_SIZE } from '../lib/promptBackup.js'
 import SearchBar from '../components/SearchBar.vue'
 import CategoryList from '../components/CategoryList.vue'
 import PromptCard from '../components/PromptCard.vue'
@@ -235,9 +236,17 @@ async function onImportFileChosen(event) {
     await promptStore.prepareImport(file)
     showImportModal.value = true
   } catch (error) {
-    // Unreadable / malformed file: localized generic message (the typed
-    // error keeps an English message for logging/fallback only).
-    uiStore.setError(error?.name === 'ImportFileError' ? t('common.importFileError') : error.message)
+    // Unreadable / malformed file: localized message per stable code (the
+    // typed error keeps an English message for logging/fallback only).
+    if (error?.name === 'ImportFileError') {
+      const message =
+        error.code === 'TOO_LARGE'
+          ? t('errors.importFileTooLarge', { maxMb: IMPORT_FILE_MAX_SIZE / 1024 / 1024 })
+          : t('common.importFileError')
+      uiStore.setError(message)
+    } else {
+      uiStore.setError(error.message)
+    }
   }
 }
 

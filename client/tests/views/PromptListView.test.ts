@@ -407,4 +407,22 @@ describe('PromptListView — export / import (SPEC §2.2a)', () => {
     )
     expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
   })
+
+  it('toasts the too-large message for an oversized file', async () => {
+    const fileError = new Error('english details')
+    ;(fileError as Error & { name: string; code: string }).name = 'ImportFileError'
+    ;(fileError as Error & { code: string }).code = 'TOO_LARGE'
+    mockPromptStoreState.prepareImport.mockRejectedValueOnce(fileError)
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    attachFile(input.element as HTMLInputElement, new File(['nope'], 'backup.zip'))
+    await input.trigger('change')
+    await nextTick()
+
+    expect(mockUIStoreState.setError).toHaveBeenCalledWith(
+      expect.stringContaining('importFileTooLarge')
+    )
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
+  })
 })

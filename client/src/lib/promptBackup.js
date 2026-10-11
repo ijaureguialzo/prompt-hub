@@ -11,6 +11,11 @@ export const PROMPTS_FILE_NAME = 'prompts.json'
 // server re-validates as the security boundary).
 export const PROMPT_LIMITS = { title: 100, content: 50000, tags: 20, tagLength: 50 }
 
+// Uploaded file size cap (25 MB, a margin above the server's JSON body cap
+// IMPORT_BODY_LIMIT=20mb): the client rejects oversized uploads before
+// parsing them in browser memory.
+export const IMPORT_FILE_MAX_SIZE = 25 * 1024 * 1024
+
 /**
  * Typed error for files that cannot be read/validated. The stable `code`
  * lets the UI map to a localized message without depending on the
@@ -57,6 +62,13 @@ export function downloadBlob(blob, filename) {
  * file cannot be parsed as the export document.
  */
 export async function readImportFile(file) {
+  if (file.size > IMPORT_FILE_MAX_SIZE) {
+    throw new ImportFileError(
+      'TOO_LARGE',
+      `The file is ${Math.round(file.size / 1024 / 1024)} MB; the maximum size is ` +
+        `${Math.round(IMPORT_FILE_MAX_SIZE / 1024 / 1024)} MB.`
+    )
+  }
   let text
   if (/\.json$/i.test(file.name)) {
     text = await file.text()

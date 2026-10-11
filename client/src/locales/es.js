@@ -169,6 +169,7 @@ export default {
     selfModification: 'No puedes cambiar tu propio rol o estado.',
     importInvalid:
       'Ese archivo no se pudo importar. Revisa el archivo de exportación e inténtalo de nuevo.',
+    importFileTooLarge: 'Ese archivo es demasiado grande (máx. {maxMb} MB).',
     internalError: 'Algo ha salido mal en nuestro lado. Inténtalo de nuevo.'
   },
   date: {
