@@ -1,0 +1,38 @@
+# Security response headers at the edge (PLAN.md P1/4).
+#
+# NOTE (Traefik v3 schema): the middleware block is `headers:` (the v2 name
+# `responseHeaders:` was removed) and the HSTS subdomain field is
+# `stsIncludeSubdomains` (v2: `includeSubDomains`). Both spellings were
+# validated against the pinned `traefik:3` image (v3.7).
+#
+# - `hsts`: attached at the websecure ENTRYPOINT in traefik.yml (static
+#   config), so every HTTPS response (api + frontend hosts) carries
+#   Strict-Transport-Security. includeSubDomains: one hit at the apex covers
+#   all subdomains. (The API additionally emits its own identical HSTS from
+#   helmet; duplicate equal values are harmless — browsers apply the most
+#   restrictive.)
+# - `frontend-secure`: attached only to the frontend router (docker-compose
+#   label `frontend-secure@file`). The API already emits its own CSP via
+#   helmet (server/src/server.js); a second Traefik CSP on API responses
+#   would stack (browsers intersect multiple CSP headers) and could
+#   over-restrict. `frameDeny` adds X-Frame-Options: DENY for older browsers
+#   (modern ones follow `frame-ancestors 'none'` above).
+#
+# The Vite production build emits only external same-origin assets
+# (dist/index.html: /assets/*.js + /assets/*.css, no inline script/style),
+# so `default-src 'self'` is safe without script-src/style-src overrides.
+#
+# NOTE: connect-src allows the API origin explicitly, because the default
+# deployment is cross-origin (SPA on FQDN_FRONTEND, API on FQDN_API).
+# File-provider config is static text (no env interpolation): if you change
+# FQDN_API or the base domain, update the origin below to match.
+http:
+  middlewares:
+    hsts:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+    frontend-secure:
+      headers:
+        contentSecurityPolicy: "default-src 'self'; connect-src 'self' https://api.prompthub.test; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        frameDeny: true

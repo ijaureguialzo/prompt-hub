@@ -21,3 +21,12 @@ entryPoints:
 
   websecure:
     address: ":443"
+    http:
+      # HSTS (1y, includeSubDomains) on every HTTPS response — api and
+      # frontend hosts. `@file` is explicit: the middleware lives in the
+      # file provider (headers.yml), and entrypoint references do not
+      # resolve provider middlewares by bare name (PLAN.md P1/4).
+      # The CSP is NOT here: it is attached to the frontend router only, so
+      # the API keeps its own helmet CSP without stacking.
+      middlewares:
+        - hsts@file

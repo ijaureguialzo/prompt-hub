@@ -74,5 +74,6 @@ make clean    # remove containers + volumes
 - **Rate limiting:** login 10/15 min, register 5/15 min, API 300/15 min per IP (429 on excess); disabled in tests.
 - **Containers run non-root** (`node` user); images built reproducibly with `npm ci`.
 - **Traefik dashboard disabled**: the Web UI is off (`api: false` in `traefik/traefik.yml`) — it exposes the full container topology and has no built-in auth, so it must never be public. Re-enable it deliberately (and only behind a private domain) if you need ops visibility.
+- **Security headers at the edge** (`traefik/headers.yml`): HSTS (1 year, `includeSubDomains`) on every HTTPS response, plus a strict CSP + `X-Frame-Options: DENY` on the SPA host. If you change `FQDN_API` or the base domain, update the API origin in the CSP there.
 - **Audit trail:** admin actions (role changes, deactivations, site-wide registration switch, category cascades) are logged to the `Audit` collection.
 - Known residual: `braces` (high, dev-only transitive dep, no upstream fix) — never ships in the production images.
