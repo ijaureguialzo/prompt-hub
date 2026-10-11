@@ -12,6 +12,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const siteConfigRoutes = require('./routes/siteConfigRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 const { assertConfig } = require('./config');
 const { logger, errToMeta } = require('./utils/logger');
@@ -83,6 +84,7 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/site-config', siteConfigRoutes);
+app.use('/api/audit', auditRoutes);
 app.use('/api/prompts', promptRoutes);
 app.use('/api/categories', categoryRoutes);
 

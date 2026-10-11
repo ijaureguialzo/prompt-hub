@@ -122,6 +122,13 @@ Applied runs return `{ dryRun: false, created, updated, skipped, results[], quot
 | `/api/site-config` | `GET` | Get full config (authenticated; same atomic upsert) | — | `{ _id, registrationEnabled, updatedAt }` | 200, 401, 500 |
 | `/api/site-config` | `PUT` | Update config (admin-only; audited) | `{ registrationEnabled }` | `{ _id, registrationEnabled, updatedAt }` | 200, 400, 401, 403, 500 |
 
+### 2.5a Audit API (admin-only)
+| Endpoint | Method | Description | Query Params | Response Schema | Status Codes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/api/audit` | `GET` | List audit entries, most recent first | `action` (exact), `actorId` (ObjectId; malformed → 400), `page` (default 1), `limit` (default 50, max 500) | `{ entries, total, page, limit, hasMore }` | 200, 400, 401, 403, 500 |
+
+Read-only: the trail is append-only, so there is no write/delete endpoint. Each entry is the §3 `Audit` shape (`actorId`/`actorEmail`/`action`/`targetId?`/`targetEmail?`/`details?`/`createdAt`). Recorded actions: `user.role_change` (`details.from`/`to`), `user.activate`, `user.deactivate`, `siteconfig.update` (`details.<field>.from`/`to`), `category.delete` (cascade counts). Filtered queries use the `{actorId, createdAt}` / `{action, createdAt}` indexes; a retention policy (TTL or purge) is a pending decision (PLAN.md P1/6).
+
 ### 2.6 Operational
 | Endpoint | Method | Description | Status Codes |
 | :--- | :--- | :--- | :--- |
@@ -228,7 +235,7 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 - **Safe cascades**: a non-admin owner deleting a category only destroys their own prompts; others' are unlinked.
 - **Admin lockout guards**: an admin cannot demote or deactivate themselves.
 - **Race-free first admin**: registration claims a unique sparse `adminSlot` — exactly one admin no matter how registrations interleave.
-- **Audit trail**: privileged operations are logged to the `Audit` collection (fire-and-forget; never blocks the request).
+- **Audit trail**: privileged operations are logged to the `Audit` collection (fire-and-forget; never blocks the request) and are readable by admins via `GET /api/audit` (paginated, filterable by `action`/`actorId`; §2.5a).
 - **Error handling**: raw error messages are logged server-side and only returned outside production; validation/duplicate-key errors map to friendly 400/409 responses.
 - **Input validation**: all writable fields are length-capped (see §3); `categoryId` must reference an existing category.
 - **Import validation**: import payloads are re-validated field-by-field on the server (title/content/tags caps, entry count cap, date sanity) regardless of client pre-validation; matching is always scoped to the importing user (§2.2a).
