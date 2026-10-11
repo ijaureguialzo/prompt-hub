@@ -119,3 +119,5 @@ client/dist/
 traefik/certs/
 
 .serena/
+
+PLAN.md
