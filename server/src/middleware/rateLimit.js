@@ -1,5 +1,12 @@
 const rateLimit = require('express-rate-limit');
 
+// SINGLE-REPLICA ASSUMPTION (PLAN.md P1/8): these limiters use
+// express-rate-limit's in-memory store — the counters live in this process.
+// The deployment must run ONE api replica; N replicas multiply every limit
+// by N (each replica keeps its own counters). Strict horizontal scaling
+// would need a shared store (e.g. Redis) behind a feature flag; that is a
+// deliberate non-goal for now (SPECIFICATION.md §2.6/§7).
+
 // Rate limiters are disabled in the test environment. `skip` is a function
 // evaluated per request, so a test can re-enable limiting by changing
 // NODE_ENV (see test/rateLimit.test.js).
