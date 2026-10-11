@@ -27,6 +27,7 @@ const ERROR_CODE_KEYS = {
   LIMIT_REACHED: 'errors.limitReached',
   RATE_LIMITED: 'errors.rateLimited',
   SELF_MODIFICATION: 'errors.selfModification',
+  IMPORT_INVALID: 'errors.importInvalid',
   INTERNAL_ERROR: 'errors.internalError'
 }
 
@@ -122,7 +123,10 @@ export const promptsApi = {
   getById: (id) => apiRequest(`/prompts/${id}`),
   create: (data) => apiRequest('/prompts', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' })
+  delete: (id) => apiRequest(`/prompts/${id}`, { method: 'DELETE' }),
+  // Export/import (SPEC §2.2a): full backup JSON + two-phase import
+  export: () => apiRequest('/prompts/export'),
+  import: (data) => apiRequest('/prompts/import', { method: 'POST', body: JSON.stringify(data) })
 }
 
 /**

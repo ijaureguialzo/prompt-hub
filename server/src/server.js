@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const crypto = require('crypto');
 const { apiLimiter } = require('./middleware/rateLimit');
+const { IMPORT_PATH } = require('./config');
 const promptRoutes = require('./routes/promptRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -55,9 +56,18 @@ app.set('trust proxy', 1);
 
 app.use(cors({ origin: allowedOrigins }));
 // No credentials: auth is a Bearer header, not cookies
-app.use(express.json());
 // JSON-only API: no form/urlencoded body parsing (avoids the `qs`
-// dependency and its historical DoS surface)
+// dependency and its historical DoS surface).
+// The default 100 KB body limit applies to every route EXCEPT the import
+// route, which carries whole export files (up to ~12 MB at the default
+// prompt quota): it skips the app-level parser here and is parsed
+// route-level with IMPORT_BODY_LIMIT (see routes/promptRoutes.js).
+app.use(
+  express.json({
+    limit: '100kb',
+    type: (req) => !(req.method === 'POST' && req.path === IMPORT_PATH)
+  })
+);
 app.use(
   compression({
     // API payloads are small; compress everything rather than a 1kb threshold

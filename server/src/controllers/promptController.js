@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Prompt = require('../models/Prompt');
 const Category = require('../models/Category');
 const { getLimits } = require('../config');
@@ -216,4 +217,362 @@ exports.deletePrompt = async (req, res) => {
   }
 
   res.status(200).json({ message: 'Prompt deleted successfully' });
+};
+
+// =====================================================================
+// Export / Import (SPEC §2.2a)
+// =====================================================================
+
+const EXPORT_FORMAT = 'prompthub-export';
+const EXPORT_VERSION = 1;
+
+// Field caps mirror the Prompt schema (kept here so import validation does
+// not reach into the model; keep in sync with models/Prompt.js).
+const TITLE_MAX = 100;
+const CONTENT_MAX = 50000;
+const TAGS_MAX = 20;
+const TAG_MAX = 50;
+
+// GET /api/prompts/export - Full backup of the caller's prompts.
+// Returns every prompt owned by the user (full content, chronological) in
+// the ExportPayload shape; the client zips it into the .zip file.
+exports.getPromptExport = async (req, res) => {
+  const prompts = await Prompt.find({ ownerId: req.user._id })
+    .sort({ createdAt: 1 })
+    .populate('categoryId', 'name');
+
+  res.status(200).json({
+    format: EXPORT_FORMAT,
+    version: EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    exporter: {
+      id: req.user._id.toString(),
+      name: req.user.name,
+      email: req.user.email
+    },
+    prompts: prompts.map((p) => ({
+      id: p._id.toString(),
+      clientId: p.clientId || null,
+      title: p.title,
+      content: p.content,
+      categoryId: p.categoryId ? p.categoryId._id.toString() : null,
+      categoryName: p.categoryId ? p.categoryId.name || null : null,
+      tags: p.tags || [],
+      createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : null,
+      updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : null
+    }))
+  });
+};
+
+// Lenient date parsing for hand-made files (accepts ISO strings and epoch ms).
+function parseIsoDate(value) {
+  if (value === null || value === undefined) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Returns null when the entry is valid, otherwise a human-readable reason.
+function validateImportEntry(entry, index) {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
+    return `entry ${index} is not an object`;
+  }
+  const title = typeof entry.title === 'string' ? entry.title.trim() : '';
+  if (!title) return `entry ${index}: title is required`;
+  if (title.length > TITLE_MAX) return `entry ${index}: title exceeds ${TITLE_MAX} characters`;
+  if (typeof entry.content !== 'string' || !entry.content) {
+    return `entry ${index}: content is required`;
+  }
+  if (entry.content.length > CONTENT_MAX) {
+    return `entry ${index}: content exceeds ${CONTENT_MAX} characters`;
+  }
+  if (entry.tags !== undefined && entry.tags !== null) {
+    if (!Array.isArray(entry.tags) || entry.tags.length > TAGS_MAX) {
+      return `entry ${index}: at most ${TAGS_MAX} tags are allowed`;
+    }
+    for (const tag of entry.tags) {
+      if (typeof tag !== 'string' || tag.length > TAG_MAX) {
+        return `entry ${index}: tags must be strings of at most ${TAG_MAX} characters`;
+      }
+    }
+  }
+  if (
+    entry.clientId !== undefined &&
+    entry.clientId !== null &&
+    typeof entry.clientId !== 'string'
+  ) {
+    return `entry ${index}: clientId must be a string`;
+  }
+  return null;
+}
+
+// Coerces a (validated) file entry into canonical internal shape.
+// NOTE: the file's `id` (the exporter's Mongo _id) is deliberately dropped —
+// new documents get fresh _ids; reusing a foreign _id could collide on a
+// shared cluster.
+function normalizeImportEntry(entry, index) {
+  const title = String(entry.title).trim();
+  const clientId =
+    typeof entry.clientId === 'string' && entry.clientId.trim() ? entry.clientId.trim() : null;
+  return {
+    index,
+    clientId,
+    title,
+    content: String(entry.content),
+    tags: Array.isArray(entry.tags)
+      ? entry.tags
+          .map((t) => String(t).trim())
+          .filter(Boolean)
+          .slice(0, TAGS_MAX)
+      : [],
+    categoryId:
+      entry.categoryId && mongoose.isValidObjectId(entry.categoryId)
+        ? String(entry.categoryId)
+        : null,
+    categoryName:
+      typeof entry.categoryName === 'string' && entry.categoryName.trim()
+        ? entry.categoryName.trim()
+        : null,
+    createdAt: parseIsoDate(entry.createdAt),
+    updatedAt: parseIsoDate(entry.updatedAt)
+  };
+}
+
+// Prompt identity is PER USER (SPEC §2.2a): an entry is "the same prompt" only
+// if the importing user owns a prompt that matches. Entries with a clientId
+// match on it; legacy entries without one fall back to the (trimmed,
+// case-insensitive) title. Matching keys double as the in-file duplicate key.
+function entryMatchKey(entry) {
+  return entry.clientId ? `clientId:${entry.clientId}` : `title:${entry.title.toLowerCase()}`;
+}
+
+function classifyEntries(entries, existing) {
+  const existingByClientId = new Map();
+  const existingByTitle = new Map();
+  for (const p of existing) {
+    if (p.clientId) existingByClientId.set(p.clientId, p);
+    const t = p.title.toLowerCase();
+    if (!existingByTitle.has(t)) existingByTitle.set(t, p);
+  }
+
+  const seen = new Set();
+  return entries.map((entry) => {
+    const key = entryMatchKey(entry);
+    let status;
+    let found = null;
+    if (seen.has(key)) {
+      status = 'duplicate';
+    } else {
+      seen.add(key);
+      found = entry.clientId
+        ? existingByClientId.get(entry.clientId)
+        : existingByTitle.get(entry.title.toLowerCase());
+      status = found ? 'conflict' : 'new';
+    }
+    return {
+      index: entry.index,
+      clientId: entry.clientId,
+      title: entry.title,
+      status,
+      existing: found
+    };
+  });
+}
+
+// Resolves a file entry's category against the IMPORTER's own categories
+// (name first, then id); anything foreign/unresolvable becomes uncategorized.
+function resolveCategoryId(entry, categories) {
+  if (entry.categoryName) {
+    const byName = categories.find(
+      (c) => c.name.toLowerCase() === entry.categoryName.toLowerCase()
+    );
+    if (byName) return byName._id;
+  }
+  if (entry.categoryId) {
+    const byId = categories.find((c) => c._id.toString() === entry.categoryId);
+    if (byId) return byId._id;
+  }
+  return null;
+}
+
+// POST /api/prompts/import - Two-phase import of an ExportPayload's prompts.
+// dryRun: classify only (the client shows the selection UI). Otherwise apply:
+// every "new" entry is created, "conflict" entries are updated ONLY when the
+// client confirmed them via `overwrites` (indices); everything else skips.
+exports.importPrompts = async (req, res) => {
+  const { maxPromptsPerUser, maxImportPrompts } = getLimits();
+
+  // The app-level JSON parser skips this route (server.js); it is parsed
+  // route-level with a larger limit (routes/promptRoutes.js). A malformed
+  // body that no parser touched arrives as undefined.
+  const rawBody = req.body;
+  const body = Array.isArray(rawBody) ? { prompts: rawBody } : rawBody || {};
+  const { dryRun, prompts, overwrites } = body;
+
+  if (!Array.isArray(prompts)) {
+    return res.status(400).json({ code: 'IMPORT_INVALID', message: 'prompts must be an array' });
+  }
+  if (prompts.length === 0) {
+    return res.status(400).json({ code: 'IMPORT_INVALID', message: 'prompts must not be empty' });
+  }
+  if (prompts.length > maxImportPrompts) {
+    return res.status(400).json({
+      code: 'IMPORT_INVALID',
+      message: `at most ${maxImportPrompts} prompts per import`
+    });
+  }
+  for (let i = 0; i < prompts.length; i++) {
+    const problem = validateImportEntry(prompts[i], i);
+    if (problem) {
+      return res.status(400).json({ code: 'IMPORT_INVALID', message: problem });
+    }
+  }
+  if (overwrites !== undefined && !Array.isArray(overwrites)) {
+    return res
+      .status(400)
+      .json({ code: 'IMPORT_INVALID', message: 'overwrites must be an array of entry indices' });
+  }
+
+  const entries = prompts.map((entry, i) => normalizeImportEntry(entry, i));
+  // Indices the user approved for overwriting (tampered/invalid ones dropped).
+  const overwriteSet = new Set(
+    Array.isArray(overwrites)
+      ? overwrites.filter((n) => Number.isInteger(n) && n >= 0 && n < entries.length)
+      : []
+  );
+
+  // Everything is scoped to the importing user: their prompts and categories
+  // are the only things read or written (ownerId is the identity boundary).
+  const [existing, categories] = await Promise.all([
+    Prompt.find({ ownerId: req.user._id }),
+    Category.find({ ownerId: req.user._id })
+  ]);
+
+  const classified = classifyEntries(entries, existing);
+  const newCount = classified.filter((c) => c.status === 'new').length;
+  const used = existing.length;
+  const quota = { used, limit: maxPromptsPerUser };
+
+  // Quota is checked before ANY write: an APPLIED import that would exceed
+  // the per-user cap fails atomically (409) rather than partially applying.
+  // A dry run instead returns 200 with quota.exceeded so the UI can warn and
+  // disable the confirm button.
+  if (!dryRun && used + newCount > maxPromptsPerUser) {
+    return res.status(409).json({
+      code: 'LIMIT_REACHED',
+      message: `Prompt limit reached (${maxPromptsPerUser} per user)`,
+      limit: maxPromptsPerUser,
+      used,
+      requested: used + newCount
+    });
+  }
+
+  if (dryRun) {
+    const results = classified.map((c) => ({
+      index: c.index,
+      clientId: c.clientId,
+      title: c.title,
+      status: c.status,
+      existingId: c.existing ? c.existing._id.toString() : null,
+      existingTitle: c.existing ? c.existing.title : null,
+      existingUpdatedAt:
+        c.existing && c.existing.updatedAt ? new Date(c.existing.updatedAt).toISOString() : null
+    }));
+    return res.status(200).json({
+      dryRun: true,
+      results,
+      summary: {
+        total: classified.length,
+        new: classified.filter((c) => c.status === 'new').length,
+        conflicts: classified.filter((c) => c.status === 'conflict').length,
+        duplicates: classified.filter((c) => c.status === 'duplicate').length
+      },
+      quota: {
+        ...quota,
+        wouldUse: used + newCount,
+        exceeded: used + newCount > maxPromptsPerUser
+      }
+    });
+  }
+
+  // --- Apply ---
+  const now = new Date();
+  const results = [];
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const c of classified) {
+    const entry = entries[c.index];
+
+    if (c.status === 'duplicate') {
+      skipped += 1;
+      results.push({ index: c.index, title: c.title, status: 'skipped', reason: 'duplicate' });
+      continue;
+    }
+
+    if (c.status === 'conflict') {
+      if (!overwriteSet.has(c.index)) {
+        skipped += 1;
+        results.push({
+          index: c.index,
+          title: c.title,
+          status: 'skipped',
+          reason: 'not-confirmed',
+          existingId: c.existing._id.toString()
+        });
+        continue;
+      }
+      const categoryId = resolveCategoryId(entry, categories);
+      // Explicit fields only — the file carries the full document shape.
+      await Prompt.updateOne(
+        { _id: c.existing._id },
+        {
+          $set: {
+            title: entry.title,
+            content: entry.content,
+            tags: entry.tags,
+            categoryId,
+            updatedAt: now
+          }
+        }
+      );
+      updated += 1;
+      results.push({
+        index: c.index,
+        title: entry.title,
+        status: 'updated',
+        promptId: c.existing._id.toString()
+      });
+      continue;
+    }
+
+    // New prompt in the importer's account (fresh _id, owner = importer).
+    const prompt = new Prompt({
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      categoryId: resolveCategoryId(entry, categories),
+      clientId: entry.clientId || crypto.randomUUID(),
+      ownerId: req.user._id,
+      createdAt: entry.createdAt || now,
+      updatedAt: entry.updatedAt || now
+    });
+    await prompt.save();
+    created += 1;
+    results.push({
+      index: c.index,
+      title: entry.title,
+      status: 'created',
+      promptId: prompt._id.toString()
+    });
+  }
+
+  res.status(200).json({
+    dryRun: false,
+    created,
+    updated,
+    skipped,
+    results,
+    quota: { ...quota, used: used + created }
+  });
 };

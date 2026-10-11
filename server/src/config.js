@@ -40,9 +40,27 @@ function positiveInt(value, fallback) {
 function getLimits() {
   return {
     maxPromptsPerUser: positiveInt(process.env.MAX_PROMPTS_PER_USER, 200),
-    maxCategoriesPerUser: positiveInt(process.env.MAX_CATEGORIES_PER_USER, 50)
+    maxCategoriesPerUser: positiveInt(process.env.MAX_CATEGORIES_PER_USER, 50),
+    // Max prompts accepted in one import request (SPEC §2.2a): bounds the
+    // per-request work of validation/matching regardless of body size.
+    maxImportPrompts: positiveInt(process.env.MAX_IMPORT_PROMPTS, 500)
   };
 }
+
+/**
+ * Body-size limit for the import route, in `bytes`-parseable form
+ * (SPEC §2.2a). The global JSON parser stays at 100 KB; the import route
+ * carries whole export files (up to ~12 MB at the default prompt quota),
+ * so it gets its own parser with this larger limit (see server.js and
+ * routes/promptRoutes.js).
+ */
+function getImportBodyLimit() {
+  return process.env.IMPORT_BODY_LIMIT || '20mb';
+}
+
+// Full path of the import route, shared by the app-level parser skip and
+// the route-level parser (must stay in sync with routes/promptRoutes.js).
+const IMPORT_PATH = '/api/prompts/import';
 
 /**
  * Validate all required configuration. Throws ConfigError on the first
@@ -52,4 +70,11 @@ function assertConfig() {
   getJwtSecret(); // throws if invalid
 }
 
-module.exports = { ConfigError, getJwtSecret, assertConfig, getLimits };
+module.exports = {
+  ConfigError,
+  getJwtSecret,
+  assertConfig,
+  getLimits,
+  getImportBodyLimit,
+  IMPORT_PATH
+};

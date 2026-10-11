@@ -5,6 +5,19 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-0">{{ t('promptList.heading') }}</h1>
       <div v-if="authStore.isAuthenticated" class="flex space-x-3">
         <button
+          @click="onExport"
+          :disabled="exporting"
+          class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm font-medium disabled:opacity-50"
+        >
+          {{ exporting ? t('promptList.exporting') : t('promptList.exportBtn') }}
+        </button>
+        <button
+          @click="onImportClick"
+          class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm font-medium"
+        >
+          {{ t('promptList.importBtn') }}
+        </button>
+        <button
           @click="uiStore.setShowCreateCategoryModal(true)"
           class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm font-medium"
         >
@@ -84,6 +97,20 @@
 
     <!-- Create Category Modal -->
     <CreateCategoryModal v-if="uiStore.showCreateCategoryModal" :editing="uiStore.editingCategory" @close="onCategoryModalClose" />
+
+    <!-- Import Prompts Modal (file selection happens above) -->
+    <ImportPromptsModal
+      v-if="showImportModal"
+      :entries="promptStore.importEntries"
+      :quota="promptStore.importQuota"
+      :importing="promptStore.importing"
+      :file-name="promptStore.importFileName"
+      @close="onImportModalClose"
+      @confirm="onImportConfirm"
+    />
+
+    <!-- Hidden file input driving the import flow (.zip or .json) -->
+    <input ref="fileInput" type="file" accept=".zip,.json,application/zip,application/json" class="hidden" @change="onImportFileChosen" />
   </div>
 </template>
 
@@ -99,6 +126,7 @@ import CategoryList from '../components/CategoryList.vue'
 import PromptCard from '../components/PromptCard.vue'
 import CreatePromptModal from '../components/CreatePromptModal.vue'
 import CreateCategoryModal from '../components/CreateCategoryModal.vue'
+import ImportPromptsModal from '../components/ImportPromptsModal.vue'
 
 const promptStore = usePromptStore()
 const categoryStore = useCategoryStore()
@@ -109,6 +137,9 @@ const t = i18nStore.t
 
 const searchQuery = ref('')
 const selectedTags = ref([])
+const fileInput = ref(null)
+const showImportModal = ref(false)
+const exporting = ref(false)
 
 const UNCAT_ID = '__uncategorized__'
 const SEARCH_DEBOUNCE_MS = 300
@@ -170,6 +201,63 @@ function onFilterByTag(tag) {
     selectedTags.value.push(tag)
   } else {
     selectedTags.value.splice(idx, 1)
+  }
+}
+
+// --- Export / Import (SPEC §2.2a) ---
+
+async function onExport() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const { count } = await promptStore.exportPrompts()
+    if (count === 0) {
+      uiStore.setError(t('promptList.exportEmpty'))
+    } else {
+      uiStore.setSuccess(t('common.exportSuccess', { count }))
+    }
+  } catch (error) {
+    uiStore.setError(error.message)
+  } finally {
+    exporting.value = false
+  }
+}
+
+function onImportClick() {
+  fileInput.value?.click()
+}
+
+async function onImportFileChosen(event) {
+  const file = event.target.files?.[0]
+  event.target.value = '' // allow picking the same file again
+  if (!file) return
+  try {
+    await promptStore.prepareImport(file)
+    showImportModal.value = true
+  } catch (error) {
+    // Unreadable / malformed file: localized generic message (the typed
+    // error keeps an English message for logging/fallback only).
+    uiStore.setError(error?.name === 'ImportFileError' ? t('common.importFileError') : error.message)
+  }
+}
+
+function onImportModalClose() {
+  showImportModal.value = false
+  promptStore.cancelImport()
+}
+
+async function onImportConfirm(overwrites) {
+  try {
+    const summary = await promptStore.confirmImport(overwrites)
+    showImportModal.value = false
+    uiStore.setSuccess(t('common.importSuccess', summary))
+    // Reconcile the list with whatever was created/updated.
+    promptStore.setFilters(currentFilters()).catch((err) => {
+      uiStore.setError(err.message)
+    })
+  } catch (error) {
+    // The modal stays open (store keeps its state) so the user can adjust.
+    uiStore.setError(error.message)
   }
 }
 

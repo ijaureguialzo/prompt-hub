@@ -41,7 +41,16 @@ const mockPromptStoreState = {
   createPrompt: vi.fn().mockResolvedValue({}),
   updatePrompt: vi.fn().mockResolvedValue({}),
   deletePrompt: vi.fn().mockResolvedValue(undefined),
-  clearCurrent: vi.fn()
+  clearCurrent: vi.fn(),
+  // Export/import flow (SPEC §2.2a)
+  importEntries: [],
+  importQuota: null,
+  importFileName: '',
+  importing: false,
+  exportPrompts: vi.fn().mockResolvedValue({ count: 2 }),
+  prepareImport: vi.fn().mockResolvedValue([]),
+  confirmImport: vi.fn().mockResolvedValue({ created: 1, updated: 1, skipped: 0 }),
+  cancelImport: vi.fn()
 }
 
 const mockCategoryStoreState = {
@@ -105,6 +114,14 @@ const createCategoryModalStub = defineComponent({
     '<div class="cat-modal" @click="$emit(\'close\')">{{ editing ? editing.name : \'new\' }}</div>'
 })
 
+// Stub with buttons so tests can drive the confirm/close contract.
+const importModalStub = defineComponent({
+  name: 'ImportPromptsModal',
+  emits: ['close', 'confirm'],
+  template:
+    '<div class="import-modal"><button class="stub-confirm" @click="$emit(\'confirm\', [1])"/><button class="stub-close" @click="$emit(\'close\')"/></div>'
+})
+
 function getWrapper() {
   return mount(PromptListView, {
     global: {
@@ -113,7 +130,8 @@ function getWrapper() {
         CategoryList: '<div><h2>Categories</h2></div>',
         PromptCard: '<div class="prompt-card"><slot /></div>',
         CreatePromptModal: '<div />',
-        CreateCategoryModal: createCategoryModalStub
+        CreateCategoryModal: createCategoryModalStub,
+        ImportPromptsModal: importModalStub
       }
     },
     attachTo: document.body
@@ -234,5 +252,159 @@ describe('PromptListView — category edit flow (UI store contract)', () => {
 
     resetModalState()
     wrapper.unmount()
+  })
+})
+
+describe('PromptListView — export / import (SPEC §2.2a)', () => {
+  // jsdom has no DataTransfer, so set input.files directly.
+  function attachFile(input: HTMLInputElement, file: File) {
+    Object.defineProperty(input, 'files', { value: [file], configurable: true })
+  }
+
+  function resetFlowState() {
+    vi.mocked(mockPromptStoreState.exportPrompts).mockClear()
+    vi.mocked(mockPromptStoreState.prepareImport).mockClear()
+    vi.mocked(mockPromptStoreState.confirmImport).mockClear()
+    vi.mocked(mockPromptStoreState.cancelImport).mockClear()
+    vi.mocked(mockUIStoreState.setSuccess).mockClear()
+    vi.mocked(mockUIStoreState.setError).mockClear()
+  }
+
+  beforeEach(() => {
+    resetFlowState()
+    // The shared module-scoped mocks are mutated by earlier (placeholder)
+    // tests; restore the state this block depends on.
+    mockAuthStoreState.isAuthenticated = true
+    mockPromptStoreState.loading = false
+  })
+
+  it('renders Export and Import buttons when authenticated', async () => {
+    const wrapper = getWrapper()
+    expect(wrapper.text()).toContain('promptList.exportBtn')
+    expect(wrapper.text()).toContain('promptList.importBtn')
+    // hidden file input drives the import flow
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+  })
+
+  it('clicking Export calls the store and toasts the result', async () => {
+    const wrapper = getWrapper()
+    const buttons = wrapper.findAll('button')
+    const exportBtn = buttons.find((b) => b.text().trim() === 'promptList.exportBtn')!
+    await exportBtn.trigger('click')
+    await nextTick()
+
+    expect(mockPromptStoreState.exportPrompts).toHaveBeenCalledTimes(1)
+    expect(mockUIStoreState.setSuccess).toHaveBeenCalledWith(
+      expect.stringContaining('exportSuccess')
+    )
+  })
+
+  it('clicking Import opens the hidden file input', async () => {
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    const clickSpy = vi.spyOn(input.element as HTMLInputElement, 'click')
+
+    const buttons = wrapper.findAll('button')
+    const importBtn = buttons.find((b) => b.text().trim() === 'promptList.importBtn')!
+    await importBtn.trigger('click')
+
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+    clickSpy.mockRestore()
+  })
+
+  it('selecting a file prepares the import and opens the modal', async () => {
+    mockPromptStoreState.prepareImport.mockResolvedValueOnce([
+      { index: 0, title: 'Fresh', status: 'new', selected: true }
+    ])
+    mockPromptStoreState.importFileName = 'backup.zip'
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    const file = new File(['{}'], 'backup.zip')
+    attachFile(input.element as HTMLInputElement, file)
+    await input.trigger('change')
+    await nextTick()
+
+    expect(mockPromptStoreState.prepareImport).toHaveBeenCalledWith(file)
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(true)
+  })
+
+  it('confirming the import toasts the summary and refetches the list', async () => {
+    mockPromptStoreState.prepareImport.mockResolvedValueOnce([
+      { index: 0, title: 'Fresh', status: 'new', selected: true }
+    ])
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    attachFile(input.element as HTMLInputElement, new File(['{}'], 'backup.zip'))
+    await input.trigger('change')
+    await nextTick()
+
+    const modal = wrapper.findComponent(importModalStub)
+    await modal.find('.stub-confirm').trigger('click')
+    await nextTick()
+
+    expect(mockPromptStoreState.confirmImport).toHaveBeenCalledWith([1])
+    expect(mockUIStoreState.setSuccess).toHaveBeenCalledWith(
+      expect.stringContaining('importSuccess')
+    )
+    // the modal is closed and the list reconciled
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
+    expect(mockPromptStoreState.setFilters).toHaveBeenCalled()
+  })
+
+  it('a confirm failure keeps the modal open and toasts the error', async () => {
+    mockPromptStoreState.prepareImport.mockResolvedValueOnce([
+      { index: 0, title: 'Fresh', status: 'new', selected: true }
+    ])
+    mockPromptStoreState.confirmImport.mockRejectedValueOnce(new Error('boom'))
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    attachFile(input.element as HTMLInputElement, new File(['{}'], 'backup.zip'))
+    await input.trigger('change')
+    await nextTick()
+
+    const modal = wrapper.findComponent(importModalStub)
+    await modal.find('.stub-confirm').trigger('click')
+    await nextTick()
+
+    expect(mockUIStoreState.setError).toHaveBeenCalledWith('boom')
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(true)
+  })
+
+  it('cancelling the import clears the store state', async () => {
+    mockPromptStoreState.prepareImport.mockResolvedValueOnce([
+      { index: 0, title: 'Fresh', status: 'new', selected: true }
+    ])
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    attachFile(input.element as HTMLInputElement, new File(['{}'], 'backup.zip'))
+    await input.trigger('change')
+    await nextTick()
+
+    await wrapper.findComponent(importModalStub).find('.stub-close').trigger('click')
+    await nextTick()
+
+    expect(mockPromptStoreState.cancelImport).toHaveBeenCalledTimes(1)
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
+  })
+
+  it('toasts a localized error when the file cannot be read', async () => {
+    const fileError = new Error('english details')
+    ;(fileError as Error & { name: string }).name = 'ImportFileError'
+    mockPromptStoreState.prepareImport.mockRejectedValueOnce(fileError)
+
+    const wrapper = getWrapper()
+    const input = wrapper.find('input[type="file"]')
+    attachFile(input.element as HTMLInputElement, new File(['nope'], 'backup.zip'))
+    await input.trigger('change')
+    await nextTick()
+
+    expect(mockUIStoreState.setError).toHaveBeenCalledWith(
+      expect.stringContaining('importFileError')
+    )
+    expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
   })
 })

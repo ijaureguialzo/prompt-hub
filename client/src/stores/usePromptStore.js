@@ -1,5 +1,14 @@
 import { defineStore } from 'pinia'
 import { promptsApi } from '../api/index.js'
+import {
+  buildExportZip,
+  exportZipName,
+  downloadBlob,
+  readImportFile,
+  normalizeImportEntries,
+  toApiEntry,
+  toApiEntries
+} from '../lib/promptBackup.js'
 
 // Page size for the list. The server serves a lightweight row per prompt
 // (metadata + 200-char excerpt), so 50 is a comfortable grid page.
@@ -17,7 +26,13 @@ export const usePromptStore = defineStore('prompts', {
     loadingMore: false,
     total: 0,
     page: 1,
-    filters: { ...EMPTY_FILTERS, tags: [] }
+    filters: { ...EMPTY_FILTERS, tags: [] },
+    // Export/import flow (SPEC §2.2a): the file's rows awaiting user
+    // decisions, the server-reported quota, and the in-flight apply flag.
+    importEntries: [],
+    importQuota: null,
+    importFileName: '',
+    importing: false
   }),
 
   getters: {
@@ -119,6 +134,94 @@ export const usePromptStore = defineStore('prompts', {
 
     clearCurrent() {
       this.currentPrompt = null
+    },
+
+    // --- Export / Import (SPEC §2.2a) ---
+
+    /**
+     * Downloads the user's prompts as a ZIP (prompts.json inside).
+     * Resolves { count } — 0 when the account has no prompts.
+     */
+    async exportPrompts() {
+      const payload = await promptsApi.export()
+      if (!payload.prompts.length) return { count: 0 }
+      const blob = await buildExportZip(payload)
+      downloadBlob(blob, exportZipName())
+      return { count: payload.prompts.length }
+    },
+
+    /**
+     * First import phase: parse the file, pre-validate, and ask the server
+     * to classify each prompt (new / conflict) against the importer's own
+     * account. The result is stored as importEntries for the modal.
+     */
+    async prepareImport(file) {
+      const payload = await readImportFile(file)
+      const { entries } = normalizeImportEntries(payload)
+
+      // Only locally-valid rows go to the server; its classification (which
+      // is authoritative — it re-checks ownership and quota) is merged back.
+      // NOTE: the server indexes results by position in the SENT array, so
+      // the merge zips against the valid-only subset (order-preserving).
+      const okEntries = entries.filter((e) => e.status === 'ok')
+      const res = await promptsApi.import({ dryRun: true, prompts: toApiEntries(entries) })
+      const byApiIndex = new Map(res.results.map((r) => [r.index, r]))
+      const okMeta = okEntries.map((_, i) => {
+        const server = byApiIndex.get(i)
+        // UI vocabulary: the server's "conflict" is an existing prompt the
+        // user may choose to overwrite.
+        const status = server?.status === 'conflict' ? 'exists' : (server?.status ?? 'new')
+        return {
+          status,
+          existingId: server?.existingId ?? null,
+          existingTitle: server?.existingTitle ?? null
+        }
+      })
+
+      let okPos = -1
+      this.importEntries = entries.map((entry) => {
+        if (entry.status !== 'ok') {
+          // Resolved client-side; never part of the API payload.
+          return { ...entry, sent: false, selected: false }
+        }
+        okPos += 1
+        const meta = okMeta[okPos]
+        return { ...entry, sent: true, ...meta, selected: meta.status === 'new' }
+      })
+      this.importQuota = res.quota
+      this.importFileName = file.name
+      return this.importEntries
+    },
+
+    /**
+     * Second import phase: apply. `conflictIndexes` are positions into
+     * importEntries of the conflicts the user approved for overwriting;
+     * they are remapped to the positions of the sent (valid-only) array.
+     */
+    async confirmImport(conflictIndexes = []) {
+      this.importing = true
+      try {
+        const sentEntries = this.importEntries.filter((e) => e.sent)
+        const overwrites = conflictIndexes
+          .map((i) => sentEntries.indexOf(this.importEntries[i]))
+          .filter((i) => i !== -1)
+        const res = await promptsApi.import({
+          dryRun: false,
+          prompts: sentEntries.map((e) => toApiEntry(e)),
+          overwrites
+        })
+        this.cancelImport()
+        return { created: res.created, updated: res.updated, skipped: res.skipped }
+      } finally {
+        this.importing = false
+      }
+    },
+
+    cancelImport() {
+      this.importEntries = []
+      this.importQuota = null
+      this.importFileName = ''
+      this.importing = false
     }
   }
 })

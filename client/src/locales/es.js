@@ -57,11 +57,37 @@ export default {
     heading: 'Prompts',
     newCategoryBtn: 'Nueva categoría',
     newPromptBtn: 'Nuevo prompt',
+    exportBtn: 'Exportar',
+    importBtn: 'Importar',
+    exporting: 'Exportando...',
+    exportEmpty: 'Aún no tienes prompts que exportar.',
     loading: 'Cargando prompts...',
     noPrompts: 'No se encontraron prompts.',
     filteredByTags: 'Filtrado por etiquetas',
     clearAllTags: 'Limpiar todas las etiquetas',
     loadMore: 'Cargar más'
+  },
+  importModal: {
+    title: 'Importar prompts',
+    fileNote: 'desde {file}',
+    summary: '{new} nuevos · {exists} para sobrescribir · {skip} omitidos',
+    newBadge: 'Nuevo',
+    existsBadge: 'Existe',
+    duplicateBadge: 'Duplicado',
+    invalidBadge: 'Inválido',
+    overwriteHint: 'Reemplazará tu versión actual',
+    invalidTitleReason: 'El título es obligatorio (máx. 100 caracteres)',
+    invalidContentReason: 'El contenido es obligatorio (máx. 50.000 caracteres)',
+    invalidTagsReason: 'Demasiadas etiquetas (máx. 20)',
+    invalidNote: '{count} entradas no son válidas y se omitirán.',
+    quotaWarning:
+      'Se excedería tu límite de prompts ({used}/{limit} en uso). Elimina algunos primero.',
+    selectAll: 'Seleccionar todo',
+    deselectAll: 'Deseleccionar todo',
+    noneImportable: 'Ningún prompt de este archivo puede importarse.',
+    cancel: 'Cancelar',
+    import: 'Importar',
+    importing: 'Importando...'
   },
   promptDetail: {
     backLink: 'Volver a prompts',
@@ -108,7 +134,11 @@ export default {
     promptCreated: '¡Prompt creado correctamente!',
     categoryUpdated: '¡Categoría actualizada correctamente!',
     categoryCreated: '¡Categoría creada correctamente!',
-    dataRefreshed: '¡Datos actualizados correctamente!'
+    dataRefreshed: '¡Datos actualizados correctamente!',
+    exportSuccess: 'Exportación descargada ({count} prompts).',
+    importSuccess:
+      'Importación completada: {created} creados, {updated} actualizados, {skipped} omitidos.',
+    importFileError: 'No se pudo leer el archivo. ¿Es una exportación de PromptHub (.zip)?'
   },
   // Textos localizados para los códigos de error del servidor
   // (ver client/src/api/index.js). Las `{etiquetas}` se rellenan con los
@@ -135,6 +165,8 @@ export default {
     limitReached: 'Has alcanzado el límite por usuario ({limit}).',
     rateLimited: 'Demasiadas solicitudes desde tu conexión. Inténtalo de nuevo más tarde.',
     selfModification: 'No puedes cambiar tu propio rol o estado.',
+    importInvalid:
+      'Ese archivo no se pudo importar. Revisa el archivo de exportación e inténtalo de nuevo.',
     internalError: 'Algo ha salido mal en nuestro lado. Inténtalo de nuevo.'
   },
   date: {

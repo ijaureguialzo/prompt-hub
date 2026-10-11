@@ -12,7 +12,27 @@ vi.mock('@/api/index.js', () => ({
       .mockResolvedValue({ _id: 'prompt-1', title: 'Test Prompt', content: 'Content here' }),
     create: vi.fn().mockResolvedValue({ _id: 'prompt-new', title: 'New Prompt' }),
     update: vi.fn().mockResolvedValue({ _id: 'prompt-1', title: 'Updated Prompt' }),
-    delete: vi.fn().mockResolvedValue({})
+    delete: vi.fn().mockResolvedValue({}),
+    export: vi.fn().mockResolvedValue({
+      format: 'prompthub-export',
+      version: 1,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      exporter: { id: 'user-1', name: 'Test', email: 'test@example.com' },
+      prompts: [
+        {
+          id: 'prompt-1',
+          clientId: 'uuid-1',
+          title: 'Test Prompt',
+          content: 'Content here',
+          categoryId: null,
+          categoryName: null,
+          tags: [],
+          createdAt: '2025-01-01T00:00:00.000Z',
+          updatedAt: '2025-01-01T00:00:00.000Z'
+        }
+      ]
+    }),
+    import: vi.fn().mockResolvedValue({})
   }
 }))
 
@@ -233,5 +253,180 @@ describe('usePromptStore', () => {
     store.currentPrompt = { _id: 'prompt-1' }
     store.clearCurrent()
     expect(store.currentPrompt).toBeNull()
+  })
+
+  // --- exportPrompts() (SPEC §2.2a) ---
+
+  it('exportPrompts() downloads the zip and returns the count', async () => {
+    const createObjectURL = vi.fn(() => 'blob:test')
+    const revokeObjectURL = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL })
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+
+    const store = getPromptStore()
+    const result = await store.exportPrompts()
+
+    expect(result.count).toBe(1)
+    expect(createObjectURL).toHaveBeenCalledTimes(1)
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:test')
+  })
+
+  it('exportPrompts() returns count 0 without downloading for an empty account', async () => {
+    const createObjectURL = vi.fn(() => 'blob:test')
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL })
+
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.export as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      format: 'prompthub-export',
+      version: 1,
+      prompts: []
+    })
+
+    const result = await store.exportPrompts()
+    expect(result.count).toBe(0)
+    expect(createObjectURL).not.toHaveBeenCalled()
+  })
+
+  // --- prepareImport() (SPEC §2.2a) ---
+
+  it('prepareImport() parses the file, merges the dry run and stores rows', async () => {
+    const payload = {
+      format: 'prompthub-export',
+      version: 1,
+      prompts: [
+        { clientId: 'uuid-1', title: 'Mine', content: 'old' },
+        { clientId: 'uuid-2', title: 'Fresh', content: 'new' }
+      ]
+    }
+    const file = new File([JSON.stringify(payload)], 'backup.json')
+
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.import as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      dryRun: true,
+      results: [
+        { index: 0, status: 'conflict', existingId: 'p-existing', existingTitle: 'Mine' },
+        { index: 1, status: 'new', existingId: null, existingTitle: null }
+      ],
+      quota: { used: 1, limit: 200, wouldUse: 2, exceeded: false }
+    })
+
+    await store.prepareImport(file)
+
+    // dry run sent only the entry fields
+    expect(promptsApi.import).toHaveBeenCalledWith({
+      dryRun: true,
+      prompts: [
+        {
+          clientId: 'uuid-1',
+          title: 'Mine',
+          content: 'old',
+          tags: [],
+          categoryId: null,
+          categoryName: null,
+          createdAt: null,
+          updatedAt: null
+        },
+        {
+          clientId: 'uuid-2',
+          title: 'Fresh',
+          content: 'new',
+          tags: [],
+          categoryId: null,
+          categoryName: null,
+          createdAt: null,
+          updatedAt: null
+        }
+      ]
+    })
+
+    expect(store.importFileName).toBe('backup.json')
+    expect(store.importQuota).toEqual({ used: 1, limit: 200, wouldUse: 2, exceeded: false })
+    expect(store.importEntries).toHaveLength(2)
+    // The server's "conflict" is surfaced as "exists", unselected by default.
+    expect(store.importEntries[0]).toMatchObject({
+      status: 'exists',
+      selected: false,
+      existingId: 'p-existing'
+    })
+    expect(store.importEntries[1]).toMatchObject({ status: 'new', selected: true })
+  })
+
+  it('prepareImport() rejects a malformed file without touching the API', async () => {
+    const file = new File(['not json'], 'backup.json')
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.import as ReturnType<typeof vi.fn>).mockClear()
+
+    await expect(store.prepareImport(file)).rejects.toThrow()
+    expect(promptsApi.import).not.toHaveBeenCalled()
+  })
+
+  // --- confirmImport() (SPEC §2.2a) ---
+
+  it('confirmImport() remaps conflict indices to the valid-only array', async () => {
+    const payload = {
+      format: 'prompthub-export',
+      version: 1,
+      prompts: [
+        { title: 'Broken', content: '' }, // invalid locally: never sent (index 0)
+        { clientId: 'uuid-1', title: 'Mine', content: 'old' }, // conflict (index 1)
+        { clientId: 'uuid-2', title: 'Fresh', content: 'new' } // new (index 2)
+      ]
+    }
+    const file = new File([JSON.stringify(payload)], 'backup.json')
+
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.import as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        // dry run over the 2 valid entries (sent order: Mine, Fresh)
+        results: [
+          { index: 0, status: 'conflict', existingId: 'p1', existingTitle: 'Mine' },
+          { index: 1, status: 'new', existingId: null, existingTitle: null }
+        ],
+        quota: { used: 1, limit: 200, wouldUse: 2, exceeded: false }
+      })
+      .mockResolvedValueOnce({
+        dryRun: false,
+        created: 1,
+        updated: 1,
+        skipped: 0,
+        quota: { used: 2, limit: 200 }
+      })
+
+    await store.prepareImport(file)
+    // The user confirms the conflict — its index in the FULL file is 1, but
+    // in the sent (valid-only) array it is 0: the remapping must handle that.
+    await store.confirmImport([1])
+
+    const calls = (promptsApi.import as ReturnType<typeof vi.fn>).mock.calls
+    const applyCall = calls[calls.length - 1][0] as {
+      dryRun: boolean
+      overwrites: number[]
+      prompts: { title: string }[]
+    }
+    expect(applyCall.dryRun).toBe(false)
+    expect(applyCall.overwrites).toEqual([0])
+    expect(applyCall.prompts.map((p) => p.title)).toEqual(['Mine', 'Fresh'])
+    // success clears the flow state
+    expect(store.importEntries).toEqual([])
+  })
+
+  it('cancelImport() resets the flow state', async () => {
+    const store = getPromptStore()
+    store.importEntries = [{ index: 0, title: 'X', status: 'new', selected: true }]
+    store.importQuota = { used: 1, limit: 200, wouldUse: 1, exceeded: false }
+    store.importFileName = 'backup.zip'
+    store.importing = true
+
+    store.cancelImport()
+
+    expect(store.importEntries).toEqual([])
+    expect(store.importQuota).toBeNull()
+    expect(store.importFileName).toBe('')
+    expect(store.importing).toBe(false)
   })
 })

@@ -57,11 +57,37 @@ export default {
     heading: 'Prompts',
     newCategoryBtn: 'New Category',
     newPromptBtn: 'New Prompt',
+    exportBtn: 'Export',
+    importBtn: 'Import',
+    exporting: 'Exporting...',
+    exportEmpty: 'You have no prompts to export yet.',
     loading: 'Loading prompts...',
     noPrompts: 'No prompts found.',
     filteredByTags: 'Filtered by tags',
     clearAllTags: 'Clear all tags',
     loadMore: 'Load more'
+  },
+  importModal: {
+    title: 'Import prompts',
+    fileNote: 'from {file}',
+    summary: '{new} new · {exists} to overwrite · {skip} skipped',
+    newBadge: 'New',
+    existsBadge: 'Exists',
+    duplicateBadge: 'Duplicate',
+    invalidBadge: 'Invalid',
+    overwriteHint: 'Will replace your current version',
+    invalidTitleReason: 'Title is required (max 100 characters)',
+    invalidContentReason: 'Content is required (max 50,000 characters)',
+    invalidTagsReason: 'Too many tags (max 20)',
+    invalidNote: '{count} entries are invalid and will be skipped.',
+    quotaWarning:
+      'Your prompt limit would be exceeded ({used}/{limit} used). Delete some prompts first.',
+    selectAll: 'Select all',
+    deselectAll: 'Deselect all',
+    noneImportable: 'No prompts in this file can be imported.',
+    cancel: 'Cancel',
+    import: 'Import',
+    importing: 'Importing...'
   },
   promptDetail: {
     backLink: 'Back to Prompts',
@@ -108,7 +134,10 @@ export default {
     promptCreated: 'Prompt created successfully!',
     categoryUpdated: 'Category updated successfully!',
     categoryCreated: 'Category created successfully!',
-    dataRefreshed: 'Data refreshed successfully!'
+    dataRefreshed: 'Data refreshed successfully!',
+    exportSuccess: 'Export downloaded ({count} prompts).',
+    importSuccess: 'Import finished: {created} created, {updated} updated, {skipped} skipped.',
+    importFileError: "Couldn't read that file. Is it a PromptHub export (.zip)?"
   },
   // Localized text for server error codes (see client/src/api/index.js).
   // Keys are camelCased error codes; `{token}` placeholders are filled from
@@ -135,6 +164,7 @@ export default {
     limitReached: 'You have reached the per-user limit ({limit}).',
     rateLimited: 'Too many requests from your connection. Please try again later.',
     selfModification: 'You cannot modify your own role or status.',
+    importInvalid: 'That file could not be imported. Please check the export file and try again.',
     internalError: 'Something went wrong on our side. Please try again.'
   },
   date: {

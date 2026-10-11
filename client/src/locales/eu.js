@@ -57,11 +57,37 @@ export default {
     heading: 'Promptak',
     newCategoryBtn: 'Kategoria berria',
     newPromptBtn: 'Prompt berria',
+    exportBtn: 'Esportatu',
+    importBtn: 'Inportatu',
+    exporting: 'Esportatzen...',
+    exportEmpty: 'Ez duzu promptik esportatzeko oraindik.',
     loading: 'Promptak kargatzen...',
     noPrompts: 'Ez da prompterik aurkitu.',
     filteredByTags: 'Etiketen arabera iragazitakoak',
     clearAllTags: 'Garbi etiketa guztiak',
     loadMore: 'Kargatu gehiago'
+  },
+  importModal: {
+    title: 'Inportatu promptak',
+    fileNote: '{file} fitxategitik',
+    summary: '{new} berriak · {exists} gainidatzeko · {skip} saltoatuak',
+    newBadge: 'Berria',
+    existsBadge: 'Badago',
+    duplicateBadge: 'Bikoitia',
+    invalidBadge: 'Baliogabea',
+    overwriteHint: 'Ordezkatuko du zure uneko bertsioa',
+    invalidTitleReason: 'Izenburua beharrezkoa da (gehienak 100 karaktere)',
+    invalidContentReason: 'Edukia beharrezkoa da (gehienak 50.000 karaktere)',
+    invalidTagsReason: 'Etiketa gehiegi (gehienak 20)',
+    invalidNote: '{count} sarrera baliogabeak dira eta saltatuko dira.',
+    quotaWarning:
+      'Zure prompt mugak gaindituko litzateke ({used}/{limit} erabiltzen). Ezabatu zenbait prompt lehenik.',
+    selectAll: 'Hautatu guztiak',
+    deselectAll: 'Deskonektatu guztiak',
+    noneImportable: 'Ezin da fitxategi honetako promptik inportatu.',
+    cancel: 'Utzi',
+    import: 'Inportatu',
+    importing: 'Inportatzen...'
   },
   promptDetail: {
     backLink: 'Itzuli promptetara',
@@ -108,7 +134,11 @@ export default {
     promptCreated: 'Prompta arrakastaz sortuta!',
     categoryUpdated: 'Kategoria arrakastaz eguneratuta!',
     categoryCreated: 'Kategoria arrakastaz sortuta!',
-    dataRefreshed: 'Datuak arrakastaz freskatu dira!'
+    dataRefreshed: 'Datuak arrakastaz freskatu dira!',
+    exportSuccess: 'Esportazioa deskargatuta ({count} prompt).',
+    importSuccess:
+      'Inportazioa amaituta: {created} sortuta, {updated} eguneratuta, {skipped} saltatu.',
+    importFileError: 'Ezin izan da fitxategia irakurri. PromptHub esportazio bat al da (.zip)?'
   },
   // Zerbitzariak itzultzen duen erroen kodeetarako lokalizatuak testuak
   // (ikusi client/src/api/index.js). `{token}` leihauak erroaren
@@ -135,6 +165,8 @@ export default {
     limitReached: 'Erabiltzaileko muga gainditu duzu ({limit}).',
     rateLimited: 'Eskaera gehiegi zure konexiotik. Saiatu berriro geroago.',
     selfModification: 'Ezin duzu zure buruaren rola edo egoera aldatu.',
+    importInvalid:
+      'Ezin izan da fitxategi hori inportatu. Egiaztatu esportazio-fitxategia eta saiatu berriro.',
     internalError: 'Zerbait gaizki jo da gure aldean. Saiatu berriro.'
   },
   date: {

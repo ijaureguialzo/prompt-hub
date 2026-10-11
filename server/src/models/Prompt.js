@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const promptSchema = new mongoose.Schema({
   title: {
@@ -17,6 +18,14 @@ const promptSchema = new mongoose.Schema({
   // $substrCP projection in GET /api/prompts; never written to the DB).
   excerpt: {
     type: String
+  },
+  // Stable identity for export/import matching (SPEC §2.2a). Deliberately NOT
+  // globally unique: when user B imports a file exported by user A, B's copy
+  // legitimately reuses A's clientId — prompts are identified per user.
+  clientId: {
+    type: String,
+    default: () => crypto.randomUUID(),
+    index: true // import matching (always combined with ownerId)
   },
   categoryId: {
     type: mongoose.Schema.Types.ObjectId,

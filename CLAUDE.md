@@ -33,8 +33,9 @@ prompt-hub/
 │   ├── api/index.js               # API client (wrappers for all endpoints)
 │   ├── router/index.js            # 8 routes with auth + admin guards
 │   ├── stores/                    # 6 Pinia stores (auth, prompts, categories, i18n, UI, theme)
-│   ├── components/                # 9 components (Navbar, Toast, PromptCard, SearchBar,
-│   │                              #   3 modals, CategoryList, UsePromptModal)
+│   ├── components/                # 10 components (Navbar, Toast, PromptCard, SearchBar,
+│   │                              #   4 modals, CategoryList, UsePromptModal)
+│   │                              #   (incl. ImportPromptsModal for the import flow)
 │   ├── views/                     # 8 pages (Login, Register, PromptList/Detail,
 │   │                              #   Category, Settings, Profile, ManageUsers)
 │   └── locales/                   # en.js, es.js, eu.js (~40 keys each)
@@ -44,9 +45,9 @@ prompt-hub/
 │   ├── controllers/               # auth, prompt, category, user, siteConfig (5)
 │   ├── routes/                    # auth, prompt, category, user, siteConfig (5)
 │   ├── middleware/                # auth.js (JWT + role), errorHandler, ownership.js
-│   └── scripts/                   # seedAdmin, migrateAddName
-├── server/test/                   # 8 Vitest integration tests (auth, categories, health,
-│                                   #   integration, prompts, siteConfig, smoke, users)
+│   └── scripts/                   # seedAdmin, migrateAddName, migrateAddClientId
+├── server/test/                   # 16 Vitest tests (unit + Supertest against
+│                                   #   mongodb-memory-server; incl. importExport)
 ├── traefik/                       # Reverse proxy: TLS, routing, HTTP→HTTPS redirect
 ├── docker-compose.yml             # 4 services: traefik, api, frontend, db
 └── .env / .env.example            # Configuration template
@@ -63,6 +64,7 @@ prompt-hub/
 - **Error localization**: server errors carry a stable `code` + English `message` fallback (see SPECIFICATION.md §2). `client/src/api/index.js` maps `code` → `errors.*` locale keys before the toast renders; never display server `message` directly for known codes.
 - **Role system**: `user` (default) and `admin`. First registered user auto-promoted to admin. Admin routes: `/api/users/*`, `/api/site-config`, ManageUsersView, SettingsView.
 - **Theme**: `useThemeStore` supports light/dark/auto with system preference listener (Tailwind CSS 4).
+- **Export/Import** (SPEC §2.2a): prompts carry a stable `clientId` (UUID). Export = `GET /api/prompts/export` (full JSON) zipped client-side (JSZip, `prompthub-export-YYYY-MM-DD.zip`). Import is two-phase: the client unzips the file, the server dry-run classifies each entry **against the importing user's own prompts** (per-user identity: other users' prompts never match), then the user picks what to overwrite. The import route uses a larger JSON body limit than the rest of the API (see `server.js` + `promptRoutes.js`).
 
 ## File Conventions
 
@@ -74,7 +76,7 @@ prompt-hub/
 
 ## Testing
 
-Both client and server use **Vitest**. Server: 13 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, via `.env.test`). Client: 26 test files (Vitest + Vue Test Utils, jsdom).
+Both client and server use **Vitest**. Server: 16 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, via `.env.test`). Client: 28 test files (Vitest + Vue Test Utils, jsdom).
 
 ```bash
 make test           # Run both suites

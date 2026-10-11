@@ -20,7 +20,7 @@ All error responses share a stable, language-neutral shape:
 { "code": "STABLE_CODE", "message": "English human-readable text", "...": "optional params" }
 ```
 
-- `code` is a stable machine-readable identifier (`INVALID_TOKEN`, `AUTH_REQUIRED`, `USER_INACTIVE`, `FORBIDDEN`, `NOT_OWNER`, `INVALID_CREDENTIALS`, `ACCOUNT_DEACTIVATED`, `REGISTRATION_DISABLED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`, `PASSWORD_TOO_SHORT`, `VALIDATION_ERROR`, `TAGS_TOO_MANY`, `EMAIL_INVALID`, `DUPLICATE`, `NOT_FOUND`, `LIMIT_REACHED`, `RATE_LIMITED`, `SELF_MODIFICATION`, `INTERNAL_ERROR`).
+- `code` is a stable machine-readable identifier (`INVALID_TOKEN`, `AUTH_REQUIRED`, `USER_INACTIVE`, `FORBIDDEN`, `NOT_OWNER`, `INVALID_CREDENTIALS`, `ACCOUNT_DEACTIVATED`, `REGISTRATION_DISABLED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`, `PASSWORD_TOO_SHORT`, `VALIDATION_ERROR`, `TAGS_TOO_MANY`, `EMAIL_INVALID`, `DUPLICATE`, `NOT_FOUND`, `LIMIT_REACHED`, `RATE_LIMITED`, `SELF_MODIFICATION`, `IMPORT_INVALID`, `INTERNAL_ERROR`).
 - `message` is the English fallback for clients that do not localize.
 - Some codes carry extra parameters for interpolation (`LIMIT_REACHED` includes `limit`).
 - The client maps `code` to a localized string (`errors.*` keys in `client/src/locales`); unknown codes fall back to `message`, then to a generic localized string. Never match on `message` content for behavior — use `code`.
@@ -41,6 +41,63 @@ All error responses share a stable, language-neutral shape:
 | `/api/prompts/:id` | `GET` | Get single prompt (populate categoryId.name) | — | `Prompt` | 200, 404, 500 |
 | `/api/prompts/:id` | `PUT` | Update prompt (ownership check) | `{ title?, content?, categoryId? }` | `Prompt` | 200, 400, 404, 500 |
 | `/api/prompts/:id` | `DELETE` | Delete prompt (ownership check) | — | `{ message }` | 200, 404, 500 |
+| `/api/prompts/export` | `GET` | Export **all** prompts owned by the caller (full content, never paginated); JSON export payload, see 2.2a | — | `ExportPayload` | 200, 401, 500 |
+| `/api/prompts/import` | `POST` | Import prompts from an export payload (two-phase: dry run + apply, see 2.2a). Body limit 20 MB (env `IMPORT_BODY_LIMIT`), write rate limited per IP | `{ dryRun?, prompts[], overwrites? }` | `ImportResult` | 200, 400, 401, 409, 429, 500 |
+
+### 2.2a Export / Import
+
+Users can back up and re-import their own prompts as a **ZIP file containing one JSON document** (`prompts.json`). The ZIP is assembled/parsed **in the browser** (JSZip) — the server API is JSON-only, consistent with the no-multipart posture (§7).
+
+**Export payload** (`GET /api/prompts/export`, `ExportPayload`):
+
+```json
+{
+  "format": "prompthub-export",
+  "version": 1,
+  "exportedAt": "ISO-8601",
+  "exporter": { "id": "user _id", "name": "...", "email": "..." },
+  "prompts": [
+    { "id": "prompt _id", "clientId": "uuid", "title": "...", "content": "...",
+      "categoryId": "id|null", "categoryName": "...|null", "tags": ["..."],
+      "createdAt": "ISO-8601", "updatedAt": "ISO-8601" }
+  ]
+}
+```
+
+**Prompt identity is per-user.** Every prompt carries a `clientId` (UUID, assigned at creation). Import matches file entries against the **importing user's own prompts only**:
+
+1. Entry with a non-empty `clientId` → the same prompt if the importing user owns a prompt with that `clientId` (otherwise it is new).
+2. Entry without `clientId` (legacy/hand-made file) → matched by exact title, case-insensitive, within the importing user's prompts.
+3. Duplicates within one file (same `clientId`, or same normalized title when no `clientId`): the first occurrence is classified, later occurrences are `duplicate` and never applied.
+
+Consequences: a prompt that exists only in *another* user's account is **not** a match — it is imported as a brand-new prompt in the importer's account (new `_id`, owner = importer). Two users holding copies of the same exported prompt are two different prompts, by design.
+
+**Import request** (`POST /api/prompts/import`):
+
+- `prompts` — array of entries with the same fields as `ExportPayload.prompts[]` (`title` and `content` required; `tags`, `categoryId`, `categoryName`, `createdAt`, `updatedAt` optional). 1–500 entries (env `MAX_IMPORT_PROMPTS`), every field re-validated against the schema caps on the server.
+- `dryRun` — `true` classifies without writing; omitted/`false` applies.
+- `overwrites` — indices (into `prompts`) of the conflicting entries the user approved for overwriting. Conflicting entries **not** listed are skipped, never silently overwritten.
+
+**Import response** (`ImportResult`):
+
+```json
+{
+  "dryRun": true,
+  "results": [ { "index": 0, "clientId": "uuid|null", "title": "...",
+    "status": "new|conflict|duplicate",
+    "existingId": "...|null", "existingTitle": "...|null", "existingUpdatedAt": "ISO|null" } ],
+  "summary": { "total": 0, "new": 0, "conflicts": 0, "duplicates": 0 },
+  "quota": { "used": 0, "limit": 200, "wouldUse": 0, "exceeded": false }
+}
+```
+
+Applied runs return `{ dryRun: false, created, updated, skipped, results[], quota }` where `status` is `created|updated|skipped` (skipped: `reason` is `not-confirmed` or `duplicate`).
+
+**Rules:**
+- Applies **atomically**: if the number of `new` entries would push the user past `MAX_PROMPTS_PER_USER`, the whole request fails with `409 LIMIT_REACHED` and nothing is written. The dry run reports `quota.exceeded` so the client can disable the confirm button in advance.
+- New prompts: owner = importer, `clientId` taken from the file (or a fresh UUID if absent), original `createdAt`/`updatedAt` preserved when present and valid.
+- Category resolution (create and update): `categoryName` matched case-insensitively against the importer's own categories; failing that, `categoryId` if it points to a category owned by the importer; otherwise `null` (uncategorized). Categories of other users are never referenced; no categories are created.
+- `400 IMPORT_INVALID` for a malformed payload (missing/empty `prompts`, more than the entry cap, or any entry violating a field cap); the message identifies the offending entry.
 
 ### 2.3 Categories API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
@@ -92,6 +149,9 @@ All error responses share a stable, language-neutral shape:
 ```javascript
 { title: String(required, ≤100), content: String(required, ≤50000),
   excerpt: String (computed on read via $substrCP projection in list views; never written),
+  clientId: String(UUID, default crypto.randomUUID(), indexed)
+      // stable identity for export/import matching; intentionally NOT globally
+      // unique — two users may legitimately own copies of the same exported prompt
   categoryId: ObjectId(ref:'Category', nullable, indexed),
   ownerId: ObjectId(ref:'User', indexed),
   tags: [String(≤50)] (max 20),
@@ -122,9 +182,11 @@ All error responses share a stable, language-neutral shape:
 
 ### Views (8): LoginView, RegisterView, PromptListView, PromptDetailView, CategoryView, SettingsView, ProfileView, ManageUsersView
 
-### Components (9): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal
+### Components (10): Navbar, Toast, PromptCard, SearchBar, CreatePromptModal, CreateCategoryModal, DeleteConfirmationModal, CategoryList, UsePromptModal, ImportPromptsModal (per-row select/overwrite, quota warning, select-all/clear-all)
 
-### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt + server-side filters `q`/`categoryId`/`tags` + `loadMore` pagination), useCategoryStore (CRUD + selection + server counts), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
+### Stores (6): useAuthStore (token/user), usePromptStore (CRUD + currentPrompt + server-side filters `q`/`categoryId`/`tags` + `loadMore` pagination + export/import flow state), useCategoryStore (CRUD + selection + server counts), useI18nStore (en/es/eu), useUIStore (toasts + modals), useThemeStore (light/dark/auto)
+
+### Export/import client (`src/lib/promptBackup.js`): builds the export ZIP (JSZip, `prompts.json` inside) and triggers the download; parses an uploaded `.zip` (or bare `.json`) file, normalizes and pre-validates entries, and merges the server dry-run classification into per-row UI state. `usePromptStore` orchestrates the API calls (`GET /prompts/export`, `POST /prompts/import`) around it.
 
 ### Routes (8): `/` → PromptListView, `/login`, `/register`, `/prompt/:id` → PromptDetailView, `/category/:id` → CategoryView, `/settings`, `/profile/:id` → ProfileView, `/admin/users` (admin guard)
 
@@ -134,7 +196,7 @@ All error responses share a stable, language-neutral shape:
 
 ## 5. Testing
 
-Both client and server use **Vitest**. Server: 15 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, config from `.env.test`). Client: 26 test files (Vitest + Vue Test Utils, jsdom). Linting: ESLint (flat config) + Prettier on both packages.
+Both client and server use **Vitest**. Server: 16 test files in `server/test/` (unit + Supertest integration against `mongodb-memory-server`, config from `.env.test`). Client: 28 test files (Vitest + Vue Test Utils, jsdom). Linting: ESLint (flat config) + Prettier on both packages.
 
 ```bash
 make test           # Run both suites
@@ -165,7 +227,8 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 - **Audit trail**: privileged operations are logged to the `Audit` collection (fire-and-forget; never blocks the request).
 - **Error handling**: raw error messages are logged server-side and only returned outside production; validation/duplicate-key errors map to friendly 400/409 responses.
 - **Input validation**: all writable fields are length-capped (see §3); `categoryId` must reference an existing category.
-- **HTTP**: JSON bodies only (no urlencoded parser), CORS with an explicit origin list and no credentials.
+- **Import validation**: import payloads are re-validated field-by-field on the server (title/content/tags caps, entry count cap, date sanity) regardless of client pre-validation; matching is always scoped to the importing user (§2.2a).
+- **HTTP**: JSON bodies only (no urlencoded parser), CORS with an explicit origin list and no credentials. The default JSON body limit is 100 KB; the import route gets a dedicated parser with a larger limit (default 20 MB, env `IMPORT_BODY_LIMIT`) because it carries whole export files, while every other endpoint keeps the small limit.
 
 ## 8. Operational Scripts
 
@@ -173,4 +236,5 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 make seed-admin SEED_EMAIL=x@y.com SEED_PASSWORD=secret [SEED_NAME=Name]  # idempotent admin bootstrap
 make seed-data SEED_USER_EMAIL=x@y.com   # idempotent demo content (marked [demo])
 cd server && node src/scripts/migrateAddName.js          # one-off migration (name field backfill)
+cd server && node src/scripts/migrateAddClientId.js      # one-off migration (clientId UUID backfill)
 ```

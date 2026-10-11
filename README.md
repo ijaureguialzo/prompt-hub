@@ -8,6 +8,7 @@ Full-stack AI prompt management application with authentication, categorization,
 - **Prompt Management**: Full CRUD with ownership checks and tags
 - **Categories**: Organize prompts, cascade delete on category removal
 - **Search & Filter**: Debounced search by title/content/tags, filter by category
+- **Backup & Restore**: Export all prompts as a ZIP (JSON inside) and re-import them; per-user identity means other users' prompts never collide
 - **Copy-to-Clipboard**: One-click prompt reuse via read-only modal
 - **i18n**: Full localization in English, Spanish, and Basque (Euskara)
 - **Dark Mode**: Light/dark/auto theme with system preference detection
