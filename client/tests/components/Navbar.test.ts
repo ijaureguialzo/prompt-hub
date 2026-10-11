@@ -60,4 +60,31 @@ describe('Navbar', () => {
     const menuAfter = wrapper.find('.z-50')
     expect(menuAfter.attributes('style')).toContain('display: none')
   })
+
+  // --- Accessible names (PLAN.md P2/14) ---
+
+  it('gives the theme toggle buttons aria-label and aria-pressed', () => {
+    const wrapper = mount(Navbar)
+    // Buttons in DOM order: profile dropdown, logout (v-show menu), light,
+    // dark, auto, then the language buttons.
+    const [, , light, dark, auto] = wrapper.findAll('button')
+    expect(light.attributes('aria-label')).toBe('theme.lightMode')
+    expect(dark.attributes('aria-label')).toBe('theme.darkMode')
+    expect(auto.attributes('aria-label')).toBe('theme.autoMode')
+    // The mock store is in 'auto' mode: only that one is pressed.
+    expect(light.attributes('aria-pressed')).toBe('false')
+    expect(dark.attributes('aria-pressed')).toBe('false')
+    expect(auto.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('marks the active language with aria-pressed', () => {
+    const wrapper = mount(Navbar)
+    // …, es, eu, en are the last three buttons
+    const buttons = wrapper.findAll('button')
+    const [es, eu, en] = buttons.slice(-3)
+    // The mock i18n store is on 'en'
+    expect(es.attributes('aria-pressed')).toBe('false')
+    expect(eu.attributes('aria-pressed')).toBe('false')
+    expect(en.attributes('aria-pressed')).toBe('true')
+  })
 })

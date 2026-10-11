@@ -53,6 +53,8 @@
           <!-- Theme mode selector -->
           <div class="flex items-center space-x-0.5 text-xs border rounded-md border-gray-300 dark:border-gray-600 overflow-hidden">
             <button @click="themeStore.setMode('light')"
+              :aria-label="t('theme.lightMode')"
+              :aria-pressed="themeStore.mode === 'light'"
               :class="[
                 'px-2 py-1.5 transition-colors',
                 themeStore.mode === 'light'
@@ -62,6 +64,8 @@
               &#9788;
             </button>
             <button @click="themeStore.setMode('dark')"
+              :aria-label="t('theme.darkMode')"
+              :aria-pressed="themeStore.mode === 'dark'"
               :class="[
                 'px-2 py-1.5 transition-colors',
                 themeStore.mode === 'dark'
@@ -71,6 +75,8 @@
               &#9790;
             </button>
             <button @click="themeStore.setMode('auto')"
+              :aria-label="t('theme.autoMode')"
+              :aria-pressed="themeStore.mode === 'auto'"
               :class="[
                 'px-2 py-1.5 transition-colors',
                 themeStore.mode === 'auto'
@@ -83,17 +89,17 @@
 
           <!-- Language selector -->
           <div class="flex items-center space-x-1 text-sm">
-            <button @click="i18nStore.setLanguage('es')"
+            <button @click="i18nStore.setLanguage('es')" :aria-pressed="i18nStore.language === 'es'"
               :class="[i18nStore.language === 'es' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200']">
               es
             </button>
             <span class="text-gray-400 dark:text-gray-600">|</span>
-            <button @click="i18nStore.setLanguage('eu')"
+            <button @click="i18nStore.setLanguage('eu')" :aria-pressed="i18nStore.language === 'eu'"
               :class="[i18nStore.language === 'eu' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200']">
               eu
             </button>
             <span class="text-gray-400 dark:text-gray-600">|</span>
-            <button @click="i18nStore.setLanguage('en')"
+            <button @click="i18nStore.setLanguage('en')" :aria-pressed="i18nStore.language === 'en'"
               :class="[i18nStore.language === 'en' ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200']">
               en
             </button>

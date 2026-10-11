@@ -7,11 +7,14 @@ vi.mock('@/stores/useI18nStore.js', () => ({
 }))
 
 describe('SearchBar', () => {
-  it('renders an input with the correct placeholder', () => {
+  it('renders an input with the correct placeholder and an accessible name', () => {
     const wrapper = mount(SearchBar)
     const input = wrapper.find('input')
     expect(input.exists()).toBe(true)
     expect(input.attributes('placeholder')).toBe('searchBar.placeholder')
+    // A placeholder is not an accessible name — the input needs its own
+    // aria-label (PLAN.md P2/14).
+    expect(input.attributes('aria-label')).toBe('searchBar.placeholder')
   })
 
   it('emits update:modelValue when the user types', async () => {
