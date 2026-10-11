@@ -72,6 +72,11 @@ describe('Categories (CRUD + Cascade Delete)', () => {
       expect(res.body.categories[0]).toHaveProperty('promptCount', 0);
       expect(res.body.uncategorizedCount).toBe(0);
       expect(res.body.totalPrompts).toBe(0);
+
+      // Per-user quotas for the UI indicator (the admin owns one of the
+      // two categories; the other belongs to the regular user).
+      expect(res.body.promptQuota).toEqual({ used: 0, limit: expect.any(Number) });
+      expect(res.body.categoryQuota).toEqual({ used: 1, limit: expect.any(Number) });
     });
 
     it('reports per-category prompt counts and uncategorized/total counts', async () => {
@@ -99,6 +104,10 @@ describe('Categories (CRUD + Cascade Delete)', () => {
       expect(creative.promptCount).toBe(0);
       expect(res.body.uncategorizedCount).toBe(1);
       expect(res.body.totalPrompts).toBe(3);
+
+      // Quotas track the owner's own usage, not the shared hub totals.
+      expect(res.body.promptQuota.used).toBe(3);
+      expect(res.body.categoryQuota.used).toBe(1);
     });
 
     it('returns 401 without token', async () => {

@@ -13,7 +13,9 @@ export default {
     uncategorized: 'Kategoriarik gabe',
     edit: 'Editatu',
     delete: 'Ezabatu',
-    noCategories: 'Oraindik ez dago kategoriarik.'
+    noCategories: 'Oraindik ez dago kategoriarik.',
+    promptsQuota: '{used}/{limit} prompt',
+    categoriesQuota: '{used}/{limit} kategoriak'
   },
   searchBar: {
     placeholder: 'Bilatu promptak izenburu, eduki edo etiketen arabera...'

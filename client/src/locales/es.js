@@ -13,7 +13,9 @@ export default {
     uncategorized: 'Sin categoría',
     edit: 'Editar',
     delete: 'Eliminar',
-    noCategories: 'Aún no hay categorías.'
+    noCategories: 'Aún no hay categorías.',
+    promptsQuota: '{used}/{limit} prompts',
+    categoriesQuota: '{used}/{limit} categorías'
   },
   searchBar: {
     placeholder: 'Buscar prompts por título, contenido o etiquetas...'

@@ -50,13 +50,17 @@ describe('useCategoryStore', () => {
     ;(categoriesApi.getAll as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       categories: [{ _id: 'c1', name: 'Cat 1', promptCount: 3 }],
       uncategorizedCount: 7,
-      totalPrompts: 10
+      totalPrompts: 10,
+      promptQuota: { used: 187, limit: 200 },
+      categoryQuota: { used: 3, limit: 50 }
     })
     await store.fetchCategories()
     expect(store.categories).toHaveLength(1)
     expect(store.categories[0].promptCount).toBe(3)
     expect(store.uncategorizedCount).toBe(7)
     expect(store.totalPrompts).toBe(10)
+    expect(store.promptQuota).toEqual({ used: 187, limit: 200 })
+    expect(store.categoryQuota).toEqual({ used: 3, limit: 50 })
   })
 
   it('fetchCategories() calls categoriesApi.getAll', async () => {

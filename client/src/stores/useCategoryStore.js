@@ -10,7 +10,10 @@ export const useCategoryStore = defineStore('categories', {
     // Server-side counts (from GET /api/categories): the sidebar must show
     // accurate numbers even though the prompt list is paginated.
     uncategorizedCount: 0,
-    totalPrompts: 0
+    totalPrompts: 0,
+    // Per-user quotas (from GET /api/categories); null until first fetch.
+    promptQuota: null,
+    categoryQuota: null
   }),
 
   getters: {
@@ -34,6 +37,8 @@ export const useCategoryStore = defineStore('categories', {
           this.categories = data.categories ?? []
           this.uncategorizedCount = data.uncategorizedCount ?? 0
           this.totalPrompts = data.totalPrompts ?? 0
+          this.promptQuota = data.promptQuota ?? null
+          this.categoryQuota = data.categoryQuota ?? null
         }
         return this.categories
       } catch (error) {

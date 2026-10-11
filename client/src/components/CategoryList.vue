@@ -60,6 +60,15 @@
       </li>
     </ul>
 
+    <!-- Per-user quota indicator (discrete: usage against the per-user caps) -->
+    <div
+      v-if="categoryStore.promptQuota || categoryStore.categoryQuota"
+      class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500"
+    >
+      <span v-if="categoryStore.promptQuota">{{ t('categoryList.promptsQuota', { used: categoryStore.promptQuota.used, limit: categoryStore.promptQuota.limit }) }}</span>
+      <span v-if="categoryStore.categoryQuota"> · {{ t('categoryList.categoriesQuota', { used: categoryStore.categoryQuota.used, limit: categoryStore.categoryQuota.limit }) }}</span>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <DeleteConfirmationModal
       v-if="deleteDialogOpen"

@@ -8,14 +8,25 @@ const { logAudit } = require('../utils/audit');
 // sidebar can show accurate counts without loading every prompt: each
 // category gets a denormalized promptCount from a single aggregation.
 exports.getAllCategories = async (req, res) => {
-  const [categories, groups, uncategorizedCount, totalPrompts] = await Promise.all([
+  const { maxPromptsPerUser, maxCategoriesPerUser } = getLimits();
+  const [
+    categories,
+    groups,
+    uncategorizedCount,
+    totalPrompts,
+    userPromptCount,
+    userCategoryCount
+  ] = await Promise.all([
     Category.find().sort({ createdAt: -1 }),
     Prompt.aggregate([
       { $match: { categoryId: { $ne: null } } },
       { $group: { _id: '$categoryId', count: { $sum: 1 } } }
     ]),
     Prompt.countDocuments({ categoryId: null }),
-    Prompt.countDocuments()
+    Prompt.countDocuments(),
+    // Per-user quotas for the UI indicator (indexed by ownerId).
+    Prompt.countDocuments({ ownerId: req.user._id }),
+    Category.countDocuments({ ownerId: req.user._id })
   ]);
 
   const counts = new Map(groups.map((g) => [g._id.toString(), g.count]));
@@ -25,7 +36,15 @@ exports.getAllCategories = async (req, res) => {
     return obj;
   });
 
-  res.status(200).json({ categories: withCounts, uncategorizedCount, totalPrompts });
+  res.status(200).json({
+    categories: withCounts,
+    uncategorizedCount,
+    totalPrompts,
+    // The list above is the SHARED hub; the quotas are the importer's own
+    // usage against the per-user caps (SPEC §7).
+    promptQuota: { used: userPromptCount, limit: maxPromptsPerUser },
+    categoryQuota: { used: userCategoryCount, limit: maxCategoriesPerUser }
+  });
 };
 
 // GET /api/categories/:id - Retrieve a specific category (authenticated)
