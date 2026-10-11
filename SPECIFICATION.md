@@ -211,7 +211,8 @@ cd client && npm test   # Client only (Vitest + Vue Test Utils)
 
 Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `healthy`; frontend depends on api `healthy`; Traefik depends on frontend `healthy`. All Node containers run as the unprivileged `node` user.
 
-- **Traefik**: HTTP 80 → HTTPS redirect, TLS 443 (dynamic certs), routes for api + frontend + internal dashboard (`traefik.prompthub.test/dashboard`, see `traefik/traefik.yml`).
+- **Traefik**: HTTP 80 → HTTPS redirect, TLS 443 (dynamic certs), routes for api + frontend + internal dashboard (`traefik.prompthub.test/dashboard`, see `traefik/traefik.yml`). Hostnames are configurable via `FQDN_FRONTEND` / `FQDN_API` / `FQDN_TRAEFIK` (compose defaults: `prompthub.test` / `api.prompthub.test` / `traefik.prompthub.test`).
+  - **API routing**: the API is reachable both on its own host (`FQDN_API`, the default target of `VITE_API_URL`) and **same-origin** on the frontend host: a dedicated router (`Host(FQDN_FRONTEND) && PathPrefix(/api)`, priority 100 vs the frontend router's 10) forwards the SPA's `/api/*` to the API service. This makes a same-origin client build (`VITE_API_URL=/api`) work without CORS, and immunizes the deploy against the classic failure where the SPA fallback would 200 `index.html` for `/api/*`. The client additionally fails loudly on any OK response with an empty/non-JSON body.
 - **Backend Dockerfile**: Multi-stage build, `npm ci` + dev-prune, `node:26-slim` (pinnable via `NODE_VERSION`), exposes port 3000.
 - **Frontend Dockerfile**: Multi-stage build, `node:26-slim`, serves `dist/` via `serve` on port 5173.
 - **DB**: MongoDB 8, named volumes (`mongo_data`, `mongo_config`).

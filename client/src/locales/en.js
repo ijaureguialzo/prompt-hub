@@ -145,6 +145,8 @@ export default {
   errors: {
     requestFailed: 'Request failed',
     networkError: 'Network error. Is the API reachable?',
+    invalidResponse:
+      'Unexpected response from the API. Please reload the page; if it persists, the app may be misconfigured.',
     invalidToken: 'Your session has expired. Please sign in again.',
     authRequired: 'Authentication required. Please sign in.',
     userInactive: 'Your account is not active. Please contact an administrator.',

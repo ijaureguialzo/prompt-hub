@@ -68,6 +68,20 @@ describe('api client', () => {
     await expect(apiRequest('/prompts')).rejects.toThrow('Request failed')
   })
 
+  it('throws an explicit error when an ok response has a non-JSON body', async () => {
+    // The P0 silent-failure: a reverse proxy serving the SPA's index.html
+    // with a 200 must be loud, not an empty app.
+    mockFetch({ ok: true, status: 200, body: '<html><body>SPA</body></html>' })
+    await expect(apiRequest('/auth/login')).rejects.toThrow(
+      'Unexpected response from the API'
+    )
+  })
+
+  it('throws an explicit error when an ok response has an empty body', async () => {
+    mockFetch({ ok: true, status: 200, body: '' })
+    await expect(apiRequest('/prompts')).rejects.toThrow('Unexpected response from the API')
+  })
+
   it('throws a friendly error on network failure', async () => {
     mockFetch({ ok: true, status: 200, networkError: true })
     await expect(apiRequest('/prompts')).rejects.toThrow('Network error')
@@ -135,6 +149,12 @@ describe('api client error localization', () => {
     await expect(apiRequest('/prompts')).rejects.toThrow(
       'Tu sesión ha caducado. Inicia sesión de nuevo.'
     )
+  })
+
+  it('localizes the invalid-response error into the selected language (es)', async () => {
+    useI18nStore().setLanguage('es')
+    mockFetch({ ok: true, status: 200, body: '<html></html>' })
+    await expect(apiRequest('/prompts')).rejects.toThrow('Respuesta inesperada de la API')
   })
 
   it('translates into the selected language (eu)', async () => {

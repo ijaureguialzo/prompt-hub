@@ -146,6 +146,8 @@ export default {
   errors: {
     requestFailed: 'Eskaerak huts egin du',
     networkError: 'Sare-errorea. APIa iristen al da?',
+    invalidResponse:
+      'Erantzun espero gabea APIak. Kargatu orria berriro; iragaiten bada, aplikazioa gaizki konfiguratuta egon daiteke.',
     invalidToken: 'Zure saioa amaitu da. Hasieratu saioa berriro, mesedez.',
     authRequired: 'Autentifikazioa behar da. Hasieratu saioa, mesedez.',
     userInactive: 'Zure kontua ez dago aktiboan. Jarri harreman administratzaile batekin.',

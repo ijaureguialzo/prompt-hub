@@ -95,12 +95,14 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   // Safe body parsing: a reverse proxy may return non-JSON error pages.
+  // An empty body or a body that is not valid JSON parses to `undefined`,
+  // which we distinguish from a legitimate JSON value (e.g. `null`).
   const text = await response.text()
   let data
   try {
-    data = text ? JSON.parse(text) : {}
+    data = text ? JSON.parse(text) : undefined
   } catch {
-    data = {}
+    data = undefined
   }
 
   if (!response.ok) {
@@ -113,6 +115,14 @@ export async function apiRequest(endpoint, options = {}) {
       }
     }
     throw new Error(toErrorMessage(data))
+  }
+
+  // An OK response with an empty / non-JSON body almost never comes from the
+  // API: it means the request hit something else — typically the SPA fallback
+  // of a reverse proxy returning index.html with a 200. Resolve-with-`{}`
+  // would leave the app silently empty, so fail loudly instead.
+  if (data === undefined) {
+    throw new Error(tMessage('errors.invalidResponse'))
   }
 
   return data

@@ -146,6 +146,8 @@ export default {
   errors: {
     requestFailed: 'Error en la solicitud',
     networkError: 'Error de red. ¿La API es alcanzable?',
+    invalidResponse:
+      'Respuesta inesperada de la API. Vuelve a cargar la página; si persiste, la app puede estar mal configurada.',
     invalidToken: 'Tu sesión ha caducado. Inicia sesión de nuevo.',
     authRequired: 'Se requiere autenticación. Inicia sesión, por favor.',
     userInactive: 'Tu cuenta no está activa. Contacta con un administrador.',

@@ -55,6 +55,16 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.entrypoints=websecure"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api.tls=true"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME}-api.loadbalancer.server.port=3000"
+      # Same-origin escape hatch: route the frontend host's /api/ prefix to
+      # the API service, with priority over the (lower) frontend router. A
+      # SPA built with a relative or frontend-host VITE_API_URL keeps working,
+      # so the classic "Traefik 200s index.html for /api" failure is a thing
+      # of the past (PLAN.md P0/1).
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api-frontend.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api-frontend.tls=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api-frontend.priority=100"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-api-frontend.service=${COMPOSE_PROJECT_NAME}-api"
 
   frontend:
     build:
@@ -76,6 +86,9 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`)"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.entrypoints=websecure"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.tls=true"
+      # Lower priority than the api-frontend router above, so /api/* on the
+      # frontend host always goes to the API service first.
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.priority=10"
       - "traefik.http.services.${COMPOSE_PROJECT_NAME}-frontend.loadbalancer.server.port=5173"
 
   db:
