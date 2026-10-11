@@ -43,9 +43,7 @@ describe('search full-scan measurement (PLAN.md P3/20)', () => {
       updatedAt: new Date()
     }));
     for (let i = 0; i < docs.length; i += 1000) {
-      await mongoose.connection
-        .collection('prompts')
-        .insertMany(docs.slice(i, i + 1000));
+      await mongoose.connection.collection('prompts').insertMany(docs.slice(i, i + 1000));
     }
     prompts = mongoose.model('Prompt');
   }, 120000);
@@ -57,11 +55,7 @@ describe('search full-scan measurement (PLAN.md P3/20)', () => {
 
   it('documents the plan (no usable index) and bounds its cost at 10^4 docs', async () => {
     const filter = {
-      $or: [
-        { title: /needleword/i },
-        { content: /needleword/i },
-        { tags: /needleword/i }
-      ]
+      $or: [{ title: /needleword/i }, { content: /needleword/i }, { tags: /needleword/i }]
     };
     const stats = await prompts.collection.find(filter).explain('executionStats');
     const plan = stats.queryPlanner?.winningPlan;
@@ -82,8 +76,7 @@ describe('search full-scan measurement (PLAN.md P3/20)', () => {
     // win this tripwire exists to catch.)
     expect(stages.length).toBeGreaterThan(0);
     expect(new Set(stages).has('COLLSCAN')).toBe(true);
-    expect(stages.every((s) => s === 'COLLSCAN' || s === 'SUBPLAN' || s === 'FILTER'))
-      .toBe(true);
+    expect(stages.every((s) => s === 'COLLSCAN' || s === 'SUBPLAN' || s === 'FILTER')).toBe(true);
 
     // A full scan of 10^4 small docs must stay cheap.
     const ms = stats.executionStats?.executionTimeMillis;

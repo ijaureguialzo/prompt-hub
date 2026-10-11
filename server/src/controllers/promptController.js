@@ -478,13 +478,12 @@ exports.importPrompts = async (req, res) => {
     // Classified results and entries share the file's order (classifyEntries
     // maps 1:1), so they zip by position.
     const results = classified.map((c, i) => {
-      const entry = entries[i]
+      const entry = entries[i];
       // Category resolution is per-importer (resolveCategoryId). A file
       // entry whose category the importer does not have will silently
       // become uncategorized on apply — surface that now, in the dry run.
-      const hasCategory = Boolean(entry.categoryName || entry.categoryId)
-      const categoryResolved =
-        !hasCategory || resolveCategoryId(entry, categories) !== null
+      const hasCategory = Boolean(entry.categoryName || entry.categoryId);
+      const categoryResolved = !hasCategory || resolveCategoryId(entry, categories) !== null;
       return {
         index: c.index,
         clientId: c.clientId,
@@ -495,7 +494,7 @@ exports.importPrompts = async (req, res) => {
         existingUpdatedAt:
           c.existing && c.existing.updatedAt ? new Date(c.existing.updatedAt).toISOString() : null,
         categoryResolved
-      }
+      };
     });
     return res.status(200).json({
       dryRun: true,

@@ -150,7 +150,7 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
       expect(res.body.quota.exceeded).toBe(false);
     });
 
-    it('reports per-entry category resolution against the importer\'s categories', async () => {
+    it("reports per-entry category resolution against the importer's categories", async () => {
       const res = await request(app)
         .post('/api/prompts/import')
         .set('Authorization', `Bearer ${regularToken}`)

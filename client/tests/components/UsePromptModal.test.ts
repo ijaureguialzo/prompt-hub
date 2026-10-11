@@ -99,7 +99,10 @@ describe('UsePromptModal', () => {
     })
 
     it('exposes role=dialog, aria-modal and the title as the accessible name', () => {
-      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      const wrapper = mount(UsePromptModal, {
+        props: { prompt: basePrompt },
+        attachTo: document.body
+      })
       try {
         const panel = document.body.querySelector('[role="dialog"]') as HTMLElement
         expect(panel).not.toBeNull()
@@ -111,7 +114,10 @@ describe('UsePromptModal', () => {
     })
 
     it('closes on Escape', async () => {
-      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      const wrapper = mount(UsePromptModal, {
+        props: { prompt: basePrompt },
+        attachTo: document.body
+      })
       try {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
         await nextTick()
@@ -122,7 +128,10 @@ describe('UsePromptModal', () => {
     })
 
     it('moves focus into the dialog and restores the trigger on close', async () => {
-      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      const wrapper = mount(UsePromptModal, {
+        props: { prompt: basePrompt },
+        attachTo: document.body
+      })
       await nextTick()
       const panel = document.body.querySelector('[role="dialog"]') as HTMLElement
       expect(panel.contains(document.activeElement)).toBe(true)

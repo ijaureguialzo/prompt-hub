@@ -167,7 +167,9 @@ describe('CategoryList', () => {
   it('shows the per-user quotas when the store has them', () => {
     mockCategoryStoreState.promptQuota = { used: 187, limit: 200 }
     mockCategoryStoreState.categoryQuota = { used: 3, limit: 50 }
-    const wrapper = mount(CategoryList, { global: { stubs: { DeleteConfirmationModal: deleteModalStub } } })
+    const wrapper = mount(CategoryList, {
+      global: { stubs: { DeleteConfirmationModal: deleteModalStub } }
+    })
     // The identity i18n mock returns the keys; the interpolation happens
     // with the real store, so assert the keys are present.
     expect(wrapper.text()).toContain('categoryList.promptsQuota')
@@ -177,7 +179,9 @@ describe('CategoryList', () => {
   it('hides the quota footer when the store has no quotas yet', () => {
     mockCategoryStoreState.promptQuota = null
     mockCategoryStoreState.categoryQuota = null
-    const wrapper = mount(CategoryList, { global: { stubs: { DeleteConfirmationModal: deleteModalStub } } })
+    const wrapper = mount(CategoryList, {
+      global: { stubs: { DeleteConfirmationModal: deleteModalStub } }
+    })
     expect(wrapper.text()).not.toContain('categoryList.promptsQuota')
     expect(wrapper.text()).not.toContain('categoryList.categoriesQuota')
   })

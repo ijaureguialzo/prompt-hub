@@ -169,9 +169,7 @@ describe('GET /api/audit (admin read endpoint)', () => {
   });
 
   it('returns 403 for a non-admin user', async () => {
-    const res = await request(app)
-      .get('/api/audit')
-      .set('Authorization', `Bearer ${regularToken}`);
+    const res = await request(app).get('/api/audit').set('Authorization', `Bearer ${regularToken}`);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('FORBIDDEN');
   });
@@ -189,9 +187,7 @@ describe('GET /api/audit (admin read endpoint)', () => {
       .send({ registrationEnabled: false });
     await sleep(50);
 
-    const res = await request(app)
-      .get('/api/audit')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).get('/api/audit').set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(2);
@@ -209,14 +205,27 @@ describe('GET /api/audit (admin read endpoint)', () => {
   it('sorts by createdAt desc with deterministic timestamps', async () => {
     const now = Date.now();
     await Audit.insertMany([
-      { actorId: adminId, actorEmail: 'admin@audit.test', action: 'user.role_change', createdAt: new Date(now - 3_600_000) },
-      { actorId: adminId, actorEmail: 'admin@audit.test', action: 'siteconfig.update', createdAt: new Date(now - 1_800_000) },
-      { actorId: adminId, actorEmail: 'admin@audit.test', action: 'user.deactivate', createdAt: new Date(now - 7_200_000) }
+      {
+        actorId: adminId,
+        actorEmail: 'admin@audit.test',
+        action: 'user.role_change',
+        createdAt: new Date(now - 3_600_000)
+      },
+      {
+        actorId: adminId,
+        actorEmail: 'admin@audit.test',
+        action: 'siteconfig.update',
+        createdAt: new Date(now - 1_800_000)
+      },
+      {
+        actorId: adminId,
+        actorEmail: 'admin@audit.test',
+        action: 'user.deactivate',
+        createdAt: new Date(now - 7_200_000)
+      }
     ]);
 
-    const res = await request(app)
-      .get('/api/audit')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).get('/api/audit').set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
     expect(res.body.entries.map((e) => e.action)).toEqual([
       'siteconfig.update',
@@ -245,7 +254,7 @@ describe('GET /api/audit (admin read endpoint)', () => {
     expect(res.body.entries[0].action).toBe('user.role_change');
   });
 
-  it('filters by actorId (only that actor\'s entries)', async () => {
+  it("filters by actorId (only that actor's entries)", async () => {
     await request(app)
       .put(`/api/users/${regularId}`)
       .set('Authorization', `Bearer ${adminToken}`)

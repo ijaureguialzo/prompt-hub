@@ -476,9 +476,7 @@ describe('usePromptStore', () => {
 
       let resolveFirst: (value: unknown) => void
       getAll
-        .mockImplementationOnce(
-          () => new Promise((resolve) => (resolveFirst = resolve))
-        )
+        .mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)))
         .mockResolvedValueOnce({
           prompts: [{ _id: 'fresh' }],
           total: 1,

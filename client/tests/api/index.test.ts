@@ -72,9 +72,7 @@ describe('api client', () => {
     // The P0 silent-failure: a reverse proxy serving the SPA's index.html
     // with a 200 must be loud, not an empty app.
     mockFetch({ ok: true, status: 200, body: '<html><body>SPA</body></html>' })
-    await expect(apiRequest('/auth/login')).rejects.toThrow(
-      'Unexpected response from the API'
-    )
+    await expect(apiRequest('/auth/login')).rejects.toThrow('Unexpected response from the API')
   })
 
   it('throws an explicit error when an ok response has an empty body', async () => {
