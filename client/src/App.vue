@@ -24,6 +24,13 @@ const themeStore = useThemeStore()
 
 onMounted(() => {
   authStore.init()
+  // Best-effort refresh (PLAN.md P2/19): if an admin changed the account's
+  // role/status since the token was issued, the server is the source of
+  // truth — pick it up so the guards and menus reflect reality. fetch
+  // failures are handled inside the store (401 → soft logout).
+  if (authStore.isAuthenticated) {
+    authStore.fetchCurrentUser()
+  }
 })
 
 onUnmounted(() => {
