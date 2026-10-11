@@ -1,4 +1,6 @@
 services:
+  # PLAN.md P5/32: cap every service's container log (json-file driver)
+  # so a verbose error loop cannot fill the disk.
   traefik:
     image: traefik:${TRAEFIK_VERSION:-3}
     ports:
@@ -6,6 +8,9 @@ services:
       - "443:443"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     # No routers: the Traefik dashboard (api@internal) is disabled in
     # traefik/traefik.yml (it leaks the full service topology), so this
     # service is not exposed on any route (PLAN.md P1/3).
@@ -40,6 +45,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     depends_on:
       db:
         condition: service_healthy
@@ -79,6 +87,9 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`)"
@@ -109,6 +120,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
 
   # PLAN.md P5/31: logical backups — mongodump loop (no ports, no routes).
   # Dumps land in the named `backups` volume (one dir per dump, retention
@@ -123,6 +137,9 @@ services:
       - backups:/backups
       - ./ops/mongo-backup.sh:/usr/local/bin/mongo-backup.sh:ro
     command: ["/usr/local/bin/mongo-backup.sh", "--loop"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
     depends_on:
       db:
         condition: service_healthy
