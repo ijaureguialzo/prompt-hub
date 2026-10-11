@@ -90,7 +90,7 @@ ESLint (flat config) + Prettier on both packages; `make lint` (or CI) runs ESLin
 
 ## Commit Convention
 
-[Conventional Commits](https://www.conventionalcommits.org/). Format: `<type>(<scope>): <description>`. Types: `fix`, `feat`, `refactor`, `chore`, `docs`, `style`, `test`.
+[Conventional Commits](https://www.conventionalcommits.org/). Format: `<type>(<scope>): <description>`. Types: `fix`, `feat`, `refactor`, `chore`, `docs`, `style`, `test`. **Always commit when a task is finished** — never leave completed work uncommitted in the working tree. `PLAN.md` is gitignored (local work log); commit only the task's actual changes.
 
 ## Database
 
