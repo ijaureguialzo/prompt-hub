@@ -28,7 +28,10 @@ services:
       - MONGO_URI=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@db:27017/${MONGO_DB}?authSource=admin
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=1h
+      # 24h session (no refresh flow): the per-request isActive check in
+      # middleware/auth.js still revokes tokens on account deactivation
+      # (PLAN.md P1/5, trade-off in SPECIFICATION.md §7).
+      - JWT_EXPIRES_IN=24h
       - CORS_ORIGIN=${CORS_ORIGIN}
       - MAX_PROMPTS_PER_USER=${MAX_PROMPTS_PER_USER:-200}
       - MAX_CATEGORIES_PER_USER=${MAX_CATEGORIES_PER_USER:-50}
