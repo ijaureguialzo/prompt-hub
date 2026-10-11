@@ -88,9 +88,19 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/prompts', promptRoutes);
 app.use('/api/categories', categoryRoutes);
 
-// Health check
+// Health check (readiness, PLAN.md P5/33): reports the mongoose connection
+// state. 200 only while the database is connected, so the compose
+// healthcheck (and any orchestrator) can see a DB outage; 503 otherwise.
+// readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const db = states[mongoose.connection.readyState] || 'unknown';
+  const ready = db === 'connected';
+  res.status(ready ? 200 : 503).json({
+    status: ready ? 'OK' : 'DEGRADED',
+    db,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handler (must be last)

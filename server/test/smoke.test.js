@@ -1,6 +1,18 @@
 const request = require('supertest');
 
 describe('Smoke Test - Infrastructure', () => {
+  beforeAll(async () => {
+    const utils = require('./utils');
+    // /api/health is a readiness probe (503 without a database connection),
+    // so the smoke tests run against a connected in-memory DB.
+    await utils.connectDB();
+  });
+
+  afterAll(async () => {
+    const utils = require('./utils');
+    await utils.disconnectDB();
+  });
+
   it('health check responds with OK status', async () => {
     const app = require('../src/server');
 

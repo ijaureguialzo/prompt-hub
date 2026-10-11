@@ -41,7 +41,9 @@ services:
       - MAX_PROMPTS_PER_USER=${MAX_PROMPTS_PER_USER:-200}
       - MAX_CATEGORIES_PER_USER=${MAX_CATEGORIES_PER_USER:-50}
     healthcheck:
-      test: [ "CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(0)); }); req.on('error', () => process.exit(1));" ]
+      # Exits 0 only on HTTP 200: /api/health is readiness (503 when the
+      # database is unreachable, PLAN.md P5/33).
+      test: [ "CMD", "node", "-e", "const http = require('http'); const req = http.get('http://localhost:3000/api/health', res => { res.resume(); res.on('end', () => process.exit(res.statusCode === 200 ? 0 : 1)); }); req.on('error', () => process.exit(1));" ]
       interval: 10s
       timeout: 5s
       retries: 5

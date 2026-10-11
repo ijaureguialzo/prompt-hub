@@ -135,7 +135,7 @@ Read-only: the trail is append-only, so there is no write/delete endpoint. Each 
 ### 2.6 Operational
 | Endpoint | Method | Description | Status Codes |
 | :--- | :--- | :--- | :--- |
-| `/api/health` | `GET` | Liveness probe (no auth) | 200 `{ status: 'OK', timestamp }` |
+| `/api/health` | `GET` | **Readiness** probe (no auth): 200 `{ status: 'OK', db: 'connected', timestamp }` only while the database connection is up; 503 `{ status: 'DEGRADED', db: 'disconnected'\|'connecting'\|'disconnecting', timestamp }` otherwise (the compose healthcheck treats non-200 as unhealthy) |
 
 **Rate limiting** (per IP; disabled in the test environment): login 10/15min, register 5/15min, content creation (`POST /api/prompts`, `POST /api/categories`) 20/15min, all other API requests 300/15min. Exceeded → `429`. Quotas are tunable via `RATE_LIMIT_AUTH`, `RATE_LIMIT_REGISTER`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_API`. The counters live in the API process's memory (express-rate-limit's default store), so these limits assume a **single API replica**: running N replicas multiplies every limit by N. A shared store (e.g. Redis) is the upgrade path for strict horizontal scaling (see §7).
 

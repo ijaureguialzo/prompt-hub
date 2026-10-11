@@ -1,4 +1,5 @@
 const request = require('supertest');
+const mongoose = require('mongoose');
 
 describe('Health Check', () => {
   let app;
@@ -32,5 +33,23 @@ describe('Health Check', () => {
     const res = await request(app).get('/api/health');
 
     expect(res.status).toBe(200);
+  });
+
+  it('reports the database state (readiness)', async () => {
+    const res = await request(app).get('/api/health');
+
+    expect(res.body.db).toBe('connected');
+  });
+
+  it('answers 503 DEGRADED while the database is disconnected', async () => {
+    await mongoose.disconnect();
+    try {
+      const res = await request(app).get('/api/health');
+      expect(res.status).toBe(503);
+      expect(res.body).toMatchObject({ status: 'DEGRADED', db: 'disconnected' });
+    } finally {
+      // Restore the connection for any later test in this file
+      await require('./utils').connectDB();
+    }
   });
 });
