@@ -9,32 +9,40 @@ const { logAudit } = require('../utils/audit');
 // category gets a denormalized promptCount from a single aggregation.
 exports.getAllCategories = async (req, res) => {
   const { maxPromptsPerUser, maxCategoriesPerUser } = getLimits();
-  const [
-    categories,
-    groups,
-    uncategorizedCount,
-    totalPrompts,
-    userPromptCount,
-    userCategoryCount
-  ] = await Promise.all([
+  const [categories, promptStats, userCategoryCount] = await Promise.all([
     Category.find().sort({ createdAt: -1 }),
+    // One round trip for every prompt-side number (PLAN.md P3/25): a $facet
+    // keeps per-category counts (null = uncategorized), the hub total (sum
+    // of the groups) and the caller's own prompt count (quota indicator) in
+    // a single aggregation, replacing the previous count/aggregate fan-out.
     Prompt.aggregate([
-      { $match: { categoryId: { $ne: null } } },
-      { $group: { _id: '$categoryId', count: { $sum: 1 } } }
+      {
+        $facet: {
+          byCategory: [{ $group: { _id: '$categoryId', count: { $sum: 1 } } }],
+          userPrompts: [
+            { $match: { ownerId: req.user._id } },
+            { $group: { _id: '$ownerId', count: { $sum: 1 } } }
+          ]
+        }
+      }
     ]),
-    Prompt.countDocuments({ categoryId: null }),
-    Prompt.countDocuments(),
-    // Per-user quotas for the UI indicator (indexed by ownerId).
-    Prompt.countDocuments({ ownerId: req.user._id }),
+    // Per-user category quota (indexed by ownerId).
     Category.countDocuments({ ownerId: req.user._id })
   ]);
 
-  const counts = new Map(groups.map((g) => [g._id.toString(), g.count]));
+  const facet = promptStats[0] || { byCategory: [], userPrompts: [] };
+  // String keys: a $group over categoryId produces a null group (the
+  // uncategorized prompts), which would crash Map keys otherwise.
+  const counts = new Map(facet.byCategory.map((g) => [String(g._id), g.count]));
   const withCounts = categories.map((c) => {
     const obj = c.toObject();
-    obj.promptCount = counts.get(c._id.toString()) || 0;
+    obj.promptCount = counts.get(String(c._id)) || 0;
     return obj;
   });
+
+  const totalPrompts = facet.byCategory.reduce((sum, g) => sum + g.count, 0);
+  const uncategorizedCount = counts.get('null') || 0;
+  const userPromptCount = facet.userPrompts[0] ? facet.userPrompts[0].count : 0;
 
   res.status(200).json({
     categories: withCounts,
