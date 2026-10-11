@@ -1,4 +1,6 @@
-import JSZip from 'jszip'
+// JSZip is imported dynamically where it is actually used (buildExportZip /
+// readImportFile): it is ~104 KB and must not load with the main chunk
+// (PLAN.md P3/22) — a pure-JSON import never pays for it.
 
 // File format contract (SPEC §2.2a): a ZIP archive containing a single JSON
 // document (`prompts.json`) with the ExportPayload shape. The ZIP is built
@@ -33,6 +35,7 @@ export class ImportFileError extends Error {
  *  uint8array keeps this isomorphic (works in the browser and in Node-based
  *  test runners, where JSZip has no `blob` output type). */
 export async function buildExportZip(payload) {
+  const JSZip = (await import('jszip')).default
   const zip = new JSZip()
   zip.file(PROMPTS_FILE_NAME, JSON.stringify(payload, null, 2))
   const bytes = await zip.generateAsync({ type: 'uint8array' })
@@ -76,6 +79,7 @@ export async function readImportFile(file) {
     let zip
     try {
       // arrayBuffer() is the stable hand-off to JSZip in every environment.
+      const JSZip = (await import('jszip')).default
       zip = await JSZip.loadAsync(await file.arrayBuffer())
     } catch {
       throw new ImportFileError('READ', 'The file could not be read as a ZIP archive.')
