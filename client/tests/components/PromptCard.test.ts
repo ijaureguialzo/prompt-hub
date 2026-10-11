@@ -34,11 +34,26 @@ describe('PromptCard', () => {
     expect(wrapper.text()).toContain('This is the prompt content.')
   })
 
-  it('renders a router-link wrapping the card', () => {
+  it('renders a router-link around the title (not the whole card)', () => {
     const wrapper = getWrapper()
-    // The stub renders <a>, proving the component is wrapped in a link.
     const link = wrapper.find('a')
     expect(link.exists()).toBe(true)
+    // The link must carry the title text…
+    expect(link.text()).toContain('Test Prompt Title')
+    // …but no interactive element may live inside it (PLAN.md P2/13).
+    expect(link.element.querySelectorAll('button, a, input')).toHaveLength(0)
+  })
+
+  it('renders the filter badges as real buttons', () => {
+    const prompt = {
+      ...basePrompt,
+      categoryId: { _id: 'cat-1', name: 'My Category' }
+    }
+    const wrapper = getWrapper(prompt)
+    const buttons = wrapper.findAll('button')
+    // Category badge + the two tags
+    expect(buttons).toHaveLength(3)
+    expect(buttons[0].text()).toBe('My Category')
   })
 
   it('renders a category badge when categoryId exists', () => {
@@ -56,19 +71,18 @@ describe('PromptCard', () => {
   it('emits filterByCategory when category badge is clicked', async () => {
     const prompt = { ...basePrompt, categoryId: { _id: 'cat-1', name: 'My Category' } }
     const wrapper = getWrapper(prompt)
-    // Find all span elements (category badge is the first).
-    const spans = wrapper.findAll('span')
-    await spans[0].trigger('click')
+    // The category badge is the first button.
+    await wrapper.findAll('button')[0].trigger('click')
     expect(wrapper.emitted('filterByCategory')).toBeTruthy()
   })
 
   it('emits filterByTag for each tag when clicked', async () => {
     const wrapper = getWrapper()
-    // Tags are rendered as spans after the category badge.
-    const spans = wrapper.findAll('span')
-    // Skip the first span (category badge).
-    for (let i = 1; i < spans.length; i++) {
-      await spans[i].trigger('click')
+    // The first button is the (uncategorized) category badge; the rest
+    // are the tags.
+    const buttons = wrapper.findAll('button')
+    for (let i = 1; i < buttons.length; i++) {
+      await buttons[i].trigger('click')
     }
     expect(wrapper.emitted('filterByTag')).toBeTruthy()
   })
@@ -87,7 +101,9 @@ describe('PromptCard', () => {
 
   it('does not crash when tags is undefined', () => {
     const prompt = { ...basePrompt, tags: undefined }
-    getWrapper(prompt)
-    // When categoryId is null and tags is undefined, only the uncategorized span renders.
+    const wrapper = getWrapper(prompt)
+    // When categoryId is null and tags is undefined, only the
+    // uncategorized button renders.
+    expect(wrapper.findAll('button')).toHaveLength(1)
   })
 })

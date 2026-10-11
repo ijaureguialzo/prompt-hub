@@ -1,35 +1,42 @@
 <template>
-  <router-link
-    :to="`/prompt/${prompt._id}`"
-    class="block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer"
+  <!--
+    The link wraps only the title/excerpt; the filter badges are real
+    <button>s OUTSIDE the anchor (interactive-inside-<a> is invalid HTML
+    and confuses screen readers — PLAN.md P2/13).
+  -->
+  <div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all"
   >
-    <div class="flex items-start justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{{ prompt.title }}</p>
-        <!-- List rows carry a server-computed excerpt (content is not
-             shipped in the list payload); detail rows carry the content. -->
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ prompt.excerpt || prompt.content }}</p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <span v-if="prompt.categoryId" @click.stop="$emit('filterByCategory', prompt.categoryId.name)"
-            class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full cursor-pointer border"
-            :class="categoryBadgeClass(prompt.categoryId.name)">
-            {{ prompt.categoryId.name }}
-          </span>
-          <span v-else @click.stop="$emit('filterByCategory', t('createPromptModal.uncategorized'))"
-            class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full cursor-pointer border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
-            {{ t('createPromptModal.uncategorized') }}
-          </span>
-          <template v-if="prompt.tags && prompt.tags.length">
-            <span v-for="tag in prompt.tags" :key="tag"
-              @click.stop="$emit('filterByTag', tag)"
-              class="text-xs px-2.5 py-1 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600">
-              {{ tag }}
-            </span>
-          </template>
-        </div>
-      </div>
+    <router-link :to="`/prompt/${prompt._id}`" class="block cursor-pointer">
+      <p class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{{ prompt.title }}</p>
+      <!-- List rows carry a server-computed excerpt (content is not
+           shipped in the list payload); detail rows carry the content. -->
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ prompt.excerpt || prompt.content }}</p>
+    </router-link>
+
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button v-if="prompt.categoryId" type="button" @click="$emit('filterByCategory', prompt.categoryId.name)"
+        class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full cursor-pointer border"
+        :class="categoryBadgeClass(prompt.categoryId.name)">
+        {{ prompt.categoryId.name }}
+      </button>
+      <button v-else type="button" @click="$emit('filterByCategory', t('createPromptModal.uncategorized'))"
+        class="inline-block px-2.5 py-1 text-xs font-semibold rounded-full cursor-pointer border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+        {{ t('createPromptModal.uncategorized') }}
+      </button>
+      <template v-if="prompt.tags && prompt.tags.length">
+        <button
+          v-for="tag in prompt.tags"
+          :key="tag"
+          type="button"
+          @click="$emit('filterByTag', tag)"
+          class="text-xs px-2.5 py-1 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600"
+        >
+          {{ tag }}
+        </button>
+      </template>
     </div>
-  </router-link>
+  </div>
 </template>
 
 <script setup>
