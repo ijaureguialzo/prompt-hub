@@ -107,7 +107,7 @@ Applied runs return `{ dryRun: false, created, updated, skipped, results[], quot
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `/api/categories` | `GET` | List **all** categories (shared hub) with denormalized `promptCount`, plus `{ uncategorizedCount, totalPrompts }` for the sidebar | — | `{ categories: Category[], uncategorizedCount, totalPrompts }` | 200, 500 |
 | `/api/categories` | `POST` | Create category (ownership check; per-user quota → 409; per-IP write rate limit → 429) | `{ name, description? }` | `Category` | 201, 400, 409, 429, 500 |
-| `/api/categories/:id` | `GET` | Get single category (populate ownerId) | — | `Category` | 200, 404, 500 |
+| `/api/categories/:id` | `GET` | Get single category (returns the raw `ownerId` — no user population; the list endpoint carries the display data the UI needs) | — | `Category` | 200, 404, 500 |
 | `/api/categories/:id` | `PUT` | Update category (ownership check) | `{ name?, description? }` | `Category` | 200, 400, 404, 500 |
 | `/api/categories/:id` | `DELETE` | Delete category (admin: cascade-delete its prompts; non-admin owner: deletes only own prompts, others are unlinked) | — | `{ message }` | 200, 403, 404, 500 |
 
