@@ -6,6 +6,8 @@ Full-stack AI prompt management system. Vue 3 frontend + Express/Mongoose backen
 
 **Tech Stack:** Vue 3 (Composition API), Pinia, Vue Router 5, Tailwind CSS 4, Vite | Express 5, Mongoose 9, JWT (hs256) | MongoDB 8, Docker Compose, Traefik 3
 
+**Visibility model (shared hub):** PromptHub is a *shared* prompt hub, not a private vault. Every authenticated user can browse, search, read and copy **any** prompt or category — the listings in §2.2/§2.3 are global. Ownership gates **writes** only: each user creates/edits/deletes their own prompts and categories (per-user quotas), and export/import is scoped to the caller's own prompts (§2.2a).
+
 ---
 
 ## 2. API Specification
@@ -36,7 +38,7 @@ All error responses share a stable, language-neutral shape:
 ### 2.2 Prompts API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/prompts` | `GET` | List prompts, newest first, paginated (`?limit=` default 50, max 500; `?page=`; `?q=` substring on title/content/tags; `?categoryId=` id or `none` for uncategorized; `?tag=` repeatable, AND). Rows are lightweight: metadata + `excerpt` (first 200 chars of content) — full content only on `GET /:id` | — | `{ prompts: Prompt[], total, page, limit, hasMore }` | 200, 400, 500 |
+| `/api/prompts` | `GET` | List **all** prompts (shared hub: every user's prompts; read for all, writes owner-only), newest first, paginated (`?limit=` default 50, max 500; `?page=`; `?q=` substring on title/content/tags; `?categoryId=` id or `none` for uncategorized; `?tag=` repeatable, AND). Rows are lightweight: metadata + `excerpt` (first 200 chars of content) — full content only on `GET /:id` | — | `{ prompts: Prompt[], total, page, limit, hasMore }` | 200, 400, 500 |
 | `/api/prompts` | `POST` | Create prompt (ownership check; per-user quota → 409; per-IP write rate limit → 429) | `{ title, content, categoryId?, tags[] }` | `Prompt` | 201, 400, 409, 429, 500 |
 | `/api/prompts/:id` | `GET` | Get single prompt (populate categoryId.name) | — | `Prompt` | 200, 404, 500 |
 | `/api/prompts/:id` | `PUT` | Update prompt (ownership check) | `{ title?, content?, categoryId? }` | `Prompt` | 200, 400, 404, 500 |
@@ -102,7 +104,7 @@ Applied runs return `{ dryRun: false, created, updated, skipped, results[], quot
 ### 2.3 Categories API (authenticated)
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `/api/categories` | `GET` | List all categories with denormalized `promptCount`, plus `{ uncategorizedCount, totalPrompts }` for the sidebar | — | `{ categories: Category[], uncategorizedCount, totalPrompts }` | 200, 500 |
+| `/api/categories` | `GET` | List **all** categories (shared hub) with denormalized `promptCount`, plus `{ uncategorizedCount, totalPrompts }` for the sidebar | — | `{ categories: Category[], uncategorizedCount, totalPrompts }` | 200, 500 |
 | `/api/categories` | `POST` | Create category (ownership check; per-user quota → 409; per-IP write rate limit → 429) | `{ name, description? }` | `Category` | 201, 400, 409, 429, 500 |
 | `/api/categories/:id` | `GET` | Get single category (populate ownerId) | — | `Category` | 200, 404, 500 |
 | `/api/categories/:id` | `PUT` | Update category (ownership check) | `{ name?, description? }` | `Category` | 200, 400, 404, 500 |
@@ -235,7 +237,7 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 - **Distributed brute-force protection** (per-account lockout): the per-IP limiter on login is bypassed by an IP-rotating botnet, so failed logins are also counted **per account** (`User.loginFails`/`loginFailsAt`, sliding 15-minute window): 5 accumulated failures lock the account for 15 minutes (401 `ACCOUNT_LOCKED`, client-localized). The dummy-hash trick is kept so every attempt — unknown email, wrong password, or locked account — costs the same bcrypt work (no timing/enumeration signal); a successful login clears the counter. The lock only gates login; an existing session of a locked account stays valid until token expiry or deactivation (the per-request `isActive` check is the revocation path).
 - **Traefik dashboard disabled** (`api: false`): the Web UI would expose the full service topology (containers, images, routes) and has no built-in auth, so it is off and unrouted.
 - **Edge headers** (`traefik/headers.yml`): HSTS (`max-age=31536000; includeSubDomains`) on all HTTPS responses; on the SPA host a CSP of `default-src 'self'; connect-src 'self' https://api.prompthub.test; object-src 'none'; frame-ancestors 'none'` (+ `X-Frame-Options: DENY`). `serve` itself emits no CSP; the API's comes from helmet.
-- **Ownership**: `middleware/ownership.js` (`requireOwnership`) runs BEFORE any mutating write on prompts/categories; admins bypass.
+- **Ownership / visibility (shared hub)**: the prompt and category listings are **global** — every authenticated user can read and copy any entry (the intended product model, see §1); `middleware/ownership.js` (`requireOwnership`) runs BEFORE any mutating write on prompts/categories (admins bypass), so only the owner edits/deletes. Export/import is scoped to the caller's own prompts (§2.2a).
 - **Safe cascades**: a non-admin owner deleting a category only destroys their own prompts; others' are unlinked.
 - **Admin lockout guards**: an admin cannot demote or deactivate themselves.
 - **Race-free first admin**: registration claims a unique sparse `adminSlot` — exactly one admin no matter how registrations interleave.

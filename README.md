@@ -1,14 +1,14 @@
 # PromptHub
 
-Full-stack AI prompt management application with authentication, categorization, and multi-language support.
+Full-stack AI prompt **hub** with authentication, categorization, and multi-language support. Prompts are **shared**: every user can browse, search and copy any prompt; you manage your own (and admins manage users).
 
 ## Features
 
 - **Auth**: JWT-based registration/login (first user auto-promoted to admin)
-- **Prompt Management**: Full CRUD with ownership checks and tags
+- **Prompt Management**: Full CRUD with ownership checks and tags — the list is shared, writes are owner-only
 - **Categories**: Organize prompts, cascade delete on category removal
 - **Search & Filter**: Debounced search by title/content/tags, filter by category
-- **Backup & Restore**: Export all prompts as a ZIP (JSON inside) and re-import them; per-user identity means other users' prompts never collide
+- **Backup & Restore**: Export **your** prompts as a ZIP (JSON inside) and re-import them; per-user identity means other users' prompts never collide
 - **Copy-to-Clipboard**: One-click prompt reuse via read-only modal
 - **i18n**: Full localization in English, Spanish, and Basque (Euskara)
 - **Dark Mode**: Light/dark/auto theme with system preference detection
