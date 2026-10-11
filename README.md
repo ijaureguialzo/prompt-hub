@@ -73,6 +73,6 @@ make clean    # remove containers + volumes
 - **First admin:** the first user to register via the UI automatically becomes admin (race-safe). Alternative for a blank DB: `make seed-admin SEED_EMAIL=you@example.com SEED_PASSWORD=…` (idempotent). Demo content for one user: `make seed-data SEED_USER_EMAIL=…` (idempotent, `[demo]`-marked). Both need the API `MONGO_URI` reachable (the running stack or your local dev DB).
 - **Rate limiting:** login 10/15 min, register 5/15 min, API 300/15 min per IP (429 on excess); disabled in tests.
 - **Containers run non-root** (`node` user); images built reproducibly with `npm ci`.
-- **Traefik dashboard** (ops only): `https://traefik.<base-domain>/dashboard/` — the domain is not expected to resolve publicly in production.
+- **Traefik dashboard disabled**: the Web UI is off (`api: false` in `traefik/traefik.yml`) — it exposes the full container topology and has no built-in auth, so it must never be public. Re-enable it deliberately (and only behind a private domain) if you need ops visibility.
 - **Audit trail:** admin actions (role changes, deactivations, site-wide registration switch, category cascades) are logged to the `Audit` collection.
 - Known residual: `braces` (high, dev-only transitive dep, no upstream fix) — never ships in the production images.

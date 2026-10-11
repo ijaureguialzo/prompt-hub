@@ -1,6 +1,8 @@
-api:
-  dashboard: true
-  disableDashboardAd: true
+# The Traefik API and Web UI are disabled on purpose: the dashboard exposes
+# the full container topology (services, images, routes) and must never be
+# publicly reachable (PLAN.md P1/3). Re-enable deliberately (api: { dashboard:
+# true }) + a router in docker-compose.yml, only for private ops networks.
+api: false
 
 providers:
   docker:

@@ -19,7 +19,6 @@ _urls: _header
 	@echo -------------------------------------
 	@echo [PromptHub] https://prompthub.test
 	@echo [API] https://api.prompthub.test
-	@echo [Traefik] https://traefik.prompthub.test
 	@echo -------------------------------------
 
 _header:
