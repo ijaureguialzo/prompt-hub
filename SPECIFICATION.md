@@ -96,7 +96,8 @@ Consequences: a prompt that exists only in *another* user's account is **not** a
 Applied runs return `{ dryRun: false, created, updated, skipped, results[], quota }` where `status` is `created|updated|skipped` (skipped: `reason` is `not-confirmed` or `duplicate`).
 
 **Rules:**
-- Applies **atomically**: if the number of `new` entries would push the user past `MAX_PROMPTS_PER_USER`, the whole request fails with `409 LIMIT_REACHED` and nothing is written. The dry run reports `quota.exceeded` so the client can disable the confirm button in advance.
+- Applies **atomically** against the quota: if the number of `new` entries would push the user past `MAX_PROMPTS_PER_USER`, the whole request fails with `409 LIMIT_REACHED` and nothing is written. The dry run reports `quota.exceeded` so the client can disable the confirm button in advance.
+- Crash mid-apply: the writes are **not** transactional (single replica, no replica set). A failure part-way leaves a partial state that is *convergent, not corrupt*: a retry of the same file reclassifies the already-created entries as conflicts (matched by `clientId`) and skips the duplicates, and the updates are idempotent (`$set` of the same values), so re-applying reaches the intended final state. Creations are batched in a single multi-insert; updates run individually.
 - New prompts: owner = importer, `clientId` taken from the file (or a fresh UUID if absent), original `createdAt`/`updatedAt` preserved when present and valid.
 - Category resolution (create and update): `categoryName` matched case-insensitively against the importer's own categories; failing that, `categoryId` if it points to a category owned by the importer; otherwise `null` (uncategorized). Categories of other users are never referenced; no categories are created.
 - `400 IMPORT_INVALID` for a malformed payload (missing/empty `prompts`, more than the entry cap, or any entry violating a field cap); the message identifies the offending entry.

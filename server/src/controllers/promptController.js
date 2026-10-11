@@ -521,6 +521,12 @@ exports.importPrompts = async (req, res) => {
   let updated = 0;
   let skipped = 0;
 
+  // Classify first, then write in batches: creations go through a single
+  // multi-insert (N round-trips → 1); updates stay individual (each targets
+  // a different document, and only user-confirmed conflicts are here).
+  const toCreate = [];
+  const toUpdate = [];
+
   for (const c of classified) {
     const entry = entries[c.index];
 
@@ -542,50 +548,68 @@ exports.importPrompts = async (req, res) => {
         });
         continue;
       }
-      const categoryId = resolveCategoryId(entry, categories);
-      // Explicit fields only — the file carries the full document shape.
-      await Prompt.updateOne(
-        { _id: c.existing._id },
-        {
-          $set: {
-            title: entry.title,
-            content: entry.content,
-            tags: entry.tags,
-            categoryId,
-            updatedAt: now
-          }
-        }
-      );
-      updated += 1;
-      results.push({
+      toUpdate.push({
         index: c.index,
         title: entry.title,
-        status: 'updated',
-        promptId: c.existing._id.toString()
+        existingId: c.existing._id,
+        $set: {
+          // Explicit fields only — the file carries the full document shape.
+          title: entry.title,
+          content: entry.content,
+          tags: entry.tags,
+          categoryId: resolveCategoryId(entry, categories),
+          updatedAt: now
+        }
       });
       continue;
     }
 
     // New prompt in the importer's account (fresh _id, owner = importer).
-    const prompt = new Prompt({
-      title: entry.title,
-      content: entry.content,
-      tags: entry.tags,
-      categoryId: resolveCategoryId(entry, categories),
-      clientId: entry.clientId || crypto.randomUUID(),
-      ownerId: req.user._id,
-      createdAt: entry.createdAt || now,
-      updatedAt: entry.updatedAt || now
-    });
-    await prompt.save();
-    created += 1;
-    results.push({
+    toCreate.push({
       index: c.index,
       title: entry.title,
-      status: 'created',
-      promptId: prompt._id.toString()
+      doc: new Prompt({
+        _id: new mongoose.Types.ObjectId(),
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags,
+        categoryId: resolveCategoryId(entry, categories),
+        clientId: entry.clientId || crypto.randomUUID(),
+        ownerId: req.user._id,
+        createdAt: entry.createdAt || now,
+        updatedAt: entry.updatedAt || now
+      })
     });
   }
+
+  if (toCreate.length) {
+    // A single round trip for every creation.
+    const inserted = await Prompt.insertMany(toCreate.map((c) => c.doc));
+    inserted.forEach((doc, i) => {
+      results.push({
+        index: toCreate[i].index,
+        title: toCreate[i].title,
+        status: 'created',
+        promptId: doc._id.toString()
+      });
+    });
+    created = inserted.length;
+  }
+
+  for (const u of toUpdate) {
+    await Prompt.updateOne({ _id: u.existingId }, { $set: u.$set });
+    updated += 1;
+    results.push({
+      index: u.index,
+      title: u.title,
+      status: 'updated',
+      promptId: u.existingId.toString()
+    });
+  }
+
+  // The batches write in groups; restore the per-entry order the response
+  // has always had (the client zips by index, but keep the contract stable).
+  results.sort((a, b) => a.index - b.index);
 
   res.status(200).json({
     dryRun: false,

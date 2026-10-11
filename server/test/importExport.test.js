@@ -369,6 +369,35 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
       expect(prompt.clientId).toMatch(/^[0-9a-f-]{36}$/);
     });
 
+    it('applies mixed batches (creations + updates) and keeps per-entry result order', async () => {
+      const mine = await createPromptAs(regularToken, { title: 'Stable', content: 'old' });
+      const res = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [
+            { clientId: 'mix-1', title: 'Mix one', content: 'c' },
+            { clientId: mine.clientId, title: 'Stable', content: 'new' },
+            { clientId: 'mix-2', title: 'Mix two', content: 'c' },
+            { clientId: mine.clientId, title: 'Stable', content: 'duplicate' }
+          ],
+          overwrites: [1]
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ created: 2, updated: 1, skipped: 1 });
+      // Results are returned in the file's index order even though the
+      // writes are batched (creations in one multi-insert, updates separately).
+      expect(res.body.results.map((r) => r.status)).toEqual([
+        'created',
+        'updated',
+        'created',
+        'skipped'
+      ]);
+      expect(res.body.results[1].promptId).toBe(mine._id);
+      expect(res.body.results[3].reason).toBe('duplicate');
+    });
+
     it('leaves unconfirmed conflicts untouched and skips them', async () => {
       const mine = await createPromptAs(regularToken, { title: 'Keep me', content: 'original' });
       const res = await request(app)
