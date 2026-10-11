@@ -1,12 +1,12 @@
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      // import.meta.dirname (Node 20.11+) replaces __dirname in ESM configs
+      '@': `${import.meta.dirname}/src`
     }
   },
   test: {
