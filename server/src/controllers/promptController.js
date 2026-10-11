@@ -34,6 +34,14 @@ function escapeRegex(value) {
 /**
  * Build the Mongo filter for the list from ?q / ?categoryId / ?tag.
  * - q: case-insensitive substring match on title, content or tags
+ *
+ * Performance (measured, PLAN.md P3/20): a non-anchored $regex cannot use
+ * a B-tree index, so the search is a full scan — but at 10^4 docs it costs
+ * ~2 ms of scan / ~8 ms end-to-end (server/test/searchPerformance.test.js,
+ * which keeps a budget tripwire on it). A $text index would change the
+ * substring semantics, so the scan is the documented cost; revisit (text
+ * index or title-only regex) when the shared collection reaches ~10^6 or
+ * the request budget starts failing.
  * - categoryId: a real id, or the literal 'none' for uncategorized
  * - tag: repeatable (?tag=a&tag=b) — AND semantics via $all
  * Throws (status 400) for an invalid categoryId.

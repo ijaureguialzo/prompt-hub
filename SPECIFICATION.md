@@ -140,6 +140,8 @@ Read-only: the trail is append-only, so there is no write/delete endpoint. Each 
 
 **Abuse protection**: per-user quotas bound what one account can create (`MAX_PROMPTS_PER_USER` default 200, `MAX_CATEGORIES_PER_USER` default 50; enforced with a count before the insert, best-effort under concurrency). Combined with the creation rate limit, this prevents a single account from flooding the shared prompt list or the categories sidebar.
 
+**Search cost** (measured, PLAN.md P3/20): the list search (`?q`) is a case-insensitive substring `$regex` over title/content/tags. A non-anchored regex cannot use a B-tree index, so the search is a collection scan — measured at **~2 ms scan / ~8 ms end-to-end for 10⁴ prompts** (`server/test/searchPerformance.test.js` keeps budget tripwires on both, and asserts the plan uses no index, so any future index usage flips a loud test). The cost is accepted at shared-hub scale; the documented re-evaluation trigger is ~10⁶ collection docs or a failing budget (options: `$text` index — changes substring semantics — or a title-only anchored regex).
+
 **Login**: unknown emails are compared against a dummy bcrypt hash so response timing does not reveal which emails are registered.
 
 ---
