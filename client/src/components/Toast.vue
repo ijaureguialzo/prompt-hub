@@ -1,16 +1,17 @@
 <template>
-  <div v-if="uiStore.successMessage || uiStore.error" class="fixed top-4 right-4 z-50 space-y-2">
+  <div role="status" aria-live="polite" class="fixed top-4 right-4 z-50 space-y-2">
+    <!--
+      The live region stays mounted (even empty) so assistive tech
+      announces toasts as they appear: a v-if'd container would not be
+      announced.
+    -->
     <div
-      v-if="uiStore.successMessage"
-      class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md text-sm max-w-xs"
+      v-for="toast in uiStore.toasts"
+      :key="toast.id"
+      class="px-4 py-2 rounded-lg shadow-md text-sm max-w-xs text-white"
+      :class="toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'"
     >
-      {{ uiStore.successMessage }}
-    </div>
-    <div
-      v-if="uiStore.error"
-      class="bg-red-600 text-white px-4 py-2 rounded-lg shadow-md text-sm max-w-xs"
-    >
-      {{ uiStore.error }}
+      {{ toast.message }}
     </div>
   </div>
 </template>

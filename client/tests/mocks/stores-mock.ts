@@ -68,6 +68,7 @@ export function createMockCategoryStore(overrides: Record<string, unknown> = {})
 /** Creates a mock UI store with all state and actions. */
 export function createMockUIStore(overrides: Record<string, unknown> = {}) {
   return {
+    toasts: [],
     error: null,
     successMessage: null,
     showCreatePromptModal: false,
@@ -75,6 +76,7 @@ export function createMockUIStore(overrides: Record<string, unknown> = {}) {
     setError: vi.fn(),
     setSuccess: vi.fn(),
     clearError: vi.fn(),
+    removeToast: vi.fn(),
     setShowCreatePromptModal: vi.fn(),
     setShowCreateCategoryModal: vi.fn(),
     ...overrides

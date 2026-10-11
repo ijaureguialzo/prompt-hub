@@ -23,45 +23,70 @@ describe('useUIStore', () => {
     vi.useRealTimers()
   })
 
-  // --- setError() ---
+  // --- setError() / queue ---
 
-  it('setError() sets the error state', () => {
+  it('setError() appends an error toast to the queue', () => {
     const store = getUIStore()
     store.setError('Something went wrong')
-    expect(store.error).toBe('Something went wrong')
+    expect(store.toasts).toHaveLength(1)
+    expect(store.toasts[0]).toMatchObject({ type: 'error', message: 'Something went wrong' })
   })
 
-  it('setError() auto-clears error after 5 seconds', () => {
+  it('setError() toasts expire independently after 5 seconds', () => {
     const store = getUIStore()
-    store.setError('Error message')
-    expect(store.error).toBe('Error message')
-    vi.advanceTimersByTime(5000)
-    expect(store.error).toBeNull()
+    store.setError('First error')
+    vi.advanceTimersByTime(2000)
+    store.setError('Second error') // arrives while the first is still live
+
+    // Regression (PLAN.md P2/12): the first toast's clock must not kill
+    // the second — each entry owns its own timer.
+    vi.advanceTimersByTime(3000) // t = 5000: first expires only
+    expect(store.toasts).toHaveLength(1)
+    expect(store.toasts[0].message).toBe('Second error')
+
+    vi.advanceTimersByTime(2000) // t = 7000: second expires too
+    expect(store.toasts).toHaveLength(0)
   })
 
-  // --- setSuccess() ---
+  // --- setSuccess() / queue ---
 
-  it('setSuccess() sets the successMessage state', () => {
+  it('setSuccess() appends a success toast to the queue', () => {
     const store = getUIStore()
     store.setSuccess('Operation successful')
-    expect(store.successMessage).toBe('Operation successful')
+    expect(store.toasts).toHaveLength(1)
+    expect(store.toasts[0]).toMatchObject({ type: 'success', message: 'Operation successful' })
   })
 
-  it('setSuccess() auto-clears successMessage after 3 seconds', () => {
+  it('success toasts expire after 3 seconds, independently of errors', () => {
     const store = getUIStore()
-    store.setSuccess('Success message')
-    expect(store.successMessage).toBe('Success message')
+    store.setError('long-lived error')
+    store.setSuccess('short success')
+
     vi.advanceTimersByTime(3000)
-    expect(store.successMessage).toBeNull()
+    expect(store.toasts).toHaveLength(1)
+    expect(store.toasts[0].type).toBe('error')
+
+    vi.advanceTimersByTime(2000)
+    expect(store.toasts).toHaveLength(0)
   })
 
   // --- clearError() ---
 
-  it('clearError() sets error to null immediately', () => {
+  it('clearError() removes error toasts (and only errors) immediately', () => {
     const store = getUIStore()
     store.setError('Error message')
+    store.setSuccess('Still fine')
     store.clearError()
-    expect(store.error).toBeNull()
+    expect(store.toasts).toHaveLength(1)
+    expect(store.toasts[0].type).toBe('success')
+  })
+
+  it('a timer for an already-removed toast is a safe no-op', () => {
+    const store = getUIStore()
+    store.setError('Doomed')
+    store.clearError()
+    vi.advanceTimersByTime(5000)
+    expect(store.toasts).toHaveLength(0)
   })
 
   // --- setShowCreatePromptModal() ---
@@ -111,10 +136,9 @@ describe('useUIStore', () => {
 
   // --- initial state ---
 
-  it('initializes with all null/false values', () => {
+  it('initializes with an empty queue and all flags off', () => {
     const store = getUIStore()
-    expect(store.error).toBeNull()
-    expect(store.successMessage).toBeNull()
+    expect(store.toasts).toEqual([])
     expect(store.showCreatePromptModal).toBe(false)
     expect(store.showCreateCategoryModal).toBe(false)
     expect(store.editingCategory).toBeNull()
