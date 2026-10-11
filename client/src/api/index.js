@@ -86,19 +86,31 @@ export async function apiRequest(endpoint, options = {}) {
   }
 
   let response
+  let text
   try {
     response = await fetch(url, {
       headers,
       ...options
     })
-  } catch {
-    throw new Error(tMessage('errors.networkError'))
+    // The body read stays inside the try: a request aborted while the
+    // response is streaming rejects here with an AbortError too.
+    text = await response.text()
+  } catch (error) {
+    // A deliberate abort (e.g. a search superseded by a newer one) is not
+    // a failure: keep a stable, recognizable identity (`name ===
+    // 'AbortError'`) so callers can ignore it silently.
+    if (error?.name === 'AbortError' || error?.name === 'CanceledError') {
+      throw Object.assign(new Error('The request was aborted.'), {
+        name: 'AbortError',
+        cause: error
+      })
+    }
+    throw new Error(tMessage('errors.networkError'), { cause: error })
   }
 
   // Safe body parsing: a reverse proxy may return non-JSON error pages.
   // An empty body or a body that is not valid JSON parses to `undefined`,
   // which we distinguish from a legitimate JSON value (e.g. `null`).
-  const text = await response.text()
   let data
   try {
     data = text ? JSON.parse(text) : undefined
@@ -130,7 +142,9 @@ export async function apiRequest(endpoint, options = {}) {
 }
 
 export const promptsApi = {
-  getAll: (params = {}) => apiRequest(buildUrl('/prompts', params)),
+  // `options` is passed through to fetch; callers may include a
+  // `signal` (AbortController) to cancel a superseded request.
+  getAll: (params = {}, options = {}) => apiRequest(buildUrl('/prompts', params), options),
   getById: (id) => apiRequest(`/prompts/${id}`),
   create: (data) => apiRequest('/prompts', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`/prompts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

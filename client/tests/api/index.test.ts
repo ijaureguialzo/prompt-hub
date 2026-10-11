@@ -87,6 +87,41 @@ describe('api client', () => {
     await expect(apiRequest('/prompts')).rejects.toThrow('Network error')
   })
 
+  it('normalizes an aborted request into a recognizable AbortError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new DOMException('Aborted', 'AbortError')))
+    )
+    const error = await apiRequest('/prompts').catch((e) => e)
+    expect(error.name).toBe('AbortError')
+    expect(error.message).toBe('The request was aborted.')
+  })
+
+  it('treats an abort while reading the body as an AbortError, not a network error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        text: () => Promise.reject(new DOMException('Aborted', 'AbortError'))
+      }))
+    )
+    const error = await apiRequest('/prompts').catch((e) => e)
+    expect(error.name).toBe('AbortError')
+  })
+
+  it('passes a caller-provided signal through to fetch', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => '{}'
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+    await apiRequest('/prompts', { signal: controller.signal })
+    expect(fetchMock.mock.calls[0][1].signal).toBe(controller.signal)
+  })
+
   it('clears auth and invokes the handler on 401', async () => {
     window.localStorage.setItem('token', 'stale-token')
     window.localStorage.setItem('user', JSON.stringify({ _id: 'u1', email: 'a@b.com' }))

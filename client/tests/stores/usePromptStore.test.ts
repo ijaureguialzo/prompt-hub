@@ -80,7 +80,8 @@ describe('usePromptStore', () => {
     await store.fetchPrompts()
     const { promptsApi } = await import('@/api/index.js')
     expect(promptsApi.getAll).toHaveBeenCalledWith(
-      expect.objectContaining({ q: 'needle', categoryId: 'cat-9', tag: ['a', 'b'] })
+      expect.objectContaining({ q: 'needle', categoryId: 'cat-9', tag: ['a', 'b'] }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
   })
 
@@ -103,7 +104,10 @@ describe('usePromptStore', () => {
     expect(store.filters.categoryId).toBe('')
     expect(store.page).toBe(1)
     expect(store.prompts.map((p) => p._id)).toEqual(['fresh'])
-    expect(promptsApi.getAll).toHaveBeenCalledWith(expect.objectContaining({ page: 1, q: 'x' }))
+    expect(promptsApi.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, q: 'x' }),
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    )
   })
 
   it('loadMore() appends the next page and advances the page counter', async () => {
@@ -428,5 +432,80 @@ describe('usePromptStore', () => {
     expect(store.importQuota).toBeNull()
     expect(store.importFileName).toBe('')
     expect(store.importing).toBe(false)
+  })
+
+  // --- List request races (PLAN.md P2/11) ---
+
+  describe('search races (AbortController)', () => {
+    it('drops the late response of a superseded search', async () => {
+      const store = getPromptStore()
+      const { promptsApi } = await import('@/api/index.js')
+      const getAll = promptsApi.getAll as ReturnType<typeof vi.fn>
+
+      let resolveFirst: (value: unknown) => void
+      getAll
+        .mockImplementationOnce(
+          () => new Promise((resolve) => (resolveFirst = resolve))
+        )
+        .mockResolvedValueOnce({
+          prompts: [{ _id: 'fresh' }],
+          total: 1,
+          page: 1,
+          limit: 50,
+          hasMore: false
+        })
+
+      const first = store.setFilters({ q: 'old' }) // slow, in flight
+      const second = store.setFilters({ q: 'new' }) // supersedes it
+
+      await second
+      expect(store.prompts.map((p) => p._id)).toEqual(['fresh'])
+
+      // The old response arrives late: it must not clobber the new list.
+      resolveFirst!({
+        prompts: [{ _id: 'stale' }],
+        total: 1,
+        page: 1,
+        limit: 50,
+        hasMore: false
+      })
+      await first
+      expect(store.prompts.map((p) => p._id)).toEqual(['fresh'])
+      expect(store.total).toBe(1)
+      expect(store.loading).toBe(false)
+    })
+
+    it('silently swallows the aborted request and keeps the newer one\u0027s state', async () => {
+      const store = getPromptStore()
+      const { promptsApi } = await import('@/api/index.js')
+      const getAll = promptsApi.getAll as ReturnType<typeof vi.fn>
+
+      getAll.mockImplementationOnce(
+        (_params: unknown, options: { signal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            options.signal.addEventListener('abort', () =>
+              reject(Object.assign(new Error('The request was aborted.'), { name: 'AbortError' }))
+            )
+          })
+      )
+      getAll.mockResolvedValueOnce({
+        prompts: [{ _id: 'fresh' }],
+        total: 1,
+        page: 1,
+        limit: 50,
+        hasMore: false
+      })
+
+      const first = store.setFilters({ q: 'old' })
+      const second = store.setFilters({ q: 'new' })
+
+      await second
+      // The abort rejection must resolve (not throw); the newer request's
+      // result and loading flags must be untouched.
+      await first
+      expect(store.prompts.map((p) => p._id)).toEqual(['fresh'])
+      expect(store.loading).toBe(false)
+      expect(store.loadingMore).toBe(false)
+    })
   })
 })

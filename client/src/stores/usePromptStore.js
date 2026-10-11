@@ -18,6 +18,14 @@ const PAGE_SIZE = 50
 // the uncategorized view (see promptController.buildListFilter).
 const EMPTY_FILTERS = { q: '', categoryId: '', tags: [] }
 
+// Identity of the in-flight list request, kept outside the reactive state
+// (an AbortController must not be proxied by Pinia). A monotonically
+// increasing sequence plus the latest request's controller: when a newer
+// list request starts, the older one is aborted, and any late response
+// from a superseded request is dropped instead of clobbering the list.
+let listSequence = 0
+let activeListController = null
+
 export const usePromptStore = defineStore('prompts', {
   state: () => ({
     prompts: [],
@@ -52,6 +60,13 @@ export const usePromptStore = defineStore('prompts', {
     },
 
     async fetchPrompts({ reset = true } = {}) {
+      // A new list request supersedes the in-flight one: abort it and mark
+      // this request as the latest (the sequence guards the state writes).
+      activeListController?.abort()
+      const controller = new AbortController()
+      activeListController = controller
+      const sequence = ++listSequence
+
       if (reset) {
         this.loading = true
         this.page = 1
@@ -67,7 +82,9 @@ export const usePromptStore = defineStore('prompts', {
           categoryId: this.filters.categoryId,
           tag: this.filters.tags
         }
-        const data = await promptsApi.getAll(params)
+        const data = await promptsApi.getAll(params, { signal: controller.signal })
+        // Superseded by a newer request while in flight: drop the result.
+        if (sequence !== listSequence) return this.prompts
         // The server returns { prompts, total, page, limit, hasMore }.
         // An array (legacy shape) is tolerated for tests/mocks.
         const rows = Array.isArray(data) ? data : (data.prompts ?? [])
@@ -76,10 +93,19 @@ export const usePromptStore = defineStore('prompts', {
         if (!reset) this.page = page + 1 // advance for the next loadMore
         return this.prompts
       } catch (error) {
+        // Aborted because a newer request superseded us: ignore silently.
+        if (error?.name === 'AbortError') return this.prompts
         throw new Error(error.message, { cause: error })
       } finally {
-        this.loading = false
-        this.loadingMore = false
+        // Only the latest request clears the flags — an aborted (older)
+        // one must not wipe the newer request's loading state.
+        if (sequence === listSequence) {
+          this.loading = false
+          this.loadingMore = false
+        }
+        if (activeListController === controller) {
+          activeListController = null
+        }
       }
     },
 
