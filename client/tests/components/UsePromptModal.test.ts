@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import UsePromptModal from '@/components/UsePromptModal.vue'
 
@@ -82,5 +83,51 @@ describe('UsePromptModal', () => {
   it('renders a modal overlay (fixed positioning)', () => {
     const wrapper = getWrapper()
     expect(wrapper.classes()).toContain('fixed')
+  })
+
+  describe('accessibility (PLAN.md P2/10)', () => {
+    let trigger: HTMLButtonElement
+
+    beforeEach(() => {
+      trigger = document.createElement('button')
+      document.body.appendChild(trigger)
+      trigger.focus()
+    })
+
+    afterEach(() => {
+      document.body.innerHTML = ''
+    })
+
+    it('exposes role=dialog, aria-modal and the title as the accessible name', () => {
+      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      try {
+        const panel = document.body.querySelector('[role="dialog"]') as HTMLElement
+        expect(panel).not.toBeNull()
+        expect(panel.getAttribute('aria-modal')).toBe('true')
+        expect(panel.getAttribute('aria-label')).toBe('promptDetail.useTitle')
+      } finally {
+        wrapper.unmount()
+      }
+    })
+
+    it('closes on Escape', async () => {
+      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      try {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        await nextTick()
+        expect(wrapper.emitted('close')).toBeTruthy()
+      } finally {
+        wrapper.unmount()
+      }
+    })
+
+    it('moves focus into the dialog and restores the trigger on close', async () => {
+      const wrapper = mount(UsePromptModal, { props: { prompt: basePrompt }, attachTo: document.body })
+      await nextTick()
+      const panel = document.body.querySelector('[role="dialog"]') as HTMLElement
+      expect(panel.contains(document.activeElement)).toBe(true)
+      wrapper.unmount()
+      expect(document.activeElement).toBe(trigger)
+    })
   })
 })
