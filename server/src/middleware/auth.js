@@ -5,6 +5,17 @@ const { getJwtSecret } = require('../config');
 // Error codes are the stable, language-neutral part of the error contract.
 // The `message` field stays English: it is a fallback for clients that do
 // not translate, while the client maps `code` to its own locale.
+// Cost model (PLAN.md P3/24): `authenticate` does ONE primary-key lookup per
+// request (`User.findById`, indexed O(1) — typically < 1 ms), which is what
+// makes the per-request `isActive`/role check possible: deactivating or
+// role-changing an account applies on their very next request, including
+// the 24h session tokens. At this app's real traffic the lookup is noise
+// next to bcrypt and the query work, so it stays on ALL routes (measured,
+// not speculative — PLAN.md P3/24). Documented escape hatch if per-request
+// volume ever grows large: move `isActive`/`role` into the JWT (set at
+// login) and keep the DB check on mutating routes only — a deactivated
+// account would then survive until token expiry or its first write.
+
 // Verify JWT and attach user to req.user
 async function authenticate(req, res, next) {
   try {
