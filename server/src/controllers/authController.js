@@ -12,6 +12,16 @@ const KNOWN_VALIDATION_CODES = require('../utils/errorCodes');
 // leak which emails are registered (user enumeration).
 const DUMMY_HASH = '$2b$12$K6RUJBkv7BIDIKow.dy4c.MEXxou1M20hM756sBLQtgLdPosK75CW';
 
+// Per-account brute-force lockout (PLAN.md P1/7): 5 failures accumulated
+// within a 15-minute window lock the account for 15 minutes. This bounds
+// what a distributed attack (rotating IPs past the per-IP limiter) can do
+// to ONE account; the per-IP limiter and the dummy-hash timing trick stay
+// in place as the other layers.
+const FAIL_WINDOW_MS = 15 * 60 * 1000;
+const MAX_LOGIN_FAILS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
+const LOCK_MESSAGE = 'Account temporarily locked. Try again in 15 minutes.';
+
 function generateToken(user) {
   // Never sign with a default/weak secret: the server refuses to start
   // without a valid JWT_SECRET (see src/config.js and server.js).
@@ -127,12 +137,46 @@ exports.login = async (req, res) => {
     // so unknown emails cost the same as wrong passwords — no enumeration
     // via response timing.
     const passwordMatches = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
+
+    const now = new Date();
+    // Consult the lock AFTER the bcrypt above so a locked account costs the
+    // same as any other attempt (uniform timing, no lock-state enumeration).
+    if (user && user.lockUntil && user.lockUntil > now) {
+      return res.status(401).json({ code: 'ACCOUNT_LOCKED', message: LOCK_MESSAGE });
+    }
+
     if (!user || !passwordMatches) {
+      if (user) {
+        // Sliding 15-minute failure window: the counter resets when the last
+        // failure is older than the window. (The read-modify-save is not
+        // atomic under concurrent attempts; that is acceptable — increments
+        // are idempotent-ish and the window self-heals on success.)
+        const fails =
+          user.loginFailsAt && now - user.loginFailsAt < FAIL_WINDOW_MS
+            ? (user.loginFails || 0) + 1
+            : 1;
+        user.loginFails = fails;
+        user.loginFailsAt = now;
+        user.lockUntil =
+          fails >= MAX_LOGIN_FAILS ? new Date(now.getTime() + LOCK_DURATION_MS) : undefined;
+        await user.save();
+        if (fails >= MAX_LOGIN_FAILS) {
+          return res.status(401).json({ code: 'ACCOUNT_LOCKED', message: LOCK_MESSAGE });
+        }
+      }
       return res.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' });
     }
 
     if (!user.isActive) {
       return res.status(403).json({ code: 'ACCOUNT_DEACTIVATED', message: 'Account deactivated' });
+    }
+
+    // Successful login: clear the failure state (also any stale lock).
+    if (user.loginFails || user.lockUntil) {
+      user.loginFails = 0;
+      user.loginFailsAt = undefined;
+      user.lockUntil = undefined;
+      await user.save();
     }
 
     res.json({ token: generateToken(user), user: user.toJSON() });

@@ -154,6 +154,7 @@ export default {
     notOwner: 'You can only modify your own resources.',
     invalidCredentials: 'Invalid email or password.',
     accountDeactivated: 'This account has been deactivated. Please contact an administrator.',
+    accountLocked: 'Too many failed login attempts: this account is temporarily locked. Please try again in 15 minutes.',
     registrationDisabled: 'Registration is currently disabled by the administrator.',
     emailTaken: 'This email is already registered.',
     wrongPassword: 'The current password is incorrect.',

@@ -20,7 +20,7 @@ All error responses share a stable, language-neutral shape:
 { "code": "STABLE_CODE", "message": "English human-readable text", "...": "optional params" }
 ```
 
-- `code` is a stable machine-readable identifier (`INVALID_TOKEN`, `AUTH_REQUIRED`, `USER_INACTIVE`, `FORBIDDEN`, `NOT_OWNER`, `INVALID_CREDENTIALS`, `ACCOUNT_DEACTIVATED`, `REGISTRATION_DISABLED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`, `PASSWORD_TOO_SHORT`, `VALIDATION_ERROR`, `TAGS_TOO_MANY`, `EMAIL_INVALID`, `DUPLICATE`, `NOT_FOUND`, `LIMIT_REACHED`, `RATE_LIMITED`, `SELF_MODIFICATION`, `IMPORT_INVALID`, `INTERNAL_ERROR`).
+- `code` is a stable machine-readable identifier (`INVALID_TOKEN`, `AUTH_REQUIRED`, `USER_INACTIVE`, `FORBIDDEN`, `NOT_OWNER`, `INVALID_CREDENTIALS`, `ACCOUNT_DEACTIVATED`, `ACCOUNT_LOCKED`, `REGISTRATION_DISABLED`, `EMAIL_TAKEN`, `WRONG_PASSWORD`, `PASSWORD_TOO_SHORT`, `VALIDATION_ERROR`, `TAGS_TOO_MANY`, `EMAIL_INVALID`, `DUPLICATE`, `NOT_FOUND`, `LIMIT_REACHED`, `RATE_LIMITED`, `SELF_MODIFICATION`, `IMPORT_INVALID`, `INTERNAL_ERROR`).
 - `message` is the English fallback for clients that do not localize.
 - Some codes carry extra parameters for interpolation (`LIMIT_REACHED` includes `limit`).
 - The client maps `code` to a localized string (`errors.*` keys in `client/src/locales`); unknown codes fall back to `message`, then to a generic localized string. Never match on `message` content for behavior — use `code`.
@@ -29,7 +29,7 @@ All error responses share a stable, language-neutral shape:
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `/api/auth/register` | `POST` | Register (first user → admin; rate limited) | `{ name, email, password }` | `{ token, user }` | 201, 400, 403, 409, 429, 500 |
-| `/api/auth/login` | `POST` | Login (checks isActive; rate limited) | `{ email, password }` | `{ token, user }` | 200, 401, 403, 429, 500 |
+| `/api/auth/login` | `POST` | Login (checks isActive; rate limited; per-account lockout after 5 failures in 15 min → 401 `ACCOUNT_LOCKED` for 15 min) | `{ email, password }` | `{ token, user }` | 200, 401, 403, 429, 500 |
 | `/api/auth/me` | `GET` | Get current user | — | `{ user }` | 200, 401, 500 |
 | `/api/auth/me` | `PATCH` | Update own profile / change password (`{ name?, email?, currentPassword?, newPassword? }`) | see left | `{ user }` | 200, 400, 401, 409, 500 |
 
@@ -149,6 +149,8 @@ Read-only: the trail is append-only, so there is no write/delete endpoint. Each 
 { name: String(required, ≤100), email: String(unique), password: String(hash),
   role: String(user/admin, default:'user'), isActive: Boolean(default:true),
   adminSlot: String(unique, sparse) // "first user = admin" claimant; stripped from all API output
+  // internal brute-force state (stripped from all API output):
+  loginFails: Number(default:0), loginFailsAt: Date, lockUntil: Date
 }
 ```
 
@@ -229,6 +231,7 @@ Docker Compose: 4 services (traefik, api, frontend, db). API depends on db `heal
 - **JWT fail-fast**: the server refuses to start without a `JWT_SECRET` of 32+ chars (no default-secret fallback).
 - **Session lifetime** (24h, `JWT_EXPIRES_IN`; no refresh flow): tokens are stored in the browser's `localStorage`, which any script running in the page can read — the long TTL is the deliberate trade-off, made tolerable by the XSS mitigations above (edge + helmet CSP: `default-src 'self'`, no external origins, no `unsafe-inline`/`unsafe-eval`). Revocation does not wait for expiry: `middleware/auth.js` re-loads the user on **every** request and rejects inactive accounts, so deactivating a user kills its 24h token immediately (the client sees 401 → soft logout on the next call; the client itself never expires tokens locally). Note a password change does NOT invalidate already-issued tokens (the payload only carries `id`/`email`/`role` — `req.user` is built from the DB document, so role changes apply per request). A refresh-token or httpOnly-cookie model (stronger against XSS) would require changing the API client (credentials, CORS) and the auth storage model; deferred until that model is chosen.
 - **Rate limiting** on auth endpoints + global API limiter (see 2.6) and `helmet` security headers.
+- **Distributed brute-force protection** (per-account lockout): the per-IP limiter on login is bypassed by an IP-rotating botnet, so failed logins are also counted **per account** (`User.loginFails`/`loginFailsAt`, sliding 15-minute window): 5 accumulated failures lock the account for 15 minutes (401 `ACCOUNT_LOCKED`, client-localized). The dummy-hash trick is kept so every attempt — unknown email, wrong password, or locked account — costs the same bcrypt work (no timing/enumeration signal); a successful login clears the counter. The lock only gates login; an existing session of a locked account stays valid until token expiry or deactivation (the per-request `isActive` check is the revocation path).
 - **Traefik dashboard disabled** (`api: false`): the Web UI would expose the full service topology (containers, images, routes) and has no built-in auth, so it is off and unrouted.
 - **Edge headers** (`traefik/headers.yml`): HSTS (`max-age=31536000; includeSubDomains`) on all HTTPS responses; on the SPA host a CSP of `default-src 'self'; connect-src 'self' https://api.prompthub.test; object-src 'none'; frame-ancestors 'none'` (+ `X-Frame-Options: DENY`). `serve` itself emits no CSP; the API's comes from helmet.
 - **Ownership**: `middleware/ownership.js` (`requireOwnership`) runs BEFORE any mutating write on prompts/categories; admins bypass.

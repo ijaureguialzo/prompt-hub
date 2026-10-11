@@ -1,4 +1,5 @@
 const request = require('supertest');
+const User = require('../src/models/User');
 
 describe('Auth', () => {
   let app;
@@ -287,6 +288,133 @@ describe('Auth', () => {
         .send({ email: 'inactive@test.com', password: 'password123' });
 
       expect(res.status).toBe(403);
+    });
+  });
+
+  // --- login lockout (per-account brute-force protection, PLAN.md P1/7) ---
+
+  describe('login lockout (per-account brute-force protection)', () => {
+    async function register(email) {
+      await request(app)
+        .post('/api/auth/register')
+        .send({ name: 'U', email, password: 'password123' });
+    }
+
+    it('locks the account for 15 min after 5 failures in the window', async () => {
+      await register('lock@test.com');
+
+      for (let i = 0; i < 4; i++) {
+        const res = await request(app)
+          .post('/api/auth/login')
+          .send({ email: 'lock@test.com', password: 'wrong-pass' });
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe('INVALID_CREDENTIALS');
+      }
+
+      const fifth = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'lock@test.com', password: 'wrong-pass' });
+      expect(fifth.status).toBe(401);
+      expect(fifth.body.code).toBe('ACCOUNT_LOCKED');
+
+      // While locked, even the correct password is refused
+      const locked = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'lock@test.com', password: 'password123' });
+      expect(locked.status).toBe(401);
+      expect(locked.body.code).toBe('ACCOUNT_LOCKED');
+
+      const user = await User.findOne({ email: 'lock@test.com' });
+      expect(user.loginFails).toBe(5);
+      expect(user.lockUntil).toBeInstanceOf(Date);
+      expect(user.lockUntil - new Date()).toBeGreaterThan(0);
+      expect(user.lockUntil - user.loginFailsAt).toBe(15 * 60 * 1000);
+    });
+
+    it('unlocks after expiry: a successful login clears the failure state', async () => {
+      await register('unlock@test.com');
+      // Simulate an expired lock left by earlier failures
+      await User.updateOne(
+        { email: 'unlock@test.com' },
+        {
+          lockUntil: new Date(Date.now() - 1000),
+          loginFails: 5,
+          loginFailsAt: new Date()
+        }
+      );
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'unlock@test.com', password: 'password123' });
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeTruthy();
+
+      const user = await User.findOne({ email: 'unlock@test.com' });
+      expect(user.loginFails).toBe(0);
+      expect(user.lockUntil).toBeFalsy();
+    });
+
+    it('resets the failure counter when the 15-min window has passed', async () => {
+      await register('window@test.com');
+      // 4 failures, but the last one is 20 min ago (outside the window)
+      await User.updateOne(
+        { email: 'window@test.com' },
+        { loginFails: 4, loginFailsAt: new Date(Date.now() - 20 * 60 * 1000) }
+      );
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'window@test.com', password: 'wrong' });
+      expect(res.body.code).toBe('INVALID_CREDENTIALS'); // reset to 1, no lock
+
+      const user = await User.findOne({ email: 'window@test.com' });
+      expect(user.loginFails).toBe(1);
+      expect(user.lockUntil).toBeFalsy();
+    });
+
+    it('a successful login after failures clears the counter', async () => {
+      await register('clear@test.com');
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'clear@test.com', password: 'nope' });
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'clear@test.com', password: 'nope' });
+
+      const ok = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'clear@test.com', password: 'password123' });
+      expect(ok.status).toBe(200);
+
+      const user = await User.findOne({ email: 'clear@test.com' });
+      expect(user.loginFails).toBe(0);
+      expect(user.lockUntil).toBeFalsy();
+    });
+
+    it('never creates or locks an account for unknown emails', async () => {
+      for (let i = 0; i < 6; i++) {
+        const res = await request(app)
+          .post('/api/auth/login')
+          .send({ email: 'ghost@test.com', password: 'wrong-pass' });
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe('INVALID_CREDENTIALS');
+      }
+      expect(await User.findOne({ email: 'ghost@test.com' })).toBeNull();
+    });
+
+    it('does not expose the internal failure state in API output', async () => {
+      await register('hidden@test.com');
+      await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'hidden@test.com', password: 'nope' });
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'hidden@test.com', password: 'password123' });
+      expect(login.status).toBe(200);
+      expect(login.body.user.loginFails).toBeUndefined();
+      expect(login.body.user.loginFailsAt).toBeUndefined();
+      expect(login.body.user.lockUntil).toBeUndefined();
     });
   });
 

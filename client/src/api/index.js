@@ -15,6 +15,7 @@ const ERROR_CODE_KEYS = {
   NOT_OWNER: 'errors.notOwner',
   INVALID_CREDENTIALS: 'errors.invalidCredentials',
   ACCOUNT_DEACTIVATED: 'errors.accountDeactivated',
+  ACCOUNT_LOCKED: 'errors.accountLocked',
   REGISTRATION_DISABLED: 'errors.registrationDisabled',
   EMAIL_TAKEN: 'errors.emailTaken',
   WRONG_PASSWORD: 'errors.wrongPassword',

@@ -155,6 +155,7 @@ export default {
     notOwner: 'Zure baliabide propioak soilik alda ditzakezu.',
     invalidCredentials: 'Helbide elektroniko edo pasahitz baliogabea.',
     accountDeactivated: 'Kontu hau desgaituta dago. Jarri harreman administratzaile batekin.',
+    accountLocked: 'Hainbat saio huts egin duzu: kontua behin-behinean blokeatuta dago. Saiatu berriz 15 minutu barru.',
     registrationDisabled: 'Erregistroa desaktibatuta dago une honetan administratzaileak.',
     emailTaken: 'Helbide elektroniko hori dagoeneko erregistratuta dago.',
     wrongPassword: 'Uneko pasahitza ez da zuzena.',

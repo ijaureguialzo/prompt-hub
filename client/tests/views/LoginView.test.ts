@@ -92,6 +92,19 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('Invalid credentials')
   })
 
+  it('shows the localized message when the account is locked', async () => {
+    mockSiteConfigState.registrationEnabled = true
+    mockAuthStoreState.login.mockRejectedValue(
+      new Error(
+        'Too many failed login attempts: this account is temporarily locked. Please try again in 15 minutes.'
+      )
+    )
+    const wrapper = await setup()
+    const form = wrapper.find('form')
+    await form.trigger('submit')
+    expect(wrapper.text()).toContain('temporarily locked')
+  })
+
   it('shows register link when registration is enabled', async () => {
     mockSiteConfigState.registrationEnabled = true
     const wrapper = await setup()

@@ -37,6 +37,20 @@ const userSchema = new mongoose.Schema({
   adminSlot: {
     type: String
   },
+  // Per-account brute-force state (PLAN.md P1/7): the per-IP rate limiter
+  // does not stop a distributed attack (rotating IPs), so failed logins are
+  // also counted per account. Internal only — stripped in toJSON, never
+  // settable via the API.
+  loginFails: {
+    type: Number,
+    default: 0
+  },
+  loginFailsAt: {
+    type: Date
+  },
+  lockUntil: {
+    type: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -67,11 +81,14 @@ userSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-// Exclude password (and the internal claim token) from JSON output
+// Exclude password and internal fields from JSON output
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   delete obj.adminSlot;
+  delete obj.loginFails;
+  delete obj.loginFailsAt;
+  delete obj.lockUntil;
   return obj;
 };
 

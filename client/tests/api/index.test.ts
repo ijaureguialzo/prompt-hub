@@ -212,4 +212,19 @@ describe('api client error localization', () => {
     })
     await expect(apiRequest('/auth/register')).rejects.toThrow('Este correo ya está registrado.')
   })
+
+  it('translates the account-locked error', async () => {
+    useI18nStore().setLanguage('es')
+    mockFetch({
+      ok: false,
+      status: 401,
+      json: {
+        code: 'ACCOUNT_LOCKED',
+        message: 'Account temporarily locked. Try again in 15 minutes.'
+      }
+    })
+    await expect(apiRequest('/auth/login')).rejects.toThrow(
+      'Demasiados intentos de acceso fallidos: esta cuenta está bloqueada temporalmente. Inténtalo de nuevo en 15 minutos.'
+    )
+  })
 })

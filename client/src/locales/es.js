@@ -155,6 +155,7 @@ export default {
     notOwner: 'Solo puedes modificar tus propios recursos.',
     invalidCredentials: 'Correo o contraseña no válidos.',
     accountDeactivated: 'Esta cuenta ha sido desactivada. Contacta con un administrador.',
+    accountLocked: 'Demasiados intentos de acceso fallidos: esta cuenta está bloqueada temporalmente. Inténtalo de nuevo en 15 minutos.',
     registrationDisabled: 'El registro está desactivado por el administrador en este momento.',
     emailTaken: 'Este correo ya está registrado.',
     wrongPassword: 'La contraseña actual no es correcta.',
