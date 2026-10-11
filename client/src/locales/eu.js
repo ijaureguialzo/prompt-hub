@@ -76,6 +76,8 @@ export default {
     duplicateBadge: 'Bikoitia',
     invalidBadge: 'Baliogabea',
     overwriteHint: 'Ordezkatuko du zure uneko bertsioa',
+    categoryUnresolved:
+      'Ez da aurkitu «{name}» kategoriak zure kontuan; promptak klaseke gabe inportatuko da',
     invalidTitleReason: 'Izenburua beharrezkoa da (gehienak 100 karaktere)',
     invalidContentReason: 'Edukia beharrezkoa da (gehienak 50.000 karaktere)',
     invalidTagsReason: 'Etiketa gehiegi (gehienak 20)',

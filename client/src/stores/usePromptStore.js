@@ -200,7 +200,11 @@ export const usePromptStore = defineStore('prompts', {
         return {
           status,
           existingId: server?.existingId ?? null,
-          existingTitle: server?.existingTitle ?? null
+          existingTitle: server?.existingTitle ?? null,
+          // `null` = unknown (server predates the flag): the modal then
+          // shows no hint. `false` = the file's category does not exist
+          // in this account → the prompt will be uncategorized.
+          categoryResolved: server ? Boolean(server.categoryResolved) : null
         }
       })
 

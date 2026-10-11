@@ -96,6 +96,12 @@
           >
             {{ invalidReasonLabel(entry.invalidReason) }}
           </span>
+          <span
+            v-if="entry.categoryResolved === false && entry.categoryName"
+            class="block text-xs text-amber-600 dark:text-amber-400 mt-1"
+          >
+            {{ t('importModal.categoryUnresolved', { name: entry.categoryName }) }}
+          </span>
         </span>
       </label>
     </div>

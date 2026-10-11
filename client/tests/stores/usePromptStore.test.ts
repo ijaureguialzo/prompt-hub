@@ -358,6 +358,38 @@ describe('usePromptStore', () => {
     expect(store.importEntries[1]).toMatchObject({ status: 'new', selected: true })
   })
 
+  it('prepareImport() carries the server categoryResolved flag into the rows', async () => {
+    const payload = {
+      format: 'prompthub-export',
+      version: 1,
+      prompts: [
+        { clientId: 'uuid-9', title: 'Categorized', content: 'c', categoryName: 'Known' },
+        { clientId: 'uuid-10', title: 'Orphaned', content: 'c', categoryName: 'Foreign' }
+      ]
+    }
+    const file = new File([JSON.stringify(payload)], 'backup.json')
+
+    const store = getPromptStore()
+    const { promptsApi } = await import('@/api/index.js')
+    ;(promptsApi.import as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      dryRun: true,
+      results: [
+        { index: 0, status: 'new', existingId: null, existingTitle: null, categoryResolved: true },
+        { index: 1, status: 'new', existingId: null, existingTitle: null, categoryResolved: false }
+      ],
+      quota: { used: 0, limit: 200, wouldUse: 2, exceeded: false }
+    })
+
+    await store.prepareImport(file)
+
+    expect(store.importEntries[0].categoryResolved).toBe(true)
+    // The row keeps its file category name so the modal can name it in the hint.
+    expect(store.importEntries[1]).toMatchObject({
+      categoryName: 'Foreign',
+      categoryResolved: false
+    })
+  })
+
   it('prepareImport() rejects a malformed file without touching the API', async () => {
     const file = new File(['not json'], 'backup.json')
     const store = getPromptStore()

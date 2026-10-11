@@ -76,6 +76,8 @@ export default {
     duplicateBadge: 'Duplicate',
     invalidBadge: 'Invalid',
     overwriteHint: 'Will replace your current version',
+    categoryUnresolved:
+      'Category "{name}" was not found in your account; the prompt will be imported as uncategorized',
     invalidTitleReason: 'Title is required (max 100 characters)',
     invalidContentReason: 'Content is required (max 50,000 characters)',
     invalidTagsReason: 'Too many tags (max 20)',

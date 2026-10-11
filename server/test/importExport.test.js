@@ -150,6 +150,31 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
       expect(res.body.quota.exceeded).toBe(false);
     });
 
+    it('reports per-entry category resolution against the importer\'s categories', async () => {
+      const res = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          dryRun: true,
+          prompts: [
+            { title: 'Known category', content: 'c', categoryName: 'Regular Creative' },
+            {
+              title: 'Foreign category',
+              content: 'c',
+              categoryName: `Foreign ${Date.now()}`
+            },
+            { title: 'No category', content: 'c' }
+          ]
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.results[0].categoryResolved).toBe(true);
+      // A category the importer does not have: will be uncategorized on apply.
+      expect(res.body.results[1].categoryResolved).toBe(false);
+      // Nothing to resolve counts as resolved (no warning needed).
+      expect(res.body.results[2].categoryResolved).toBe(true);
+    });
+
     it('classifies a prompt the user already has (by clientId) as conflict', async () => {
       const mine = await createPromptAs(regularToken, { title: 'Mine' });
       await new Promise((r) => setTimeout(r, 20));

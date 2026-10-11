@@ -137,6 +137,61 @@ describe('ImportPromptsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
+  describe('unresolved category hint (PLAN.md P2/15)', () => {
+    it('shows the hint when the server could not resolve the row category', () => {
+      const wrapper = mount(ImportPromptsModal, {
+        props: {
+          entries: [
+            {
+              index: 0,
+              title: 'Orphaned',
+              status: 'new',
+              categoryName: 'Foreign',
+              categoryResolved: false,
+              selected: true
+            }
+          ],
+          fileName: 'backup.json'
+        }
+      })
+      expect(wrapper.text()).toContain('importModal.categoryUnresolved')
+    })
+
+    it('omits the hint when the category resolves or the flag is unknown', () => {
+      const withFlag = mount(ImportPromptsModal, {
+        props: {
+          entries: [
+            {
+              index: 0,
+              title: 'Known',
+              status: 'new',
+              categoryName: 'Foreign',
+              categoryResolved: true,
+              selected: true
+            }
+          ]
+        }
+      })
+      expect(withFlag.text()).not.toContain('importModal.categoryUnresolved')
+
+      const withoutFlag = mount(ImportPromptsModal, {
+        props: {
+          entries: [
+            {
+              index: 0,
+              title: 'Unknown flag',
+              status: 'new',
+              categoryName: 'Foreign',
+              categoryResolved: null,
+              selected: true
+            }
+          ]
+        }
+      })
+      expect(withoutFlag.text()).not.toContain('importModal.categoryUnresolved')
+    })
+  })
+
   describe('accessibility (PLAN.md P2/10)', () => {
     let trigger: HTMLButtonElement
 

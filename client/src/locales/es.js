@@ -76,6 +76,8 @@ export default {
     duplicateBadge: 'Duplicado',
     invalidBadge: 'Inválido',
     overwriteHint: 'Reemplazará tu versión actual',
+    categoryUnresolved:
+      'No se encontró la categoría «{name}» en tu cuenta; el prompt se importará sin clasificar',
     invalidTitleReason: 'El título es obligatorio (máx. 100 caracteres)',
     invalidContentReason: 'El contenido es obligatorio (máx. 50.000 caracteres)',
     invalidTagsReason: 'Demasiadas etiquetas (máx. 20)',
