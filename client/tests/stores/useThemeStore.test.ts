@@ -126,4 +126,29 @@ describe('useThemeStore', () => {
       store.dispose()
     }).not.toThrow()
   })
+
+  // --- `dark` class on <html> (PLAN.md P2/16) ---
+
+  it("setMode('dark') adds the `dark` class to <html>", () => {
+    document.documentElement.classList.remove('dark')
+    getThemeStore().setMode('dark')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it("setMode('light') removes the `dark` class from <html>", () => {
+    document.documentElement.classList.add('dark')
+    getThemeStore().setMode('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+  })
+
+  it('init() applies the class for a saved dark mode', () => {
+    document.documentElement.classList.remove('dark')
+    const store = getThemeStore()
+    ;(window.localStorage as { setItem: (k: string, v: string) => void }).setItem(
+      'themeMode',
+      'dark'
+    )
+    store.init()
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
 })

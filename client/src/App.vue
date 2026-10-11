@@ -1,5 +1,9 @@
 <template>
-  <div class="min-h-screen bg-white dark:bg-gray-950" :class="themeStore.isDark ? 'dark' : ''">
+  <!--
+    The `dark` class lives on <html> (useThemeStore._applyDomClass) so the
+    <body> background is themed too — no light overscroll in dark mode.
+  -->
+  <div class="min-h-screen bg-white dark:bg-gray-950">
     <Navbar />
     <Toast />
     <main class="container mx-auto px-4 py-6">

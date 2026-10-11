@@ -37,6 +37,7 @@ export const useThemeStore = defineStore('theme', {
 
       // Set up listener for system preference changes (only active in auto mode)
       this._setupMediaQueryListener()
+      this._applyDomClass()
     },
 
     setMode(mode) {
@@ -50,6 +51,7 @@ export const useThemeStore = defineStore('theme', {
 
         // Re-setup listener in case mode changed (e.g., auto → dark → auto)
         this._setupMediaQueryListener()
+        this._applyDomClass()
       }
     },
 
@@ -78,11 +80,25 @@ export const useThemeStore = defineStore('theme', {
         if (this.mode === 'auto') {
           this._mediaQueryListener = () => {
             this._systemDark = mql.matches
+            this._applyDomClass()
           }
           mql.addEventListener('change', this._mediaQueryListener)
         } else {
           this._mediaQueryListener = null
         }
+      }
+      this._applyDomClass()
+    },
+
+    /**
+     * Mirrors the resolved dark state onto <html>: the `dark` class must
+     * live on the document element so the <body> (index.html carries
+     * bg-gray-100 dark:bg-gray-950) is themed too — otherwise the
+     * overscroll/bounce area flashes light in dark mode (PLAN.md P2/16).
+     */
+    _applyDomClass() {
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.toggle('dark', this.isDark)
       }
     },
 
