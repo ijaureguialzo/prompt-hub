@@ -120,10 +120,9 @@ export const useAuthStore = defineStore('auth', {
       return updated.user
     },
 
-    async updateUser(_updatedUser) {
-      // The argument is accepted for caller compatibility; the canonical
-      // data always comes fresh from the server
-      // Refresh user data from server (e.g. after admin changes role)
+    async updateUser() {
+      // No argument: the canonical data always comes fresh from the server
+      // (e.g. after an admin changes this user's role/status).
       await this.fetchCurrentUser()
     },
 

@@ -205,7 +205,7 @@ describe('useAuthStore', () => {
 
   it('updateUser() calls fetchCurrentUser', async () => {
     const store = useAuthStore()
-    await store.updateUser({ _id: 'user-1' })
+    await store.updateUser()
     const { authApi } = await import('@/api/index.js')
     expect(authApi.getCurrentUser).toHaveBeenCalled()
   })

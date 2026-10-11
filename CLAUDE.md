@@ -28,27 +28,29 @@ Local dev: `cd server && npm run dev` (port 3000) + `cd client && npm run dev` (
 ```
 prompt-hub/
 ├── client/src/                    # Vue 3 SPA (Vite)
-│   ├── main.js                    # Bootstrap: Pinia, Router, i18n
+│   ├── main.js                    # Bootstrap: Pinia, Router, i18n, theme
 │   ├── App.vue                    # Root: <Navbar> + <Toast> + <router-view>
 │   ├── api/index.js               # API client (wrappers for all endpoints)
 │   ├── router/index.js            # 8 routes with auth + admin guards
 │   ├── stores/                    # 6 Pinia stores (auth, prompts, categories, i18n, UI, theme)
-│   ├── components/                # 10 components (Navbar, Toast, PromptCard, SearchBar,
-│   │                              #   4 modals, CategoryList, UsePromptModal)
-│   │                              #   (incl. ImportPromptsModal for the import flow)
+│   ├── components/                # 11 components (Navbar, Toast, PromptCard, SearchBar,
+│   │                              #   Modal base + 4 feature modals, CategoryList, UsePromptModal)
 │   ├── views/                     # 8 pages (Login, Register, PromptList/Detail,
 │   │                              #   Category, Settings, Profile, ManageUsers)
-│   └── locales/                   # en.js, es.js, eu.js (~40 keys each)
+│   └── locales/                   # en.js, es.js, eu.js (~195 keys each)
+├── client/                        # public/ (favicon), nginx.conf (cache policy, SPA fallback),
+│                                  #   Dockerfile (build stage + nginx runtime)
 ├── server/src/                    # Express 5 API
-│   ├── server.js                  # Entry: CORS, routes, MongoDB connect
-│   ├── models/                    # User, Prompt, Category, SiteConfig (Mongoose)
-│   ├── controllers/               # auth, prompt, category, user, siteConfig (5)
-│   ├── routes/                    # auth, prompt, category, user, siteConfig (5)
-│   ├── middleware/                # auth.js (JWT + role), errorHandler, ownership.js
-│   └── scripts/                   # seedAdmin, migrateAddName, migrateAddClientId
-├── server/test/                   # 16 Vitest tests (unit + Supertest against
-│                                   #   mongodb-memory-server; incl. importExport)
-├── traefik/                       # Reverse proxy: TLS, routing, HTTP→HTTPS redirect
+│   ├── server.js                  # Entry: CORS, rate limiting, routes, MongoDB connect
+│   ├── models/                    # User, Prompt, Category, SiteConfig, Audit (Mongoose)
+│   ├── controllers/               # auth, prompt, category, user, siteConfig, audit (6)
+│   ├── routes/                    # auth, prompt, category, user, siteConfig, audit (6)
+│   ├── middleware/                # auth.js (JWT + role), ownership.js, rateLimit.js, errorHandler
+│   ├── utils/                     # audit.js, errorCodes.js, logger.js
+│   └── scripts/                   # seedAdmin, seedData, migrateAddName, migrateAddClientId
+├── server/test/                   # 215 Vitest tests (unit + Supertest against
+│                                  #   mongodb-memory-server; incl. importExport + perf)
+├── traefik/                       # Reverse proxy: TLS, routing, HSTS/CSP, HTTP→HTTPS redirect
 ├── docker-compose.yml             # 4 services: traefik, api, frontend, db
 └── .env / .env.example            # Configuration template
 ```
