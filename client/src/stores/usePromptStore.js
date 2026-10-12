@@ -246,7 +246,15 @@ export const usePromptStore = defineStore('prompts', {
           overwrites
         })
         this.cancelImport()
-        return { created: res.created, updated: res.updated, skipped: res.skipped }
+        return {
+          created: res.created,
+          updated: res.updated,
+          skipped: res.skipped,
+          // Lets the caller refresh the category sidebar: the apply may have
+          // created missing categories, and created/updated prompts change
+          // the per-category counts anyway.
+          categoriesCreated: res.categories?.created ?? 0
+        }
       } finally {
         this.importing = false
       }

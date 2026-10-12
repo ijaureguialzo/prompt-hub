@@ -448,13 +448,15 @@ describe('usePromptStore', () => {
         created: 1,
         updated: 1,
         skipped: 0,
+        categories: { created: 1 },
         quota: { used: 2, limit: 200 }
       })
 
     await store.prepareImport(file)
     // The user confirms the conflict — its index in the FULL file is 1, but
     // in the sent (valid-only) array it is 0: the remapping must handle that.
-    await store.confirmImport([1])
+    const summary = await store.confirmImport([1])
+    expect(summary.categoriesCreated).toBe(1)
 
     const calls = (promptsApi.import as ReturnType<typeof vi.fn>).mock.calls
     const applyCall = calls[calls.length - 1][0] as {

@@ -268,6 +268,7 @@ describe('PromptListView — export / import (SPEC §2.2a)', () => {
     vi.mocked(mockPromptStoreState.cancelImport).mockClear()
     vi.mocked(mockUIStoreState.setSuccess).mockClear()
     vi.mocked(mockUIStoreState.setError).mockClear()
+    vi.mocked(mockCategoryStoreState.fetchCategories).mockClear()
   }
 
   beforeEach(() => {
@@ -341,6 +342,7 @@ describe('PromptListView — export / import (SPEC §2.2a)', () => {
     await nextTick()
 
     const modal = wrapper.findComponent(importModalStub)
+    const categoryCallsBefore = vi.mocked(mockCategoryStoreState.fetchCategories).mock.calls.length
     await modal.find('.stub-confirm').trigger('click')
     await nextTick()
 
@@ -351,6 +353,10 @@ describe('PromptListView — export / import (SPEC §2.2a)', () => {
     // the modal is closed and the list reconciled
     expect(wrapper.findComponent(importModalStub).exists()).toBe(false)
     expect(mockPromptStoreState.setFilters).toHaveBeenCalled()
+    // the sidebar is refreshed too (imports create missing categories)
+    expect(vi.mocked(mockCategoryStoreState.fetchCategories).mock.calls.length).toBeGreaterThan(
+      categoryCallsBefore
+    )
   })
 
   it('a confirm failure keeps the modal open and toasts the error', async () => {
@@ -371,6 +377,11 @@ describe('PromptListView — export / import (SPEC §2.2a)', () => {
 
     expect(mockUIStoreState.setError).toHaveBeenCalledWith('boom')
     expect(wrapper.findComponent(importModalStub).exists()).toBe(true)
+    // nothing was applied, so the sidebar must not be refreshed again
+    // (the mount call already happened before the confirm)
+    expect(vi.mocked(mockCategoryStoreState.fetchCategories).mock.calls.length).toBeLessThanOrEqual(
+      1
+    )
   })
 
   it('cancelling the import clears the store state', async () => {

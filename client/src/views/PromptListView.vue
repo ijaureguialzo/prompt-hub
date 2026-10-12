@@ -265,6 +265,11 @@ async function onImportConfirm(overwrites) {
     promptStore.setFilters(currentFilters()).catch((err) => {
       uiStore.setError(err.message)
     })
+    // The sidebar's categories (and their prompt counts) are stale after an
+    // import that created missing categories — refresh them too.
+    categoryStore.fetchCategories().catch((err) => {
+      uiStore.setError(err.message)
+    })
   } catch (error) {
     // The modal stays open (store keeps its state) so the user can adjust.
     uiStore.setError(error.message)
