@@ -340,7 +340,10 @@ describe('Users (Admin CRUD)', () => {
         .post('/api/prompts/import')
         .set('Authorization', `Bearer ${regularToken}`)
         .send({
-          prompts: [{ title: 'A', content: 'c' }, { title: 'B', content: 'c' }]
+          prompts: [
+            { title: 'A', content: 'c' },
+            { title: 'B', content: 'c' }
+          ]
         });
       expect(apply.status).toBe(409);
       expect(apply.body).toMatchObject({ code: 'LIMIT_REACHED', limit: 1 });

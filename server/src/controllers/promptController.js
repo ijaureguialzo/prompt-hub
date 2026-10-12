@@ -513,9 +513,10 @@ exports.importPrompts = async (req, res) => {
   const [existing, categories, allNames] = await Promise.all([
     Prompt.find({ ownerId: req.user._id }),
     Category.find({ ownerId: req.user._id }),
-    Category.find({}).select('name').lean().then((rows) =>
-      new Set(rows.map((r) => r.name.toLowerCase()))
-    )
+    Category.find({})
+      .select('name')
+      .lean()
+      .then((rows) => new Set(rows.map((r) => r.name.toLowerCase())))
   ]);
 
   // Missing referenced categories: created on apply (deduped, quota-capped);

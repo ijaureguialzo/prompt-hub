@@ -362,7 +362,9 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
         .post('/api/prompts/import')
         .set('Authorization', `Bearer ${regularToken}`)
         .send({
-          prompts: [{ clientId: 'cat-1', title: 'Categorized', content: 'c', categoryName: 'Travel' }]
+          prompts: [
+            { clientId: 'cat-1', title: 'Categorized', content: 'c', categoryName: 'Travel' }
+          ]
         });
 
       expect(applied.status).toBe(200);
@@ -445,7 +447,9 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
         .post('/api/prompts/import')
         .set('Authorization', `Bearer ${regularToken}`)
         .send({
-          prompts: [{ clientId: 'cat-4', title: 'Borrowed', content: 'c', categoryName: 'Admin Tech' }]
+          prompts: [
+            { clientId: 'cat-4', title: 'Borrowed', content: 'c', categoryName: 'Admin Tech' }
+          ]
         });
 
       expect(applied.status).toBe(200);
@@ -481,9 +485,7 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
           .set('Authorization', `Bearer ${regularToken}`)
           .send({
             dryRun: true,
-            prompts: [
-              { clientId: 'cat-6', title: 'Quota', content: 'c', categoryName: 'Overflow' }
-            ]
+            prompts: [{ clientId: 'cat-6', title: 'Quota', content: 'c', categoryName: 'Overflow' }]
           });
         expect(dry.body.results[0].categoryResolved).toBe(false);
         expect(dry.body.results[0].categoryWillBeCreated).toBe(false);

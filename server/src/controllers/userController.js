@@ -103,8 +103,14 @@ exports.updateUser = async (req, res) => {
   if (updateData.promptQuota !== undefined && updateData.promptQuota !== existing.promptQuota) {
     quotaChanges.promptQuota = { from: existing.promptQuota ?? null, to: updateData.promptQuota };
   }
-  if (updateData.categoryQuota !== undefined && updateData.categoryQuota !== existing.categoryQuota) {
-    quotaChanges.categoryQuota = { from: existing.categoryQuota ?? null, to: updateData.categoryQuota };
+  if (
+    updateData.categoryQuota !== undefined &&
+    updateData.categoryQuota !== existing.categoryQuota
+  ) {
+    quotaChanges.categoryQuota = {
+      from: existing.categoryQuota ?? null,
+      to: updateData.categoryQuota
+    };
   }
   if (Object.keys(quotaChanges).length > 0) {
     logAudit(req, 'user.quota_change', {
