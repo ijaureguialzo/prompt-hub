@@ -97,10 +97,14 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.rule=Host(`${FQDN_FRONTEND:-prompthub.test}`)"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.entrypoints=websecure"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.tls=true"
-      # Edge security headers (PLAN.md P1/4): CSP + X-Frame-Options on the
-      # SPA only (the API gets its own CSP from helmet); HSTS is attached at
-      # the websecure entrypoint for every HTTPS response.
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.middlewares=frontend-secure@file"
+      # Edge security headers (PLAN.md P1/4): the CSP + X-Frame-Options
+      # middleware (`frontend-secure`, traefik/headers.yml) is a FILE-PROVIDER
+      # object that only exists in the bundled traefik container, so its
+      # router label lives in docker-compose.override.yml — which deployments
+      # that run a standalone Traefik replace, since a docker-provider Traefik
+      # cannot resolve `frontend-secure@file` and would silently disable the
+      # SPA router. HSTS is attached at the websecure entrypoint in
+      # traefik/traefik.yml (bundled deployment only).
       # Lower priority than the api-frontend router above, so /api/* on the
       # frontend host always goes to the API service first.
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.priority=10"

@@ -11,12 +11,16 @@
 #   all subdomains. (The API additionally emits its own identical HSTS from
 #   helmet; duplicate equal values are harmless — browsers apply the most
 #   restrictive.)
-# - `frontend-secure`: attached only to the frontend router (docker-compose
-#   label `frontend-secure@file`). The API already emits its own CSP via
-#   helmet (server/src/server.js); a second Traefik CSP on API responses
-#   would stack (browsers intersect multiple CSP headers) and could
-#   over-restrict. `frameDeny` adds X-Frame-Options: DENY for older browsers
-#   (modern ones follow `frame-ancestors 'none'` above).
+# - `frontend-secure`: attached only to the frontend router, via the label
+#   in docker-compose.override.yml (kept out of docker-compose.yml on purpose:
+#   deployments that run a standalone Traefik without the file provider —
+#   e.g. the home-pi Ansible roles — replace the override file, so they never
+#   emit the unresolvable `@file` reference that would silently disable the
+#   router). The API already emits its own CSP via helmet
+#   (server/src/server.js); a second Traefik CSP on API responses would stack
+#   (browsers intersect multiple CSP headers) and could over-restrict.
+#   `frameDeny` adds X-Frame-Options: DENY for older browsers (modern ones
+#   follow `frame-ancestors 'none'` above).
 #
 # The Vite production build emits only external same-origin assets
 # (dist/index.html: /assets/*.js + /assets/*.css, no inline script/style),

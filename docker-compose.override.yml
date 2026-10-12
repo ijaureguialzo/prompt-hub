@@ -1,0 +1,18 @@
+# Compose override for the BUNDLED Traefik deployment (auto-loaded by
+# `docker compose`: `make start` / `stop` / `restart` pick it up).
+#
+# Why the edge-header label lives HERE and not in docker-compose.yml:
+# `frontend-secure` (strict CSP + X-Frame-Options, traefik/headers.yml) is a
+# FILE-PROVIDER object that only exists inside this repo's own traefik
+# container. Deployments that run a standalone Traefik (docker provider only
+# — e.g. the home-pi Ansible roles, which start only `frontend` on the shared
+# network) replace THIS file with their own override, so the
+# `frontend-secure@file` reference never reaches the container labels: a
+# docker-provider Traefik cannot resolve it and would silently disable the
+# frontend router (and stop requesting its Let's Encrypt cert), taking the
+# whole site down. Those deployments simply serve the SPA without the edge
+# CSP / X-Frame-Options (and without HSTS, which is likewise bundled-only).
+services:
+  frontend:
+    labels:
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-frontend.middlewares=frontend-secure@file"
