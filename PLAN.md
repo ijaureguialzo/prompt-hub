@@ -297,6 +297,12 @@ Leyenda de estado: `[ ]` pendiente · `[~]` en curso · `[x]` hecha
   - **Archivos:** `server/src/{models/User.js, config.js, controllers/{user,prompt,category}Controller.js}`, `client/src/views/ManageUsersView.vue`, locales, `SPECIFICATION.md`, tests
   - **Hecho:** `User.promptQuota`/`categoryQuota` (Number 0–100000, default null → sin migración: ausente se lee como null = global). `config.effective*Quota(user)` (override ?? env) se usa en todos los puntos de enforcement: crear prompt/categoría, import (dry-run + plan de categorías) y el indicador de la lista de categorías (ahora por caller). `PUT /api/users/:id` acepta ambas (null = restaura global; 0 = no puede crear; inválido → 400) y audita los cambios reales (`user.quota_change`). UI: botón «Cuotas» por fila + modal (vacío = global) + la fila muestra `Cuotas: p / c` (global si null). SPEC §2.4/§2.6/§3. 231 server + 410 client en verde; verificado en el navegador (modal, indicador, 409 al tope, reset a null y auto-cuota del propio admin). `b011de1`.
 
+- [x] **40. Nombre del export con hora (unicidad dentro del día)**
+  - **Problema:** el nombre era `prompthub-export-YYYY-MM-DD.zip`: dos exports el mismo día daban el mismo nombre (colisión / renombre con «(1)» en la carpeta de descargas).
+  - **Hacer:** añadir `HH-MM-SS` (24h) al nombre del fichero.
+  - **Archivos:** `client/src/lib/promptBackup.js`, `client/tests/lib/promptBackup.test.ts`, `CLAUDE.md`
+  - **Hecho:** `prompthub-export-YYYY-MM-DD-HH-MM-SS.zip` con fecha **y** hora locales (antes la fecha era UTC vía `toISOString()`; ahora la fecha y la hora son coherentes con el reloj del usuario). El test construye la `Date` con partes locales, así que la expectativa es independiente del timezone de la máquina/CI.
+
 ---
 
 ## Resumen de impacto

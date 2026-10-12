@@ -66,7 +66,7 @@ prompt-hub/
 - **Error localization**: server errors carry a stable `code` + English `message` fallback (see SPECIFICATION.md §2). `client/src/api/index.js` maps `code` → `errors.*` locale keys before the toast renders; never display server `message` directly for known codes.
 - **Role system**: `user` (default) and `admin`. First registered user auto-promoted to admin. Admin routes: `/api/users/*`, `/api/site-config`, ManageUsersView, SettingsView.
 - **Theme**: `useThemeStore` supports light/dark/auto with system preference listener (Tailwind CSS 4).
-- **Export/Import** (SPEC §2.2a): prompts carry a stable `clientId` (UUID). Export = `GET /api/prompts/export` (full JSON) zipped client-side (JSZip, `prompthub-export-YYYY-MM-DD.zip`). Import is two-phase: the client unzips the file, the server dry-run classifies each entry **against the importing user's own prompts** (per-user identity: other users' prompts never match), then the user picks what to overwrite. The import route uses a larger JSON body limit than the rest of the API (see `server.js` + `promptRoutes.js`).
+- **Export/Import** (SPEC §2.2a): prompts carry a stable `clientId` (UUID). Export = `GET /api/prompts/export` (full JSON) zipped client-side (JSZip, `prompthub-export-YYYY-MM-DD-HH-MM-SS.zip`). Import is two-phase: the client unzips the file, the server dry-run classifies each entry **against the importing user's own prompts** (per-user identity: other users' prompts never match), then the user picks what to overwrite. The import route uses a larger JSON body limit than the rest of the API (see `server.js` + `promptRoutes.js`).
 
 ## File Conventions
 

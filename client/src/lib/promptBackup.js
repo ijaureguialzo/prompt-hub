@@ -45,9 +45,14 @@ export async function buildExportZip(payload) {
   return new Blob([bytes], { type: 'application/zip' })
 }
 
-/** Deterministic download name: `prompthub-export-YYYY-MM-DD.zip`. */
+/** Deterministic download name: `prompthub-export-YYYY-MM-DD-HH-MM-SS.zip`
+ *  (local date + 24h clock): the time keeps same-day exports distinct, so
+ *  exporting several times a day never collides in the downloads folder. */
 export function exportZipName(date = new Date()) {
-  return `prompthub-export-${date.toISOString().slice(0, 10)}.zip`
+  const pad = (n) => String(n).padStart(2, '0')
+  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+  const timePart = `${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
+  return `prompthub-export-${datePart}-${timePart}.zip`
 }
 
 /** Triggers a browser download of the blob. */

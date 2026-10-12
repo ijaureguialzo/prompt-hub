@@ -77,9 +77,15 @@ describe('promptBackup (export/import file handling)', () => {
   })
 
   describe('exportZipName', () => {
-    it('uses a deterministic date-stamped name', () => {
-      expect(exportZipName(new Date('2025-06-07T12:00:00.000Z'))).toBe(
-        'prompthub-export-2025-06-07.zip'
+    it('stamps the name with the local date and the 24h time', () => {
+      // Built from local parts (not a fixed UTC instant) so the expectation
+      // holds on any machine timezone: same-day re-exports get distinct names.
+      expect(exportZipName(new Date(2025, 5, 7, 14, 5, 9))).toBe(
+        'prompthub-export-2025-06-07-14-05-09.zip'
+      )
+      // Single digits are zero-padded.
+      expect(exportZipName(new Date(2025, 0, 3, 9, 4, 5))).toBe(
+        'prompthub-export-2025-01-03-09-04-05.zip'
       )
     })
   })
