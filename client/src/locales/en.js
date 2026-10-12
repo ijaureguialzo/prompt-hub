@@ -215,7 +215,18 @@ export default {
     registrationTitle: 'Registration',
     registrationDesc: 'Allow or prevent new users from creating accounts.',
     registrationEnabled: 'Registration enabled.',
-    registrationDisabled: 'Registration disabled.'
+    registrationDisabled: 'Registration disabled.',
+    quotaEdit: 'Quotas',
+    quotaGlobal: 'global',
+    quotaMeta: 'Quotas: {p} / {c}',
+    quotaModalTitle: 'Edit quotas',
+    quotaModalDesc:
+      'Leave a field empty to use the global default. 0 means the account cannot create new content.',
+    promptQuotaLabel: 'Prompt limit',
+    categoryQuotaLabel: 'Category limit',
+    quotaSave: 'Save',
+    quotaCancel: 'Cancel',
+    quotaSaved: 'Quotas updated.'
   },
   profile: {
     heading: 'My Profile',

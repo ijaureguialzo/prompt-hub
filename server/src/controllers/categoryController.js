@@ -1,6 +1,6 @@
 const Category = require('../models/Category');
 const Prompt = require('../models/Prompt');
-const { getLimits } = require('../config');
+const { effectivePromptQuota, effectiveCategoryQuota } = require('../config');
 const { logAudit } = require('../utils/audit');
 
 // GET /api/categories - List all categories (authenticated).
@@ -8,7 +8,10 @@ const { logAudit } = require('../utils/audit');
 // sidebar can show accurate counts without loading every prompt: each
 // category gets a denormalized promptCount from a single aggregation.
 exports.getAllCategories = async (req, res) => {
-  const { maxPromptsPerUser, maxCategoriesPerUser } = getLimits();
+  // The caller's effective caps (an admin-set per-user override wins over
+  // the global env defaults).
+  const promptLimit = effectivePromptQuota(req.user);
+  const categoryLimit = effectiveCategoryQuota(req.user);
   const [categories, promptStats, userCategoryCount] = await Promise.all([
     Category.find().sort({ createdAt: -1 }),
     // One round trip for every prompt-side number (PLAN.md P3/25): a $facet
@@ -50,8 +53,8 @@ exports.getAllCategories = async (req, res) => {
     totalPrompts,
     // The list above is the SHARED hub; the quotas are the importer's own
     // usage against the per-user caps (SPEC §7).
-    promptQuota: { used: userPromptCount, limit: maxPromptsPerUser },
-    categoryQuota: { used: userCategoryCount, limit: maxCategoriesPerUser }
+    promptQuota: { used: userPromptCount, limit: promptLimit },
+    categoryQuota: { used: userCategoryCount, limit: categoryLimit }
   });
 };
 
@@ -82,8 +85,9 @@ exports.createCategory = async (req, res) => {
   }
 
   // Per-user quota: bounds category creation (any authenticated user can
-  // otherwise create unbounded categories, which bloats every user's sidebar).
-  const { maxCategoriesPerUser } = getLimits();
+  // otherwise create unbounded categories, which bloats every user's
+  // sidebar). An admin-set per-account override wins over the global cap.
+  const maxCategoriesPerUser = effectiveCategoryQuota(req.user);
   const existingCount = await Category.countDocuments({ ownerId: req.user._id });
   if (existingCount >= maxCategoriesPerUser) {
     return res.status(409).json({

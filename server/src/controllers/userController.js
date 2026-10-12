@@ -1,6 +1,20 @@
 const User = require('../models/User');
 const { logAudit } = require('../utils/audit');
 
+// Quota override value: null (or "null") restores the global default;
+// anything else must be an integer in [0, 100000] (0 = no new content).
+// Returns { ok: false, message } for invalid input, { ok: true, value } otherwise.
+function parseQuotaOverride(value, field) {
+  if (value === null || value === undefined || value === 'null' || value === '') {
+    return { ok: true, value: null };
+  }
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0 || n > 100000) {
+    return { ok: false, message: `${field} must be an integer between 0 and 100000, or null` };
+  }
+  return { ok: true, value: n };
+}
+
 // GET /api/users - List all users (admin only)
 exports.getUsers = async (req, res) => {
   const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -18,7 +32,7 @@ exports.getUserById = async (req, res) => {
 
 // PUT /api/users/:id - Update user (admin only)
 exports.updateUser = async (req, res) => {
-  const { name, email, role, isActive } = req.body;
+  const { name, email, role, isActive, promptQuota, categoryQuota } = req.body;
 
   // Lockout guard: an admin must never be able to demote or deactivate
   // THEMSELVES — if they were the last admin, the app would have no admin
@@ -43,6 +57,23 @@ exports.updateUser = async (req, res) => {
   if (email) updateData.email = email.toLowerCase().trim();
   if (role) updateData.role = role;
   if (isActive !== undefined) updateData.isActive = isActive;
+  // Per-user quota overrides (null = back to the global default). Unlike the
+  // fields above, 0 is a meaningful value, so presence (not truthiness)
+  // drives the update.
+  if (promptQuota !== undefined) {
+    const parsed = parseQuotaOverride(promptQuota, 'promptQuota');
+    if (!parsed.ok) {
+      return res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.message });
+    }
+    updateData.promptQuota = parsed.value;
+  }
+  if (categoryQuota !== undefined) {
+    const parsed = parseQuotaOverride(categoryQuota, 'categoryQuota');
+    if (!parsed.ok) {
+      return res.status(400).json({ code: 'VALIDATION_ERROR', message: parsed.message });
+    }
+    updateData.categoryQuota = parsed.value;
+  }
 
   const user = await User.findByIdAndUpdate(
     req.params.id,
@@ -64,6 +95,22 @@ exports.updateUser = async (req, res) => {
       targetId: user._id,
       targetEmail: user.email,
       details: { from: existing.isActive, to: isActive }
+    });
+  }
+  // Quota changes are admin content-policy actions: audit the transitions
+  // that actually change something.
+  const quotaChanges = {};
+  if (updateData.promptQuota !== undefined && updateData.promptQuota !== existing.promptQuota) {
+    quotaChanges.promptQuota = { from: existing.promptQuota ?? null, to: updateData.promptQuota };
+  }
+  if (updateData.categoryQuota !== undefined && updateData.categoryQuota !== existing.categoryQuota) {
+    quotaChanges.categoryQuota = { from: existing.categoryQuota ?? null, to: updateData.categoryQuota };
+  }
+  if (Object.keys(quotaChanges).length > 0) {
+    logAudit(req, 'user.quota_change', {
+      targetId: user._id,
+      targetEmail: user.email,
+      details: quotaChanges
     });
   }
 

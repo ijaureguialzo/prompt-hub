@@ -117,7 +117,7 @@ Applied runs return `{ dryRun: false, created, updated, skipped, categories: { c
 | Endpoint | Method | Description | Request Body | Response Schema | Status Codes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `/api/users` | `GET` | List all users (including inactive) | — | `Array<User>` | 200, 500 |
-| `/api/users/:id` | `PUT` | Update user (role, isActive toggle; admin cannot modify their own role/isActive) | `{ name?, role?, isActive? }` | `User` | 200, 400, 404, 500 |
+| `/api/users/:id` | `PUT` | Update user (role, isActive toggle, per-user quota overrides; admin cannot modify their own role/isActive) | `{ name?, role?, isActive?, promptQuota?, categoryQuota? }` | `User` | 200, 400, 403, 404, 500 |
 | `/api/users/:id` | `DELETE` | Soft-delete user (set isActive=false; admin cannot deactivate themselves) | — | `{ message }` | 200, 400, 404, 500 |
 
 ### 2.5 Site Config API
@@ -141,7 +141,7 @@ Read-only: the trail is append-only, so there is no write/delete endpoint. Each 
 
 **Rate limiting** (per IP; disabled in the test environment): login 10/15min, register 5/15min, content creation (`POST /api/prompts`, `POST /api/categories`) 20/15min, all other API requests 300/15min. Exceeded → `429`. Quotas are tunable via `RATE_LIMIT_AUTH`, `RATE_LIMIT_REGISTER`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_API`. The counters live in the API process's memory (express-rate-limit's default store), so these limits assume a **single API replica**: running N replicas multiplies every limit by N. A shared store (e.g. Redis) is the upgrade path for strict horizontal scaling (see §7).
 
-**Abuse protection**: per-user quotas bound what one account can create (`MAX_PROMPTS_PER_USER` default 200, `MAX_CATEGORIES_PER_USER` default 50; enforced with a count before the insert, best-effort under concurrency). Combined with the creation rate limit, this prevents a single account from flooding the shared prompt list or the categories sidebar.
+**Abuse protection**: per-user quotas bound what one account can create. The global defaults come from `MAX_PROMPTS_PER_USER` (200) / `MAX_CATEGORIES_PER_USER` (50); admins may override them **per account** via `PUT /api/users/:id` (`promptQuota` / `categoryQuota`, integer 0–100000, `null` = back to the global default; 0 = the account cannot create new content). Enforcement uses the effective value (override ?? global) on prompt/category creation and import, is best-effort under concurrency (count before insert), and is combined with the per-IP creation rate limit so one account cannot flood the shared hub. Quota changes are audit-logged (`user.quota_change`); the categories endpoint reports the caller's effective limits.
 
 **Client error reporting: deliberately deferred** (PLAN.md P5/35). Operational visibility today comes from the server side: structured pino logs (rotated, §P5), the audit trail for admin actions, and the readiness/health probes. A client-side `window.onerror` → `POST /api/telemetry` hook would add an unauthenticated write surface, a new collection, and a retention/PII policy (stack traces and URLs can carry user data) for marginal value at this app's scale. Revisit — or send errors to an existing external collector — if client-side failures that the server logs cannot explain actually appear.
 
@@ -157,6 +157,8 @@ Read-only: the trail is append-only, so there is no write/delete endpoint. Each 
 ```javascript
 { name: String(required, ≤100), email: String(unique), password: String(hash),
   role: String(user/admin, default:'user'), isActive: Boolean(default:true),
+  // per-user quota overrides (admin-editable): null/absent = global default
+  promptQuota: Number(0..100000, default:null), categoryQuota: Number(0..100000, default:null),
   adminSlot: String(unique, sparse) // "first user = admin" claimant; stripped from all API output
   // internal brute-force state (stripped from all API output):
   loginFails: Number(default:0), loginFailsAt: Date, lockUntil: Date

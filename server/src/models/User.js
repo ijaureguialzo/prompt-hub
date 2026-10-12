@@ -51,6 +51,22 @@ const userSchema = new mongoose.Schema({
   lockUntil: {
     type: Date
   },
+  // Per-user quota overrides (admin-editable via PUT /api/users/:id).
+  // null/absent = follow the global MAX_PROMPTS/CATEGORIES_PER_USER default;
+  // 0 = the account may not create new content. Kept in the JSON output on
+  // purpose: the UI displays and edits them.
+  promptQuota: {
+    type: Number,
+    min: 0,
+    max: 100000,
+    default: null
+  },
+  categoryQuota: {
+    type: Number,
+    min: 0,
+    max: 100000,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

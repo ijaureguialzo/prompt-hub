@@ -216,7 +216,18 @@ export default {
     registrationTitle: 'Erregistroa',
     registrationDesc: 'Baimendu edo eragoz berri erabiltzaileek kontuak sortzea.',
     registrationEnabled: 'Erregistroa aktibatuta.',
-    registrationDisabled: 'Erregistroa desaktibatuta.'
+    registrationDisabled: 'Erregistroa desaktibatuta.',
+    quotaEdit: 'Kutuak',
+    quotaGlobal: 'globala',
+    quotaMeta: 'Kutuak: {p} / {c}',
+    quotaModalTitle: 'Kutuak editatu',
+    quotaModalDesc:
+      'Utzi hutsik eremu bat lehenetsu globala erabiltzeko. 0 esan nahi du kontuak ezin duela eduki berria sortu.',
+    promptQuotaLabel: 'Prompten muga',
+    categoryQuotaLabel: 'Kategorien muga',
+    quotaSave: 'Gorde',
+    quotaCancel: 'Utzi kanpo',
+    quotaSaved: 'Kutuak eguneratu dira.'
   },
   profile: {
     heading: 'Nire Profila',

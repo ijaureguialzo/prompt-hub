@@ -217,7 +217,18 @@ export default {
     registrationTitle: 'Registro',
     registrationDesc: 'Permitir o impedir que nuevos usuarios creen cuentas.',
     registrationEnabled: 'Registro activado.',
-    registrationDisabled: 'Registro desactivado.'
+    registrationDisabled: 'Registro desactivado.',
+    quotaEdit: 'Cuotas',
+    quotaGlobal: 'global',
+    quotaMeta: 'Cuotas: {p} / {c}',
+    quotaModalTitle: 'Editar cuotas',
+    quotaModalDesc:
+      'Deja un campo vacío para usar el valor global. 0 significa que la cuenta no puede crear contenido nuevo.',
+    promptQuotaLabel: 'Límite de prompts',
+    categoryQuotaLabel: 'Límite de categorías',
+    quotaSave: 'Guardar',
+    quotaCancel: 'Cancelar',
+    quotaSaved: 'Cuotas actualizadas.'
   },
   profile: {
     heading: 'Mi Perfil',

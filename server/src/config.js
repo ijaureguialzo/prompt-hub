@@ -47,6 +47,19 @@ function getLimits() {
   };
 }
 
+// Effective per-USER quotas: an admin-set override (User.promptQuota /
+// categoryQuota) wins; null/undefined = follow the global env default.
+// Existing documents simply lack the fields, so no migration is needed.
+function effectivePromptQuota(user) {
+  const value = user?.promptQuota;
+  return value == null ? getLimits().maxPromptsPerUser : value;
+}
+
+function effectiveCategoryQuota(user) {
+  const value = user?.categoryQuota;
+  return value == null ? getLimits().maxCategoriesPerUser : value;
+}
+
 /**
  * Body-size limit for the import route, in `bytes`-parseable form
  * (SPEC §2.2a). The global JSON parser stays at 100 KB; the import route
@@ -75,6 +88,8 @@ module.exports = {
   getJwtSecret,
   assertConfig,
   getLimits,
+  effectivePromptQuota,
+  effectiveCategoryQuota,
   getImportBodyLimit,
   IMPORT_PATH
 };

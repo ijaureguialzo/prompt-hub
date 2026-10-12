@@ -44,6 +44,7 @@
             class="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b border-indigo-500 focus:outline-none focus:border-indigo-600 w-full" />
           <p class="text-xs text-gray-500 dark:text-gray-400">
             {{ user.email }} · {{ user.role }} · {{ user.isActive ? t('admin.active') : t('admin.deactivated') }}
+            · {{ t('admin.quotaMeta', { p: user.promptQuota ?? t('admin.quotaGlobal'), c: user.categoryQuota ?? t('admin.quotaGlobal') }) }}
           </p>
         </div>
 
@@ -75,6 +76,12 @@
             class="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium disabled:opacity-50">
             {{ t('categoryList.delete') }}
           </button>
+
+          <!-- Per-user quota overrides (modal; empty = global default) -->
+          <button @click="openQuotaEdit(user)"
+            class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium">
+            {{ t('admin.quotaEdit') }}
+          </button>
         </div>
       </div>
 
@@ -93,6 +100,45 @@
       @close="pendingDeleteUser = null"
       @confirm="handleDeactivateUser"
     />
+
+    <!-- Per-user quota overrides -->
+    <Modal v-if="quotaUser" :label="t('admin.quotaModalTitle')" panel-class="max-w-sm"
+      @close="quotaUser = null">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t('admin.quotaModalTitle') }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ quotaUser.email }}</p>
+        </div>
+        <button @click="quotaUser = null" :aria-label="t('admin.quotaCancel')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">{{ t('admin.quotaModalDesc') }}</p>
+
+      <label class="block mt-4">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.promptQuotaLabel') }}</span>
+        <input v-model="promptQuotaDraft" type="number" min="0" max="100000" inputmode="numeric"
+          class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </label>
+      <label class="block mt-3">
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('admin.categoryQuotaLabel') }}</span>
+        <input v-model="categoryQuotaDraft" type="number" min="0" max="100000" inputmode="numeric"
+          class="mt-1 w-full rounded-md border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </label>
+
+      <div class="flex justify-end space-x-3 mt-6">
+        <button @click="quotaUser = null"
+          class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">
+          {{ t('admin.quotaCancel') }}
+        </button>
+        <button @click="handleSaveQuotas" :disabled="savingQuota"
+          class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 disabled:opacity-50">
+          {{ t('admin.quotaSave') }}
+        </button>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -103,6 +149,7 @@ import { useI18nStore } from '../stores/useI18nStore.js'
 import { useUIStore } from '../stores/useUIStore'
 import { usersApi, siteConfigApi } from '../api/index.js'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal.vue'
+import Modal from '../components/Modal.vue'
 
 const authStore = useAuthStore()
 const i18nStore = useI18nStore()
@@ -116,6 +163,50 @@ const configLoading = ref(false)
 const error = ref('')
 const editingUserId = ref(null)
 const pendingDeleteUser = ref(null)
+
+// Quota override editor: the user row being edited plus string drafts
+// (empty string = null = "follow the global default").
+const quotaUser = ref(null)
+const promptQuotaDraft = ref('')
+const categoryQuotaDraft = ref('')
+const savingQuota = ref(false)
+
+function openQuotaEdit(user) {
+  quotaUser.value = user
+  promptQuotaDraft.value = user.promptQuota == null ? '' : String(user.promptQuota)
+  categoryQuotaDraft.value = user.categoryQuota == null ? '' : String(user.categoryQuota)
+}
+
+// '' → null (reset to global); otherwise the typed integer (0 is valid).
+function quotaValue(draft) {
+  if (draft === '' || draft === null) return null
+  const n = Number(draft)
+  return Number.isInteger(n) && n >= 0 && n <= 100000 ? n : null
+}
+
+async function handleSaveQuotas() {
+  const user = quotaUser.value
+  if (!user || savingQuota.value) return
+  const payload = {
+    promptQuota: quotaValue(promptQuotaDraft.value),
+    categoryQuota: quotaValue(categoryQuotaDraft.value)
+  }
+  savingQuota.value = true
+  try {
+    const updated = await usersApi.update(user._id, payload)
+    user.promptQuota = updated.promptQuota ?? null
+    user.categoryQuota = updated.categoryQuota ?? null
+    if (user._id === authStore.user?._id) {
+      await authStore.updateUser()
+    }
+    quotaUser.value = null
+    uiStore.setSuccess(t('admin.quotaSaved'))
+  } catch (err) {
+    uiStore.setError(err.message)
+  } finally {
+    savingQuota.value = false
+  }
+}
 
 function startEdit(user) {
   user._originalName = user.name

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const Prompt = require('../models/Prompt');
 const Category = require('../models/Category');
-const { getLimits } = require('../config');
+const { getLimits, effectivePromptQuota, effectiveCategoryQuota } = require('../config');
 
 // Pagination bounds for GET /api/prompts (payload protection).
 // The default is a sane page size — NOT "everything": with content capped
@@ -141,8 +141,9 @@ exports.createPrompt = async (req, res) => {
 
   // Per-user quota: bounds what a single account can accumulate (spam/DoS).
   // Best-effort (concurrent creates can race past the cap by a little);
-  // the write routes are additionally rate limited per IP.
-  const { maxPromptsPerUser } = getLimits();
+  // the write routes are additionally rate limited per IP. An admin-set
+  // per-account override (User.promptQuota) wins over the global default.
+  const maxPromptsPerUser = effectivePromptQuota(req.user);
   const existingCount = await Prompt.countDocuments({ ownerId: req.user._id });
   if (existingCount >= maxPromptsPerUser) {
     return res.status(409).json({
@@ -461,7 +462,10 @@ function resolveImportCategoryId(entry, categories, createdByKey) {
 // every "new" entry is created, "conflict" entries are updated ONLY when the
 // client confirmed them via `overwrites` (indices); everything else skips.
 exports.importPrompts = async (req, res) => {
-  const { maxPromptsPerUser, maxCategoriesPerUser, maxImportPrompts } = getLimits();
+  const { maxImportPrompts } = getLimits();
+  // Per-user overrides win over the global defaults (config.effective*).
+  const promptQuota = effectivePromptQuota(req.user);
+  const categoryQuota = effectiveCategoryQuota(req.user);
 
   // The app-level JSON parser skips this route (server.js); it is parsed
   // route-level with a larger limit (routes/promptRoutes.js). A malformed
@@ -516,22 +520,22 @@ exports.importPrompts = async (req, res) => {
 
   // Missing referenced categories: created on apply (deduped, quota-capped);
   // planned identically in the dry run so the UI can warn about them.
-  const categoryPlan = planImportCategories(entries, categories, allNames, maxCategoriesPerUser);
+  const categoryPlan = planImportCategories(entries, categories, allNames, categoryQuota);
 
   const classified = classifyEntries(entries, existing);
   const newCount = classified.filter((c) => c.status === 'new').length;
   const used = existing.length;
-  const quota = { used, limit: maxPromptsPerUser };
+  const quota = { used, limit: promptQuota };
 
   // Quota is checked before ANY write: an APPLIED import that would exceed
   // the per-user cap fails atomically (409) rather than partially applying.
   // A dry run instead returns 200 with quota.exceeded so the UI can warn and
   // disable the confirm button.
-  if (!dryRun && used + newCount > maxPromptsPerUser) {
+  if (!dryRun && used + newCount > promptQuota) {
     return res.status(409).json({
       code: 'LIMIT_REACHED',
-      message: `Prompt limit reached (${maxPromptsPerUser} per user)`,
-      limit: maxPromptsPerUser,
+      message: `Prompt limit reached (${promptQuota} per user)`,
+      limit: promptQuota,
       used,
       requested: used + newCount
     });
@@ -580,7 +584,7 @@ exports.importPrompts = async (req, res) => {
       quota: {
         ...quota,
         wouldUse: used + newCount,
-        exceeded: used + newCount > maxPromptsPerUser
+        exceeded: used + newCount > promptQuota
       }
     });
   }

@@ -204,6 +204,149 @@ describe('Users (Admin CRUD)', () => {
     });
   });
 
+  // --- Quota overrides (per-user limits, admin-editable) ---
+
+  describe('PUT /api/users/:id — quota overrides', () => {
+    async function createPrompt(token) {
+      return request(app)
+        .post('/api/prompts')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ title: `Prompt ${Date.now()}-${Math.random()}`, content: 'c' });
+    }
+
+    it('sets promptQuota, enforces it on create, and null restores the global default', async () => {
+      const set = await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: 2 });
+      expect(set.status).toBe(200);
+      expect(set.body.promptQuota).toBe(2);
+
+      // Two prompts fit the cap, the third hits it.
+      expect((await createPrompt(regularToken)).status).toBe(201);
+      expect((await createPrompt(regularToken)).status).toBe(201);
+      const blocked = await createPrompt(regularToken);
+      expect(blocked.status).toBe(409);
+      expect(blocked.body).toMatchObject({ code: 'LIMIT_REACHED', limit: 2 });
+
+      // null = back to the global default (200) — creating works again.
+      const reset = await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: null });
+      expect(reset.status).toBe(200);
+      expect(reset.body.promptQuota).toBeNull();
+      expect((await createPrompt(regularToken)).status).toBe(201);
+    });
+
+    it('categoryQuota 0 blocks category creation with the effective limit in the error', async () => {
+      await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ categoryQuota: 0 });
+
+      const res = await request(app)
+        .post('/api/categories')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ name: 'No way' });
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({ code: 'LIMIT_REACHED', limit: 0 });
+    });
+
+    it('rejects invalid quota values', async () => {
+      for (const bad of [-1, 100001, 'abc']) {
+        const res = await request(app)
+          .put(`/api/users/${regularUserId}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ promptQuota: bad });
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe('VALIDATION_ERROR');
+      }
+    });
+
+    it('refuses quota edits from non-admins', async () => {
+      const res = await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ promptQuota: 1 });
+      expect(res.status).toBe(403);
+    });
+
+    it('audits quota changes but not no-ops', async () => {
+      const mongoose = require('mongoose');
+      await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: 7, categoryQuota: 3 });
+      // give the fire-and-forget audit write a beat
+      await new Promise((r) => setTimeout(r, 50));
+      expect(
+        await mongoose.model('Audit').countDocuments({
+          actorId: adminUserId,
+          action: 'user.quota_change'
+        })
+      ).toBe(1);
+
+      // Setting the same values again is a no-op: no new audit entry.
+      await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: 7, categoryQuota: 3 });
+      await new Promise((r) => setTimeout(r, 50));
+      expect(
+        await mongoose.model('Audit').countDocuments({
+          actorId: adminUserId,
+          action: 'user.quota_change'
+        })
+      ).toBe(1);
+    });
+
+    it('the categories endpoint reports the caller effective limits', async () => {
+      await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: 12, categoryQuota: 4 });
+
+      const res = await request(app)
+        .get('/api/categories')
+        .set('Authorization', `Bearer ${regularToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        promptQuota: { limit: 12 },
+        categoryQuota: { limit: 4 }
+      });
+    });
+
+    it('imports are capped by the per-user prompt quota', async () => {
+      await request(app)
+        .put(`/api/users/${regularUserId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ promptQuota: 1 });
+
+      const dry = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          dryRun: true,
+          prompts: [
+            { title: 'A', content: 'c' },
+            { title: 'B', content: 'c' }
+          ]
+        });
+      expect(dry.status).toBe(200);
+      expect(dry.body.quota).toMatchObject({ limit: 1, exceeded: true });
+
+      const apply = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [{ title: 'A', content: 'c' }, { title: 'B', content: 'c' }]
+        });
+      expect(apply.status).toBe(409);
+      expect(apply.body).toMatchObject({ code: 'LIMIT_REACHED', limit: 1 });
+    });
+  });
+
   // --- DELETE /api/users/:id (soft delete) ---
 
   describe('DELETE /api/users/:id', () => {
