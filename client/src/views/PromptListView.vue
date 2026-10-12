@@ -103,6 +103,7 @@
       v-if="showImportModal"
       :entries="promptStore.importEntries"
       :quota="promptStore.importQuota"
+      :categories="promptStore.importCategories?.toCreate ?? null"
       :importing="promptStore.importing"
       :file-name="promptStore.importFileName"
       @close="onImportModalClose"

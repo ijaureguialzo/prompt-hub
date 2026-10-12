@@ -169,10 +169,15 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.results[0].categoryResolved).toBe(true);
-      // A category the importer does not have: will be uncategorized on apply.
-      expect(res.body.results[1].categoryResolved).toBe(false);
+      expect(res.body.results[0].categoryWillBeCreated).toBe(false);
+      // A category the importer does not have: it is created on apply (the
+      // user is told in advance — the old silent-uncategorization behavior).
+      expect(res.body.results[1].categoryResolved).toBe(true);
+      expect(res.body.results[1].categoryWillBeCreated).toBe(true);
+      expect(res.body.categories.toCreate).toHaveLength(1);
       // Nothing to resolve counts as resolved (no warning needed).
       expect(res.body.results[2].categoryResolved).toBe(true);
+      expect(res.body.results[2].categoryWillBeCreated).toBe(false);
     });
 
     it('classifies a prompt the user already has (by clientId) as conflict', async () => {
@@ -321,6 +326,197 @@ describe('Prompts export / import (SPEC §2.2a)', () => {
         if (original === undefined) delete process.env.MAX_IMPORT_PROMPTS;
         else process.env.MAX_IMPORT_PROMPTS = original;
       }
+    });
+  });
+
+  // -------------------------------------------------------------------
+  // Import category handling (referenced-but-missing categories are created)
+  // -------------------------------------------------------------------
+
+  describe('import category creation', () => {
+    it('dry run advertises a missing category; apply creates it and links the prompt', async () => {
+      const dry = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          dryRun: true,
+          prompts: [
+            { clientId: 'cat-1', title: 'Categorized', content: 'c', categoryName: 'Travel' }
+          ]
+        });
+
+      expect(dry.status).toBe(200);
+      expect(dry.body.results[0].categoryResolved).toBe(true);
+      expect(dry.body.results[0].categoryWillBeCreated).toBe(true);
+      expect(dry.body.categories.toCreate).toEqual(['Travel']);
+
+      // A dry run must not write anything.
+      expect(
+        await mongoose.model('Category').countDocuments({
+          ownerId: regularId,
+          name: 'Travel'
+        })
+      ).toBe(0);
+
+      const applied = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [{ clientId: 'cat-1', title: 'Categorized', content: 'c', categoryName: 'Travel' }]
+        });
+
+      expect(applied.status).toBe(200);
+      expect(applied.body).toMatchObject({ created: 1, categories: { created: 1 } });
+
+      const category = await mongoose.model('Category').findOne({
+        ownerId: regularId,
+        name: 'Travel'
+      });
+      expect(category).toBeTruthy();
+
+      const prompt = await mongoose.model('Prompt').findById(applied.body.results[0].promptId);
+      expect(prompt.categoryId.toString()).toBe(category._id.toString());
+    });
+
+    it('does not re-create a category the importer already has (case-insensitive)', async () => {
+      // 'Regular Creative' exists for the importer; a file spelling it in a
+      // different case must resolve to it, not create a second one.
+      const res = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [
+            {
+              clientId: 'cat-2',
+              title: 'Same cat',
+              content: 'c',
+              categoryName: 'regular creative'
+            }
+          ]
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.categories.created).toBe(0);
+      const prompt = await mongoose.model('Prompt').findById(res.body.results[0].promptId);
+      expect(prompt.categoryId.toString()).toBe(regularCatId);
+    });
+
+    it('re-importing the same file creates no duplicate category', async () => {
+      const file = [{ clientId: 'cat-3', title: 'Repeat', content: 'c', categoryName: 'Fitness' }];
+      const first = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ prompts: file });
+      expect(first.body.categories.created).toBe(1);
+
+      // Second pass: the prompt now exists (conflict, confirmed) and the
+      // category resolves by name — nothing new is created.
+      const second = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({ prompts: file, overwrites: [0] });
+
+      expect(second.status).toBe(200);
+      expect(second.body).toMatchObject({ created: 0, updated: 1, categories: { created: 0 } });
+      expect(
+        await mongoose.model('Category').countDocuments({
+          ownerId: regularId,
+          name: 'Fitness'
+        })
+      ).toBe(1);
+    });
+
+    it('never creates a name owned by another user (global unique index); the prompt is uncategorized', async () => {
+      const dry = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          dryRun: true,
+          prompts: [
+            { clientId: 'cat-4', title: 'Borrowed', content: 'c', categoryName: 'Admin Tech' }
+          ]
+        });
+
+      expect(dry.body.results[0].categoryResolved).toBe(false);
+      expect(dry.body.results[0].categoryWillBeCreated).toBe(false);
+      expect(dry.body.categories.toCreate).toEqual([]);
+
+      const applied = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [{ clientId: 'cat-4', title: 'Borrowed', content: 'c', categoryName: 'Admin Tech' }]
+        });
+
+      expect(applied.status).toBe(200);
+      expect(applied.body.categories.created).toBe(0);
+      const prompt = await mongoose.model('Prompt').findById(applied.body.results[0].promptId);
+      expect(prompt.categoryId).toBeNull();
+    });
+
+    it('shares one created category between several entries that reference it', async () => {
+      const res = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [
+            { clientId: 'cat-5a', title: 'One', content: 'c', categoryName: 'Garden' },
+            { clientId: 'cat-5b', title: 'Two', content: 'c', categoryName: 'GARDEN' }
+          ]
+        });
+
+      expect(res.body.categories.created).toBe(1);
+      const first = await mongoose.model('Prompt').findById(res.body.results[0].promptId);
+      const second = await mongoose.model('Prompt').findById(res.body.results[1].promptId);
+      expect(first.categoryId.toString()).toBe(second.categoryId.toString());
+    });
+
+    it('skips creation when the importer is at the category quota (prompt is uncategorized)', async () => {
+      // The importer already has one category; cap the quota at 1.
+      const original = process.env.MAX_CATEGORIES_PER_USER;
+      process.env.MAX_CATEGORIES_PER_USER = '1';
+      try {
+        const dry = await request(app)
+          .post('/api/prompts/import')
+          .set('Authorization', `Bearer ${regularToken}`)
+          .send({
+            dryRun: true,
+            prompts: [
+              { clientId: 'cat-6', title: 'Quota', content: 'c', categoryName: 'Overflow' }
+            ]
+          });
+        expect(dry.body.results[0].categoryResolved).toBe(false);
+        expect(dry.body.results[0].categoryWillBeCreated).toBe(false);
+
+        const applied = await request(app)
+          .post('/api/prompts/import')
+          .set('Authorization', `Bearer ${regularToken}`)
+          .send({
+            prompts: [{ clientId: 'cat-6', title: 'Quota', content: 'c', categoryName: 'Overflow' }]
+          });
+        expect(applied.status).toBe(200);
+        expect(applied.body.categories.created).toBe(0);
+        const prompt = await mongoose.model('Prompt').findById(applied.body.results[0].promptId);
+        expect(prompt.categoryId).toBeNull();
+      } finally {
+        if (original === undefined) delete process.env.MAX_CATEGORIES_PER_USER;
+        else process.env.MAX_CATEGORIES_PER_USER = original;
+      }
+    });
+
+    it('never creates a name longer than the schema cap (prompt is uncategorized)', async () => {
+      const longName = 'x'.repeat(60);
+      const applied = await request(app)
+        .post('/api/prompts/import')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .send({
+          prompts: [{ clientId: 'cat-7', title: 'Long cat', content: 'c', categoryName: longName }]
+        });
+
+      expect(applied.status).toBe(200);
+      expect(applied.body.categories.created).toBe(0);
+      const prompt = await mongoose.model('Prompt').findById(applied.body.results[0].promptId);
+      expect(prompt.categoryId).toBeNull();
     });
   });
 

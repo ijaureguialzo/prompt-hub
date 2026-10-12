@@ -38,7 +38,10 @@ export async function buildExportZip(payload) {
   const JSZip = (await import('jszip')).default
   const zip = new JSZip()
   zip.file(PROMPTS_FILE_NAME, JSON.stringify(payload, null, 2))
-  const bytes = await zip.generateAsync({ type: 'uint8array' })
+  // DEFLATE: the pretty-printed JSON is highly repetitive; without it JSZip
+  // stores the entries uncompressed and the .zip weighs (almost) as much as
+  // the raw JSON.
+  const bytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' })
   return new Blob([bytes], { type: 'application/zip' })
 }
 

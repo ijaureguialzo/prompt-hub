@@ -80,6 +80,9 @@ export default {
     overwriteHint: 'Reemplazará tu versión actual',
     categoryUnresolved:
       'No se encontró la categoría «{name}» en tu cuenta; el prompt se importará sin clasificar',
+    categoryWillBeCreated:
+      'La categoría «{name}» no existe en tu cuenta; se creará durante la importación',
+    categoriesToCreate: 'Categorías que se crearán en la importación: {names}',
     invalidTitleReason: 'El título es obligatorio (máx. 100 caracteres)',
     invalidContentReason: 'El contenido es obligatorio (máx. 50.000 caracteres)',
     invalidTagsReason: 'Demasiadas etiquetas (máx. 20)',

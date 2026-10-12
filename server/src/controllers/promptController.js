@@ -387,7 +387,7 @@ function classifyEntries(entries, existing) {
 }
 
 // Resolves a file entry's category against the IMPORTER's own categories
-// (name first, then id); anything foreign/unresolvable becomes uncategorized.
+// (name first, then id); anything foreign/unresolvable becomes null.
 function resolveCategoryId(entry, categories) {
   if (entry.categoryName) {
     const byName = categories.find(
@@ -402,12 +402,66 @@ function resolveCategoryId(entry, categories) {
   return null;
 }
 
+// Mirrors the Category schema cap: a file name longer than this cannot be
+// turned into a category document, so it is never created.
+const CATEGORY_NAME_MAX = 50;
+
+// Which of the file's missing categories will be created for the importer
+// (PLAN.md fix: a referenced-but-absent category is created, not silently
+// dropped) and which entries end up uncategorized.
+//
+//   create  – Map<lowercased name, name>: distinct names to create, capped
+//             by the importer's remaining per-user category quota
+//   blocked – Set<lowercased name>: names that will NOT be created (over
+//             quota, longer than the schema cap, or already owned by
+//             another user — category names are app-unique)
+//
+// `allNames` is the lowercased set of every category name in the app (the
+// unique index is global, so a name another user owns cannot be created).
+function planImportCategories(entries, categories, allNames, maxCategoriesPerUser) {
+  const create = new Map();
+  const blocked = new Set();
+  const remaining = Math.max(0, maxCategoriesPerUser - categories.length);
+
+  for (const entry of entries) {
+    // Resolvable (the importer has it by name or id): nothing to do.
+    if (resolveCategoryId(entry, categories)) continue;
+    if (!entry.categoryName) continue; // foreign id with no name: cannot be recreated
+    if (entry.categoryName.length > CATEGORY_NAME_MAX) {
+      blocked.add(entry.categoryName.toLowerCase());
+      continue;
+    }
+    const key = entry.categoryName.toLowerCase();
+    if (allNames.has(key)) {
+      // The name exists but belongs to another user (the importer's own
+      // categories already matched above): the global unique index forbids
+      // creating it, and the foreign category cannot be referenced.
+      blocked.add(key);
+      continue;
+    }
+    if (create.has(key)) continue;
+    if (create.size < remaining) create.set(key, entry.categoryName);
+    else blocked.add(key); // over the per-user category quota
+  }
+  return { create, blocked };
+}
+
+// Final category for a file entry after the apply-phase creation: the
+// importer's existing match first, then a just-created category, else null
+// (uncategorized).
+function resolveImportCategoryId(entry, categories, createdByKey) {
+  const existing = resolveCategoryId(entry, categories);
+  if (existing) return existing;
+  if (!entry.categoryName) return null;
+  return createdByKey.get(entry.categoryName.toLowerCase()) || null;
+}
+
 // POST /api/prompts/import - Two-phase import of an ExportPayload's prompts.
 // dryRun: classify only (the client shows the selection UI). Otherwise apply:
 // every "new" entry is created, "conflict" entries are updated ONLY when the
 // client confirmed them via `overwrites` (indices); everything else skips.
 exports.importPrompts = async (req, res) => {
-  const { maxPromptsPerUser, maxImportPrompts } = getLimits();
+  const { maxPromptsPerUser, maxCategoriesPerUser, maxImportPrompts } = getLimits();
 
   // The app-level JSON parser skips this route (server.js); it is parsed
   // route-level with a larger limit (routes/promptRoutes.js). A malformed
@@ -450,10 +504,19 @@ exports.importPrompts = async (req, res) => {
 
   // Everything is scoped to the importing user: their prompts and categories
   // are the only things read or written (ownerId is the identity boundary).
-  const [existing, categories] = await Promise.all([
+  // allNames is app-wide: category names carry a GLOBAL unique index, so a
+  // name another user owns cannot be created for the importer.
+  const [existing, categories, allNames] = await Promise.all([
     Prompt.find({ ownerId: req.user._id }),
-    Category.find({ ownerId: req.user._id })
+    Category.find({ ownerId: req.user._id }),
+    Category.find({}).select('name').lean().then((rows) =>
+      new Set(rows.map((r) => r.name.toLowerCase()))
+    )
   ]);
+
+  // Missing referenced categories: created on apply (deduped, quota-capped);
+  // planned identically in the dry run so the UI can warn about them.
+  const categoryPlan = planImportCategories(entries, categories, allNames, maxCategoriesPerUser);
 
   const classified = classifyEntries(entries, existing);
   const newCount = classified.filter((c) => c.status === 'new').length;
@@ -479,11 +542,16 @@ exports.importPrompts = async (req, res) => {
     // maps 1:1), so they zip by position.
     const results = classified.map((c, i) => {
       const entry = entries[i];
-      // Category resolution is per-importer (resolveCategoryId). A file
-      // entry whose category the importer does not have will silently
-      // become uncategorized on apply — surface that now, in the dry run.
+      // A file entry whose category the importer does not have is created on
+      // apply (when possible) instead of silently becoming uncategorized —
+      // surface both outcomes in the dry run. An entry that references no
+      // category at all counts as resolved (nothing to warn about).
       const hasCategory = Boolean(entry.categoryName || entry.categoryId);
-      const categoryResolved = !hasCategory || resolveCategoryId(entry, categories) !== null;
+      const resolved = resolveCategoryId(entry, categories) !== null;
+      const willBeCreated =
+        !resolved &&
+        Boolean(entry.categoryName) &&
+        categoryPlan.create.has(entry.categoryName.toLowerCase());
       return {
         index: c.index,
         clientId: c.clientId,
@@ -493,7 +561,8 @@ exports.importPrompts = async (req, res) => {
         existingTitle: c.existing ? c.existing.title : null,
         existingUpdatedAt:
           c.existing && c.existing.updatedAt ? new Date(c.existing.updatedAt).toISOString() : null,
-        categoryResolved
+        categoryResolved: !hasCategory || resolved || willBeCreated,
+        categoryWillBeCreated: willBeCreated
       };
     });
     return res.status(200).json({
@@ -504,6 +573,9 @@ exports.importPrompts = async (req, res) => {
         new: classified.filter((c) => c.status === 'new').length,
         conflicts: classified.filter((c) => c.status === 'conflict').length,
         duplicates: classified.filter((c) => c.status === 'duplicate').length
+      },
+      categories: {
+        toCreate: [...categoryPlan.create.values()]
       },
       quota: {
         ...quota,
@@ -519,6 +591,25 @@ exports.importPrompts = async (req, res) => {
   let created = 0;
   let updated = 0;
   let skipped = 0;
+  let categoriesCreated = 0;
+
+  // Create the planned missing categories FIRST (deduped by name, capped by
+  // the quota in the plan): existing names are never re-created, so a
+  // repeat import of the same file creates nothing new.
+  const createdByKey = new Map();
+  if (categoryPlan.create.size) {
+    const insertedCategories = await Category.insertMany(
+      [...categoryPlan.create.values()].map((name) => ({
+        name,
+        description: '',
+        ownerId: req.user._id
+      }))
+    );
+    for (const doc of insertedCategories) {
+      createdByKey.set(doc.name.toLowerCase(), doc._id);
+    }
+    categoriesCreated = insertedCategories.length;
+  }
 
   // Classify first, then write in batches: creations go through a single
   // multi-insert (N round-trips → 1); updates stay individual (each targets
@@ -556,7 +647,7 @@ exports.importPrompts = async (req, res) => {
           title: entry.title,
           content: entry.content,
           tags: entry.tags,
-          categoryId: resolveCategoryId(entry, categories),
+          categoryId: resolveImportCategoryId(entry, categories, createdByKey),
           updatedAt: now
         }
       });
@@ -572,7 +663,7 @@ exports.importPrompts = async (req, res) => {
         title: entry.title,
         content: entry.content,
         tags: entry.tags,
-        categoryId: resolveCategoryId(entry, categories),
+        categoryId: resolveImportCategoryId(entry, categories, createdByKey),
         clientId: entry.clientId || crypto.randomUUID(),
         ownerId: req.user._id,
         createdAt: entry.createdAt || now,
@@ -615,6 +706,7 @@ exports.importPrompts = async (req, res) => {
     created,
     updated,
     skipped,
+    categories: { created: categoriesCreated },
     results,
     quota: { ...quota, used: used + created }
   });

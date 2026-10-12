@@ -37,6 +37,12 @@
       >
         {{ t('importModal.invalidNote', { count: counts.invalid }) }}
       </div>
+      <div
+        v-if="categoriesToCreate.length > 0"
+        class="mt-3 px-3 py-2 rounded-md bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-sm"
+      >
+        {{ t('importModal.categoriesToCreate', { names: categoriesToCreate.join(', ') }) }}
+      </div>
     </div>
 
     <!-- Selection controls -->
@@ -97,7 +103,13 @@
             {{ invalidReasonLabel(entry.invalidReason) }}
           </span>
           <span
-            v-if="entry.categoryResolved === false && entry.categoryName"
+            v-if="entry.categoryWillBeCreated === true"
+            class="block text-xs text-indigo-600 dark:text-indigo-400 mt-1"
+          >
+            {{ t('importModal.categoryWillBeCreated', { name: entry.categoryName }) }}
+          </span>
+          <span
+            v-else-if="entry.categoryResolved === false && entry.categoryName"
             class="block text-xs text-amber-600 dark:text-amber-400 mt-1"
           >
             {{ t('importModal.categoryUnresolved', { name: entry.categoryName }) }}
@@ -133,6 +145,8 @@ const props = defineProps({
   // { index, title, status: 'new'|'exists'|'duplicate'|'invalid', ... }
   entries: { type: Array, required: true },
   quota: { type: Object, default: null },
+  // Names the apply phase will create (server dry-run `categories.toCreate`)
+  categories: { type: Array, default: null },
   importing: { type: Boolean, default: false },
   fileName: { type: String, default: '' }
 })
@@ -165,6 +179,9 @@ const counts = computed(() => ({
 }))
 
 const anySelectable = computed(() => props.entries.some((e) => isSelectableStatus(e.status)))
+const categoriesToCreate = computed(() =>
+  Array.isArray(props.categories) ? props.categories : []
+)
 const anythingSelected = computed(() =>
   props.entries.some((e, i) => isSelectableStatus(e.status) && selected.value[i])
 )

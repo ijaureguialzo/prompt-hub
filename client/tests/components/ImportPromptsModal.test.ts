@@ -192,6 +192,51 @@ describe('ImportPromptsModal', () => {
     })
   })
 
+  describe('category-creation notice (missing categories are created on apply)', () => {
+    it('shows the creation hint (not the unresolved warning) when the server will create the category', () => {
+      const wrapper = mount(ImportPromptsModal, {
+        props: {
+          entries: [
+            {
+              index: 0,
+              title: 'New cat',
+              status: 'new',
+              categoryName: 'Foreign',
+              categoryResolved: true,
+              categoryWillBeCreated: true,
+              selected: true
+            }
+          ],
+          categories: ['Foreign']
+        }
+      })
+      expect(wrapper.text()).toContain('importModal.categoryWillBeCreated')
+      expect(wrapper.text()).not.toContain('importModal.categoryUnresolved')
+      // The summary banner lists the names the apply will create.
+      expect(wrapper.text()).toContain('importModal.categoriesToCreate')
+    })
+
+    it('omits the banner when nothing will be created', () => {
+      const wrapper = mount(ImportPromptsModal, {
+        props: {
+          entries: [
+            {
+              index: 0,
+              title: 'Known',
+              status: 'new',
+              categoryName: 'Mine',
+              categoryResolved: true,
+              categoryWillBeCreated: false,
+              selected: true
+            }
+          ]
+        }
+      })
+      expect(wrapper.text()).not.toContain('importModal.categoriesToCreate')
+      expect(wrapper.text()).not.toContain('importModal.categoryWillBeCreated')
+    })
+  })
+
   describe('accessibility (PLAN.md P2/10)', () => {
     let trigger: HTMLButtonElement
 

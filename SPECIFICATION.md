@@ -87,19 +87,21 @@ Consequences: a prompt that exists only in *another* user's account is **not** a
   "dryRun": true,
   "results": [ { "index": 0, "clientId": "uuid|null", "title": "...",
     "status": "new|conflict|duplicate",
-    "existingId": "...|null", "existingTitle": "...|null", "existingUpdatedAt": "ISO|null" } ],
+    "existingId": "...|null", "existingTitle": "...|null", "existingUpdatedAt": "ISO|null",
+    "categoryResolved": true|false, "categoryWillBeCreated": true|false } ],
   "summary": { "total": 0, "new": 0, "conflicts": 0, "duplicates": 0 },
+  "categories": { "toCreate": ["names the apply phase will create"] },
   "quota": { "used": 0, "limit": 200, "wouldUse": 0, "exceeded": false }
 }
 ```
 
-Applied runs return `{ dryRun: false, created, updated, skipped, results[], quota }` where `status` is `created|updated|skipped` (skipped: `reason` is `not-confirmed` or `duplicate`).
+Applied runs return `{ dryRun: false, created, updated, skipped, categories: { created }, results[], quota }` where `status` is `created|updated|skipped` (skipped: `reason` is `not-confirmed` or `duplicate`).
 
 **Rules:**
 - Applies **atomically** against the quota: if the number of `new` entries would push the user past `MAX_PROMPTS_PER_USER`, the whole request fails with `409 LIMIT_REACHED` and nothing is written. The dry run reports `quota.exceeded` so the client can disable the confirm button in advance.
 - Crash mid-apply: the writes are **not** transactional (single replica, no replica set). A failure part-way leaves a partial state that is *convergent, not corrupt*: a retry of the same file reclassifies the already-created entries as conflicts (matched by `clientId`) and skips the duplicates, and the updates are idempotent (`$set` of the same values), so re-applying reaches the intended final state. Creations are batched in a single multi-insert; updates run individually.
 - New prompts: owner = importer, `clientId` taken from the file (or a fresh UUID if absent), original `createdAt`/`updatedAt` preserved when present and valid.
-- Category resolution (create and update): `categoryName` matched case-insensitively against the importer's own categories; failing that, `categoryId` if it points to a category owned by the importer; otherwise `null` (uncategorized). Categories of other users are never referenced; no categories are created.
+- Category resolution (create and update): `categoryName` matched case-insensitively against the importer's own categories; failing that, `categoryId` if it points to a category owned by the importer. If the entry references a category by name that the importer does not have, it is **created for the importer on apply** (deduped by name within the file, capped by `MAX_CATEGORIES_PER_USER`, names longer than the 50-char schema cap are skipped): the dry run pre-computes the same plan (`categoryWillBeCreated` per entry, `categories.toCreate` summary) so the UI warns the user. Names that exist but belong to **another** user are never created (category names carry a global unique index) nor referenced — those prompts land uncategorized (`categoryResolved: false`). Entries with only a foreign `categoryId` and no name cannot be recreated. A repeat import of the same file re-resolves by name, so no duplicate categories are ever created.
 - `400 IMPORT_INVALID` for a malformed payload (missing/empty `prompts`, more than the entry cap, or any entry violating a field cap); the message identifies the offending entry.
 
 ### 2.3 Categories API (authenticated)

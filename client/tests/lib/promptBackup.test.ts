@@ -55,6 +55,25 @@ describe('promptBackup (export/import file handling)', () => {
       const parsed = JSON.parse(await entry!.async('string'))
       expect(parsed).toEqual(samplePayload)
     })
+
+    it('deflate-compresses the payload (the zip must beat the raw JSON size)', async () => {
+      // Repetitive content is exactly what prompts look like in practice;
+      // an uncompressed (STORE) zip would weigh ~the same as the JSON.
+      const bulky = {
+        format: 'prompthub-export',
+        version: 1,
+        prompts: Array.from({ length: 50 }, (_, i) => ({
+          id: `id-${i}`,
+          clientId: `uuid-${i}`,
+          title: `Prompt ${i}`,
+          content: 'You are a helpful assistant. '.repeat(100),
+          tags: ['a', 'b']
+        }))
+      }
+      const jsonBytes = new Blob([JSON.stringify(bulky, null, 2)]).size
+      const zipBlob = await buildExportZip(bulky)
+      expect(zipBlob.size).toBeLessThan(jsonBytes / 2)
+    })
   })
 
   describe('exportZipName', () => {

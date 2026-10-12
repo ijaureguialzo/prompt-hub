@@ -80,6 +80,9 @@ export default {
     overwriteHint: 'Will replace your current version',
     categoryUnresolved:
       'Category "{name}" was not found in your account; the prompt will be imported as uncategorized',
+    categoryWillBeCreated:
+      'Category "{name}" does not exist in your account; it will be created on import',
+    categoriesToCreate: 'Categories that will be created on import: {names}',
     invalidTitleReason: 'Title is required (max 100 characters)',
     invalidContentReason: 'Content is required (max 50,000 characters)',
     invalidTagsReason: 'Too many tags (max 20)',

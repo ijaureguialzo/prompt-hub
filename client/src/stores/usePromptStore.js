@@ -39,6 +39,7 @@ export const usePromptStore = defineStore('prompts', {
     // decisions, the server-reported quota, and the in-flight apply flag.
     importEntries: [],
     importQuota: null,
+    importCategories: null,
     importFileName: '',
     importing: false
   }),
@@ -201,10 +202,13 @@ export const usePromptStore = defineStore('prompts', {
           status,
           existingId: server?.existingId ?? null,
           existingTitle: server?.existingTitle ?? null,
-          // `null` = unknown (server predates the flag): the modal then
-          // shows no hint. `false` = the file's category does not exist
-          // in this account → the prompt will be uncategorized.
-          categoryResolved: server ? Boolean(server.categoryResolved) : null
+          // `null` = unknown (server predates the flags): the modal then
+          // shows no hint. `categoryResolved: false` = the prompt will land
+          // uncategorized. `categoryWillBeCreated: true` = the referenced
+          // category does not exist in this account and the apply will
+          // create it.
+          categoryResolved: server ? Boolean(server.categoryResolved) : null,
+          categoryWillBeCreated: server ? Boolean(server.categoryWillBeCreated) : null
         }
       })
 
@@ -219,6 +223,7 @@ export const usePromptStore = defineStore('prompts', {
         return { ...entry, sent: true, ...meta, selected: meta.status === 'new' }
       })
       this.importQuota = res.quota
+      this.importCategories = res.categories || null
       this.importFileName = file.name
       return this.importEntries
     },
@@ -250,6 +255,7 @@ export const usePromptStore = defineStore('prompts', {
     cancelImport() {
       this.importEntries = []
       this.importQuota = null
+      this.importCategories = null
       this.importFileName = ''
       this.importing = false
     }

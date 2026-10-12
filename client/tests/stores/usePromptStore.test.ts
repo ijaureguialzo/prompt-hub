@@ -374,20 +374,38 @@ describe('usePromptStore', () => {
     ;(promptsApi.import as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       dryRun: true,
       results: [
-        { index: 0, status: 'new', existingId: null, existingTitle: null, categoryResolved: true },
-        { index: 1, status: 'new', existingId: null, existingTitle: null, categoryResolved: false }
+        {
+          index: 0,
+          status: 'new',
+          existingId: null,
+          existingTitle: null,
+          categoryResolved: true,
+          categoryWillBeCreated: false
+        },
+        {
+          index: 1,
+          status: 'new',
+          existingId: null,
+          existingTitle: null,
+          categoryResolved: true,
+          categoryWillBeCreated: true
+        }
       ],
-      quota: { used: 0, limit: 200, wouldUse: 2, exceeded: false }
+      quota: { used: 0, limit: 200, wouldUse: 2, exceeded: false },
+      categories: { toCreate: ['Foreign'] }
     })
 
     await store.prepareImport(file)
 
     expect(store.importEntries[0].categoryResolved).toBe(true)
+    expect(store.importEntries[0].categoryWillBeCreated).toBe(false)
     // The row keeps its file category name so the modal can name it in the hint.
     expect(store.importEntries[1]).toMatchObject({
       categoryName: 'Foreign',
-      categoryResolved: false
+      categoryResolved: true,
+      categoryWillBeCreated: true
     })
+    expect(store.importCategories).toEqual({ toCreate: ['Foreign'] })
   })
 
   it('prepareImport() rejects a malformed file without touching the API', async () => {
